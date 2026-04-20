@@ -1,0 +1,114 @@
+﻿const express = require('express');
+const router = express.Router();
+const authMiddleware = require('../middleware/auth');
+const { chat } = require('../services/openaiService');
+// const { store } = require('../database/firebase');
+
+// Store simulé pour mode démo
+const mockStore = {
+  users: new Map(),
+  
+  async get(collection, id) {
+    if (collection === 'users') {
+      return this.users.get(id) || { childAge: 10, childName: 'enfant' };
+    }
+    return null;
+  },
+  
+  async set(collection, id, data) {
+    if (collection === 'users') {
+      const existing = this.users.get(id) || {};
+      this.users.set(id, { ...existing, ...data });
+    }
+  }
+};
+
+const DISCOURAGED_PATTERNS = [
+  /je\s+suis\s+bloque/i,
+  /je\s+comprends\s+pas/i,
+  /c'?est\s+trop\s+difficile/i,
+  /j'?arrive\s+pas/i,
+  /je\s+suis\s+nul/i,
+  /j'?abandonne/i,
+];
+
+function detectIntervention(user, message) {
+  const missionProgress = user?.missionProgress || {};
+  const strugglingEntries = Object.entries(missionProgress)
+    .filter(([, p]) => Number(p.errors || 0) >= 2 && Number(p.completed || 0) <= Number(p.errors || 0))
+    .sort((a, b) => Number(b[1].errors || 0) - Number(a[1].errors || 0));
+
+  const strugglingSkill = strugglingEntries[0]?.[0] || null;
+  const emotionTriggered = DISCOURAGED_PATTERNS.some((regex) => regex.test(message || ''));
+
+  const needsIntervention = Boolean(emotionTriggered || strugglingSkill);
+  const reasons = [];
+  if (emotionTriggered) reasons.push('discouragement_detected');
+  if (strugglingSkill) reasons.push('repeated_errors');
+
+  return {
+    needsIntervention,
+    reasons,
+    strugglingSkill,
+  };
+}
+
+function parsePositiveInt(value, fallback) {
+  const n = Number.parseInt(value, 10);
+  return Number.isInteger(n) && n > 0 ? n : fallback;
+}
+
+router.post('/chat', authMiddleware, async (req, res) => {
+  try {
+    const { message, subject, skill } = req.body;
+    if (!message || typeof message !== 'string') {
+      return res.status(400).json({ error: 'Message requis' });
+    }
+
+    const user = await mockStore.get('users', req.user.userId);
+    const intervention = detectIntervention(user, message);
+
+    const systemPrompt = `Tu es KIDO, un tuteur IA bienveillant pour ${user?.childName || 'un enfant'} de ${user?.childAge || 10} ans.
+Regles:
+- Langage simple et positif
+- Maximum 4 phrases
+- Ne donne pas directement la solution finale
+- Guide l'enfant et verifie sa comprehension
+${subject ? `- Sujet: ${subject}` : ''}
+${skill ? `- Competence: ${skill}` : ''}
+${intervention.needsIntervention ? `- Intervention obligatoire: rassure l'enfant et decoupe en micro-etapes.` : ''}
+${intervention.strugglingSkill ? `- Point de blocage observe: ${intervention.strugglingSkill}` : ''}`;
+
+    const tutorTimeoutMs = parsePositiveInt(process.env.AI_TUTOR_TIMEOUT_MS, parsePositiveInt(process.env.AI_TIMEOUT_MS, 500000));
+    const tutorMaxAttempts = parsePositiveInt(process.env.AI_TUTOR_MAX_ATTEMPTS, 1);
+
+    const response = await chat(systemPrompt, message, false, {
+      timeoutMs: tutorTimeoutMs,
+      maxAttempts: tutorMaxAttempts,
+    });
+
+    await mockStore.set('users', req.user.userId, {
+      lastTutorInteractionAt: new Date().toISOString(),
+      lastTutorIntervention: {
+        ...intervention,
+        at: new Date().toISOString(),
+      },
+    });
+
+    if (typeof response === 'object' && response.demo) {
+      return res.json({
+        response: 'Le tuteur IA est temporairement indisponible. Reessaie dans un instant.',
+        demo: true,
+        intervention,
+      });
+    }
+
+    return res.json({ response, intervention });
+  } catch (err) {
+    console.error('AI chat error:', err);
+    return res.status(500).json({ error: 'Erreur tuteur IA' });
+  }
+});
+
+module.exports = router;
+

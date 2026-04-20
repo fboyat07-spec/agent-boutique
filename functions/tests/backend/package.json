@@ -1,0 +1,102 @@
+{
+  "name": "kidai-backend-tests",
+  "version": "1.0.0",
+  "description": "Tests critiques backend pour KidAI",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:ci": "jest --ci --coverage --watchAll=false",
+    "test:specific": "jest --testNamePattern",
+    "test:debug": "node --inspect-brk node_modules/.bin/jest --runInBand",
+    "test:verbose": "jest --verbose",
+    "test:report": "jest --reporters=default --reporters=jest-html-reporters",
+    "clean": "rimraf coverage",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
+  },
+  "jest": {
+    "preset": null,
+    "testEnvironment": "node",
+    "rootDir": ".",
+    "testMatch": [
+      "**/*.test.js",
+      "**/*.spec.js"
+    ],
+    "collectCoverageFrom": [
+      "../**/*.js",
+      "!../tests/**",
+      "!../node_modules/**",
+      "!**/config/**",
+      "!**/middleware/**"
+    ],
+    "coverageDirectory": "../coverage",
+    "coverageReporters": [
+      "text",
+      "lcov",
+      "html"
+    ],
+    "coverageThresholds": {
+      "global": {
+        "branches": 80,
+        "functions": 80,
+        "lines": 80,
+        "statements": 80
+      }
+    },
+    "setupFilesAfterEnv": ["./setup.js"],
+    "testTimeout": 10000,
+    "verbose": true,
+    "clearMocks": true,
+    "restoreMocks": true,
+    "reporters": [
+      "default",
+      [
+        "jest-html-reporters",
+        {
+          "publicPath": "../coverage/html-report",
+          "filename": "report.html",
+          "expand": true
+        }
+      ]
+    ]
+  },
+  "dependencies": {
+    "jest": "^29.7.0",
+    "jest-html-reporters": "^3.1.5",
+    "@babel/core": "^7.23.0",
+    "@babel/preset-env": "^7.23.0",
+    "babel-jest": "^29.7.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.54.0",
+    "eslint-config-standard": "^17.1.0",
+    "eslint-plugin-import": "^2.29.0",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^6.1.1",
+    "rimraf": "^5.0.5"
+  },
+  "babel": {
+    "presets": [
+      [
+        "@babel/preset-env",
+        {
+          "targets": {
+            "node": "18"
+          }
+        }
+      ]
+    ]
+  },
+  "keywords": [
+    "jest",
+    "testing",
+    "backend",
+    "firebase",
+    "functions",
+    "kidai"
+  ],
+  "author": "KidAI Team",
+  "license": "MIT"
+}

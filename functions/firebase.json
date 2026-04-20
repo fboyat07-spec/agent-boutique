@@ -1,0 +1,264 @@
+{
+  "functions": {
+    "source": "src",
+    "codebase": "default",
+    "ignore": [
+      "node_modules",
+      ".git",
+      "firebase-debug.log",
+      "firebase-debug.*.log",
+      "*.local"
+    ],
+    "runtime": "nodejs18",
+    "region": "europe-west1",
+    "memory": "256MB",
+    "maxInstances": 100,
+    "timeout": "540s",
+    "minInstances": 0,
+    "concurrency": 1,
+    "vpcConnector": null,
+    "serviceAccountEmail": null,
+    "ingressSettings": "ALLOW_ALL",
+    "labels": {
+      "environment": "${ENVIRONMENT}",
+      "project": "kidai"
+    },
+    "env": [
+      {
+        "variable": "ENVIRONMENT",
+        "value": "${ENVIRONMENT}",
+        "available": [
+          {
+            "value": "development"
+          },
+          {
+            "value": "staging"
+          },
+          {
+            "value": "production"
+          }
+        ]
+      },
+      {
+        "variable": "NODE_ENV",
+        "value": "${NODE_ENV}"
+      },
+      {
+        "variable": "FIREBASE_CONFIG",
+        "value": "${FIREBASE_CONFIG}"
+      },
+      {
+        "variable": "DEBUG",
+        "value": "${DEBUG}"
+      },
+      {
+        "variable": "MONITORING_ENABLED",
+        "value": "${MONITORING_ENABLED}"
+      },
+      {
+        "variable": "MONITORING_LOG_LEVEL",
+        "value": "${MONITORING_LOG_LEVEL}"
+      },
+      {
+        "variable": "MONITORING_ALERTING",
+        "value": "${MONITORING_ALERTING}"
+      },
+      {
+        "variable": "SLACK_WEBHOOK_URL",
+        "value": "${SLACK_WEBHOOK_URL}",
+        "input": "text"
+      },
+      {
+        "variable": "SLACK_ENABLED",
+        "value": "${SLACK_ENABLED}"
+      },
+      {
+        "variable": "EMAIL_SERVICE",
+        "value": "${EMAIL_SERVICE}"
+      },
+      {
+        "variable": "EMAIL_ENABLED",
+        "value": "${EMAIL_ENABLED}"
+      },
+      {
+        "variable": "ANALYTICS_SERVICE",
+        "value": "${ANALYTICS_SERVICE}"
+      },
+      {
+        "variable": "ANALYTICS_TRACKING_ID",
+        "value": "${ANALYTICS_TRACKING_ID}"
+      },
+      {
+        "variable": "COST_CONTROL_ENABLED",
+        "value": "${COST_CONTROL_ENABLED}"
+      },
+      {
+        "variable": "COST_DAILY_CALLS",
+        "value": "${COST_DAILY_CALLS}"
+      },
+      {
+        "variable": "COST_MONTHLY_CALLS",
+        "value": "${COST_MONTHLY_CALLS}"
+      },
+      {
+        "variable": "RATE_LIMIT_ENABLED",
+        "value": "${RATE_LIMIT_ENABLED}"
+      },
+      {
+        "variable": "RATE_LIMIT_STRICT",
+        "value": "${RATE_LIMIT_STRICT}"
+      },
+      {
+        "variable": "RATE_LIMIT_WINDOW",
+        "value": "${RATE_LIMIT_WINDOW}"
+      },
+      {
+        "variable": "RATE_LIMIT_MAX_REQUESTS",
+        "value": "${RATE_LIMIT_MAX_REQUESTS}"
+      },
+      {
+        "variable": "CACHE_ENABLED",
+        "value": "${CACHE_ENABLED}"
+      },
+      {
+        "variable": "CACHE_TTL",
+        "value": "${CACHE_TTL}"
+      },
+      {
+        "variable": "CACHE_MAX_SIZE",
+        "value": "${CACHE_MAX_SIZE}"
+      },
+      {
+        "variable": "TEST_MODE_ENABLED",
+        "value": "${TEST_MODE_ENABLED}"
+      },
+      {
+        "variable": "TEST_MODE_BYPASS",
+        "value": "${TEST_MODE_BYPASS}"
+      },
+      {
+        "variable": "TEST_MODE_ADMIN",
+        "value": "${TEST_MODE_ADMIN}"
+      },
+      {
+        "variable": "TEST_MODE_DEBUG",
+        "value": "${TEST_MODE_DEBUG}"
+      },
+      {
+        "variable": "TEST_MODE_MOCK",
+        "value": "${TEST_MODE_MOCK}"
+      },
+      {
+        "variable": "TEST_MODE_SKIP_AUTH",
+        "value": "${TEST_MODE_SKIP_AUTH}"
+      },
+      {
+        "variable": "FEATURE_NEW_UI",
+        "value": "${FEATURE_NEW_UI}"
+      },
+      {
+        "variable": "FEATURE_BETA_FEATURES",
+        "value": "${FEATURE_BETA_FEATURES}"
+      },
+      {
+        "variable": "FEATURE_DEBUG_TOOLS",
+        "value": "${FEATURE_DEBUG_TOOLS}"
+      },
+      {
+        "variable": "FEATURE_ANALYTICS",
+        "value": "${FEATURE_ANALYTICS}"
+      },
+      {
+        "variable": "JWT_SECRET",
+        "value": "${JWT_SECRET}",
+        "input": "password"
+      },
+      {
+        "variable": "API_SECRET",
+        "value": "${API_SECRET}",
+        "input": "password"
+      },
+      {
+        "variable": "ENCRYPTION_KEY",
+        "value": "${ENCRYPTION_KEY}",
+        "input": "password"
+      },
+      {
+        "variable": "CORS_ORIGIN",
+        "value": "${CORS_ORIGIN}"
+      },
+      {
+        "variable": "CORS_CREDENTIALS",
+        "value": "${CORS_CREDENTIALS}"
+      },
+      {
+        "variable": "LOG_LEVEL",
+        "value": "${LOG_LEVEL}"
+      },
+      {
+        "variable": "VERBOSE_LOGGING",
+        "value": "${VERBOSE_LOGGING}"
+      },
+      {
+        "variable": "DEBUG_MODE",
+        "value": "${DEBUG_MODE}"
+      },
+      {
+        "variable": "EXTERNAL_API_URL",
+        "value": "${EXTERNAL_API_URL}",
+        "input": "text"
+      },
+      {
+        "variable": "EXTERNAL_API_KEY",
+        "value": "${EXTERNAL_API_KEY}",
+        "input": "password"
+      },
+      {
+        "variable": "MONITORING_WEBHOOK_URL",
+        "value": "${MONITORING_WEBHOOK_URL}",
+        "input": "text"
+      },
+      {
+        "variable": "WEBHOOK_AUTH_TOKEN",
+        "value": "${WEBHOOK_AUTH_TOKEN}",
+        "input": "password"
+      }
+    ],
+    "predeploy": [
+      "npm --prefix \"$RESOURCE_DIR\" run lint",
+      "npm --prefix \"$RESOURCE_DIR\" run build"
+    ],
+    "postdeploy": [
+      "npm --prefix \"$RESOURCE_DIR\" run postdeploy"
+    ]
+  },
+  "firestore": {
+    "rules": "firebase.firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "emulators": {
+    "auth": {
+      "port": 9099
+    },
+    "functions": {
+      "port": 5001
+    },
+    "firestore": {
+      "port": 8080
+    },
+    "database": {
+      "port": 9000
+    },
+    "hosting": {
+      "port": 5000
+    },
+    "storage": {
+      "port": 9199
+    },
+    "ui": {
+      "enabled": true,
+      "port": 4000
+    },
+    "singleProjectMode": true
+  }
+}

@@ -1,0 +1,61 @@
+﻿rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    function createOwnUid() {
+      return request.resource.data.uid is string
+        && request.resource.data.uid == request.auth.uid;
+    }
+
+    function readOwnUid() {
+      return resource.data.uid is string
+        && resource.data.uid == request.auth.uid;
+    }
+
+    function updateOwnUid() {
+      return readOwnUid()
+        && request.resource.data.uid == resource.data.uid;
+    }
+
+    match /users/{userId} {
+      allow create: if isOwner(userId)
+        && request.resource.data.uid == request.auth.uid;
+      allow read, delete: if isOwner(userId);
+      allow update: if isOwner(userId)
+        && request.resource.data.uid == userId;
+
+      match /history/{docId} {
+        allow create, read, update, delete: if isOwner(userId);
+      }
+    }
+
+    match /diagnostics/{docId} {
+      allow create: if signedIn() && createOwnUid();
+      allow read, delete: if signedIn() && readOwnUid();
+      allow update: if signedIn() && updateOwnUid();
+    }
+
+    match /learning_sessions/{docId} {
+      allow create: if signedIn() && createOwnUid();
+      allow read, delete: if signedIn() && readOwnUid();
+      allow update: if signedIn() && updateOwnUid();
+    }
+
+    match /questions/{docId} {
+      allow create: if signedIn() && createOwnUid();
+      allow read, delete: if signedIn() && readOwnUid();
+      allow update: if signedIn() && updateOwnUid();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

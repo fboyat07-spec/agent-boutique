@@ -1,0 +1,176 @@
+// Service adaptatif simplifié - mode démo uniquement
+
+// Questions de diagnostic statiques (fallback mode démo)
+const DIAGNOSTIC_QUESTIONS = {
+  maths: [
+    {
+      id: 'maths_1', skill: 'compter_1_10', difficulty: 'easy', age_min: 6,
+      question: 'Combien font 3 + 4 ?',
+      options: ['5', '6', '7', '8'], answer: '7', explanation: '3 + 4 = 7, on compte : 3, puis 4, 5, 6, 7'
+    },
+    {
+      id: 'maths_2', skill: 'addition_simple', difficulty: 'easy', age_min: 6,
+      question: 'Sophie a 5 pommes. Elle en mange 2. Combien lui en reste-t-il ?',
+      options: ['2', '3', '4', '7'], answer: '3', explanation: '5 - 2 = 3 pommes restantes'
+    },
+    {
+      id: 'maths_3', skill: 'multiplication_base', difficulty: 'medium', age_min: 8,
+      question: 'Combien font 6 × 7 ?',
+      options: ['36', '42', '48', '54'], answer: '42', explanation: '6 × 7 = 42 (table de 6)'
+    },
+    {
+      id: 'maths_4', skill: 'fractions_intro', difficulty: 'hard', age_min: 10,
+      question: 'Quelle fraction représente la moitié d\'un gâteau ?',
+      options: ['1/4', '1/2', '2/3', '3/4'], answer: '1/2', explanation: 'La moitié = 1 partie sur 2 = 1/2'
+    },
+    {
+      id: 'maths_5', skill: 'addition_retenue', difficulty: 'medium', age_min: 8,
+      question: 'Combien font 47 + 35 ?',
+      options: ['72', '82', '73', '83'], answer: '82', explanation: '47 + 35 : 7+5=12, je pose 2 et reporte 1, 4+3+1=8, donc 82'
+    },
+    {
+      id: 'maths_6', skill: 'geometrie_base', difficulty: 'easy', age_min: 6,
+      question: 'Combien de côtés a un triangle ?',
+      options: ['2', '3', '4', '5'], answer: '3', explanation: 'Un triangle a exactement 3 côtés et 3 angles'
+    },
+  ],
+  francais: [
+    {
+      id: 'fr_1', skill: 'mots_simples', difficulty: 'easy', age_min: 6,
+      question: 'Combien de syllabes dans le mot "ma-ti-son" ?',
+      options: ['1', '2', '3', '4'], answer: '3', explanation: 'Ma-i-son = 3 syllabes : MA - I - SON'
+    },
+    {
+      id: 'fr_2', skill: 'accord_genre', difficulty: 'medium', age_min: 8,
+      question: 'Laquelle de ces phrases est correcte ?',
+      options: ['La chien est grand', 'Le chien est grande', 'Le chien est grand', 'La chien est grande'],
+      answer: 'Le chien est grand', explanation: '"chien" est masculin → "Le" et "grand" sans -e'
+    },
+    {
+      id: 'fr_3', skill: 'conjugaison_present', difficulty: 'medium', age_min: 8,
+      question: 'Conjugue "manger" : Nous ___ à la cantine.',
+      options: ['mange', 'manges', 'mangeons', 'mangent'], answer: 'mangeons', explanation: 'Nous mangeons - attention au "e" devant -ons pour garder le son doux'
+    },
+    {
+      id: 'fr_4', skill: 'conjugaison_passe', difficulty: 'hard', age_min: 10,
+      question: 'Quelle est la forme correcte au passé composé ? "Hier, elle ___ au parc."',
+      options: ['allait', 'est allée', 'ira', 'va'], answer: 'est allée', explanation: 'Passé composé de "aller" avec "être" : elle est allée'
+    },
+    {
+      id: 'fr_5', skill: 'ponctuation', difficulty: 'easy', age_min: 7,
+      question: 'Quel signe met-on à la fin d\'une question ?',
+      options: ['.', '!', '?', ','], answer: '?', explanation: 'Une question se termine par un point d\'interrogation ?'
+    },
+  ],
+  sciences: [
+    {
+      id: 'sci_1', skill: 'vivant_non_vivant', difficulty: 'easy', age_min: 6,
+      question: 'Lequel de ces éléments est vivant ?',
+      options: ['Une pierre', 'Une voiture', 'Un arbre', 'Une chaise'], answer: 'Un arbre', explanation: 'Un arbre est vivant : il grandit, se nourrit et se reproduit'
+    },
+    {
+      id: 'sci_2', skill: 'etats_matiere', difficulty: 'easy', age_min: 7,
+      question: 'Dans quel état est l\'eau quand elle gèle ?',
+      options: ['Liquide', 'Solide', 'Gazeux', 'Chaud'], answer: 'Solide', explanation: 'Quand l\'eau gèle (à 0°C), elle devient solide : la glace'
+    },
+    {
+      id: 'sci_3', skill: 'corps_humain', difficulty: 'easy', age_min: 6,
+      question: 'Quel organe pompe le sang dans notre corps ?',
+      options: ['Le poumon', 'Le cerveau', 'Le cœur', 'L\'estomac'], answer: 'Le cœur', explanation: 'Le cœur est une pompe musculaire qui fait circuler le sang'
+    },
+    {
+      id: 'sci_4', skill: 'cycle_vie', difficulty: 'medium', age_min: 8,
+      question: 'Dans quel ordre pousse une plante ?',
+      options: ['Fleur → Graine → Pousse', 'Graine → Pousse → Fleur', 'Pousse → Fleur → Graine', 'Graine → Fleur → Pousse'],
+      answer: 'Graine → Pousse → Fleur', explanation: 'Une plante naît d\'une graine, germe en pousse, puis fleurit'
+    },
+    {
+      id: 'sci_5', skill: 'meteo_saisons', difficulty: 'easy', age_min: 6,
+      question: 'En quelle saison les feuilles tombent-elles des arbres ?',
+      options: ['Printemps', 'Été', 'Automne', 'Hiver'], answer: 'Automne', explanation: 'En automne, les feuilles changent de couleur et tombent'
+    },
+  ],
+  logique: [
+    {
+      id: 'log_1', skill: 'suites_simples', difficulty: 'easy', age_min: 6,
+      question: 'Quelle est la suite ? 2, 4, 6, 8, ___',
+      options: ['9', '10', '11', '12'], answer: '10', explanation: 'On ajoute 2 à chaque fois : 8 + 2 = 10'
+    },
+    {
+      id: 'log_2', skill: 'comparaisons', difficulty: 'easy', age_min: 6,
+      question: 'Lequel est le plus grand ? 345 ou 354 ?',
+      options: ['345', '354', 'Ils sont égaux', 'Impossible à dire'], answer: '354', explanation: '354 > 345 car au chiffre des dizaines : 5 > 4'
+    },
+    {
+      id: 'log_3', skill: 'suites_complexes', difficulty: 'medium', age_min: 9,
+      question: 'Quelle est la suite ? 1, 3, 6, 10, ___',
+      options: ['13', '14', '15', '16'], answer: '15', explanation: 'On ajoute 2, puis 3, puis 4, puis 5 : 10 + 5 = 15'
+    },
+    {
+      id: 'log_4', skill: 'problemes_logiques', difficulty: 'medium', age_min: 9,
+      question: 'Léa est plus grande que Tom. Tom est plus grand que Marc. Qui est le plus petit ?',
+      options: ['Léa', 'Tom', 'Marc', 'Impossible à dire'], answer: 'Marc', explanation: 'Léa > Tom > Marc, donc Marc est le plus petit'
+    },
+    {
+      id: 'log_5', skill: 'deduction', difficulty: 'hard', age_min: 11,
+      question: 'Tous les chats sont des animaux. Minou est un chat. Donc Minou est :',
+      options: ['Peut-être un animal', 'Certainement un animal', 'Pas un animal', 'On ne sait pas'],
+      answer: 'Certainement un animal', explanation: 'Syllogisme : si tous les chats sont animaux et Minou est chat, alors Minou est certainement animal'
+    },
+  ]
+};
+
+/**
+ * Sélectionne les questions de diagnostic adaptées à l'âge
+ */
+function selectDiagnosticQuestions(age) {
+  const questions = [];
+
+  for (const subject of ['maths', 'francais', 'sciences', 'logique']) {
+    const subjectQuestions = DIAGNOSTIC_QUESTIONS[subject]
+      .filter(q => q.age_min <= age)
+      .slice(0, 3); // max 3 par matière = 12 questions total
+    questions.push(...subjectQuestions);
+  }
+
+  // Mélanger
+  return questions.sort(() => Math.random() - 0.5);
+}
+
+/**
+ * Génère une mission (exercice) avec fallback
+ */
+async function generateMission(skill, subject, difficulty, age, previousErrors = []) {
+  // Mode démo - retourne une question statique
+  const allQuestions = Object.values(DIAGNOSTIC_QUESTIONS).flat();
+  const matching = allQuestions.filter(q => q.skill === skill);
+  if (matching.length > 0) {
+    const q = matching[Math.floor(Math.random() * matching.length)];
+    return { 
+      ...q, 
+      xpReward: difficulty === 'easy' ? 10 : difficulty === 'medium' ? 20 : 35, 
+      emoji: '📚',
+      skill,
+      subject,
+      difficulty,
+      generated: false
+    };
+  }
+
+  // Question générique de fallback
+  return {
+    question: `Exercice de ${subject} - compétence : ${skill}`,
+    options: ['Réponse A', 'Réponse B', 'Réponse C', 'Réponse D'],
+    answer: 'Réponse A',
+    explanation: 'Continue à pratiquer pour maîtriser cette compétence !',
+    hint: 'Réfléchis bien avant de répondre',
+    emoji: '🎯',
+    xpReward: 15,
+    skill,
+    subject,
+    difficulty,
+    generated: false
+  };
+}
+
+module.exports = { selectDiagnosticQuestions, generateMission, DIAGNOSTIC_QUESTIONS };

@@ -1,0 +1,15 @@
+# Fichier son pour erreur
+# Ce fichier doit être remplacé par un vrai fichier audio MP3
+# Vous pouvez télécharger un son d'erreur et le placer ici
+# Exemples de sons gratuits :
+# - https://freesound.org/people/brunogoncalves/sounds/434016/
+# - https://freesound.org/people/brunogoncalves/sounds/434017/
+# - https://freesound.org/people/brunogoncalves/sounds/434018/
+
+# Instructions :
+# 1. Téléchargez un fichier MP3 d'erreur
+# 2. Renommez-le en "error.mp3"
+# 3. Placez-le dans ce dossier assets/sounds/
+# 4. Le son sera automatiquement joué lors des erreurs
+
+# Pour le moment, le code fonctionnera sans son (grâce au try/catch)

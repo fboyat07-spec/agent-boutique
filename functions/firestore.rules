@@ -1,0 +1,79 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Utilisateurs
+    match /users/{userId} {
+      // L'utilisateur peut lire et modifier ses propres données
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      
+      // Seuls les utilisateurs authentifiés peuvent créer leur profil
+      allow create: if request.auth != null && request.auth.uid == userId;
+      
+      // Les admins peuvent lire toutes les données utilisateurs (pour les analytics)
+      allow read: if request.auth != null && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      
+      // Validation des données utilisateur
+      validate: if request.resource.data.keys().hasAll([
+        'username', 'email', 'createdAt'
+      ]) && request.resource.data.username is string &&
+        request.resource.data.username.size() > 2 &&
+        request.resource.data.username.size() <= 30 &&
+        request.resource.data.email is string &&
+        request.resource.data.email.matches('^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$') &&
+        request.resource.data.createdAt is timestamp;
+    }
+
+    // Leaderboard (lecture seule pour tous)
+    match /leaderboard/{userId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Analytics (écriture par le système, lecture par les admins)
+    match /analytics/{eventId} {
+      allow read: if request.auth != null && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      
+      allow write: if request.auth != null && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // Sessions (lecture/écriture par le propriétaire)
+    match /sessions/{sessionId} {
+      allow read, write: if request.auth != null && 
+        request.resource.data.userId == request.auth.uid;
+    }
+
+    // Badges (lecture par tous, écriture par le système)
+    match /badges/{badgeId} {
+      allow read: if request.auth != null;
+      allow write: if false; // Écriture gérée par les fonctions cloud
+    }
+
+    // Missions templates (lecture par tous)
+    match /missionTemplates/{templateId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // Notifications (écriture par le système, lecture par le propriétaire)
+    match /notifications/{notificationId} {
+      allow read: if request.auth != null && 
+        request.resource.data.userId == request.auth.uid;
+      allow write: if false; // Écriture gérée par les fonctions cloud
+    }
+
+    // Collections système (accès admin uniquement)
+    match /system/{docId} {
+      allow read, write: if request.auth != null && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+  }
+}
