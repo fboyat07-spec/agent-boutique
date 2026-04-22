@@ -4,8 +4,15 @@ console.log("SERVER FINAL UNIQUE");
 const express = require('express');
 const app = express();
 
+// GLOBAL REQUEST LOGGER - DEBUG RAILWAY HEALTHCHECK
+app.use((req, res, next) => {
+  console.log('[REQUEST]', req.method, req.url);
+  next();
+});
+
 // HEALTH ROUTE - MUST BE FIRST
 app.get('/health', (req, res) => {
+  console.log('[HEALTH ROUTE HIT]');
   res.status(200).send("OK");
 });
 
