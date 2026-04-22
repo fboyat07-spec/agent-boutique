@@ -176,6 +176,10 @@ app.get('/health', (req, res) => {
   });
 });
 
+app.get('/health', (req, res) => {
+  res.status(200).send("OK");
+});
+
 app.get('/ping', (req, res) => {
   res.send('OK');
 });
