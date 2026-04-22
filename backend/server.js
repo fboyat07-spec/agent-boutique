@@ -187,6 +187,17 @@ app.get('/webhook-test', (req, res) => {
   });
 });
 
+// Route test unique pour identifier serveur
+app.get('/webhook/test', (req, res) => {
+  console.log('[WEBHOOK TEST ROUTE HIT]');
+  res.json({
+    success: true,
+    server: 'EXPRESS V4',
+    timestamp: new Date().toISOString(),
+    message: 'Serveur Express correct exécuté'
+  });
+});
+
 // 404 handler
 app.use('*', (req, res) => {
   res.status(404).json({
