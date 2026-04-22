@@ -126,7 +126,7 @@ app.get('/webhook/whatsapp', (req, res) => {
 });
 
 // WhatsApp Webhook Messages (POST)
-app.post('/webhook/whatsapp', (req, res) => {
+app.post('/webhook/whatsapp', async (req, res) => {
   console.log('[WEBHOOK POST HIT]');
   console.log('[WEBHOOK POST BODY]', JSON.stringify(req.body, null, 2));
   
@@ -188,7 +188,12 @@ app.post('/webhook/whatsapp', (req, res) => {
       // Auto-reply uniquement pour messages texte avec contenu
       if (messageType === 'text' && messageText && messageText.trim()) {
         console.log('[AUTO-REPLY TRIGGERED]');
-        sendWhatsAppReply(senderPhone, messageText);
+        try {
+          await sendWhatsAppReply(senderPhone, messageText);
+          console.log('[AUTO-REPLY COMPLETED]');
+        } catch (replyError) {
+          console.log('[AUTO-REPLY FAILED]', replyError.message);
+        }
       } else {
         console.log('[AUTO-REPLY SKIPPED]', { 
           reason: !messageType ? 'no_type' : 
