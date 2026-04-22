@@ -133,31 +133,73 @@ app.post('/webhook/whatsapp', (req, res) => {
   // RESPONSE 200 IMMEDIATE
   res.sendStatus(200);
   
-  // Traitement async des messages
-  if (req.body?.entry?.[0]?.changes?.[0]?.value?.messages) {
+  // Traitement sécurisé des messages
+  try {
+    // Validation structure webhook
+    const entry = req.body?.entry;
+    if (!entry || !Array.isArray(entry) || entry.length === 0) {
+      console.log('[WEBHOOK NO ENTRY]');
+      return;
+    }
+    
+    const changes = entry[0]?.changes;
+    if (!changes || !Array.isArray(changes) || changes.length === 0) {
+      console.log('[WEBHOOK NO CHANGES]');
+      return;
+    }
+    
+    const value = changes[0]?.value;
+    if (!value) {
+      console.log('[WEBHOOK NO VALUE]');
+      return;
+    }
+    
+    const messages = value.messages;
+    if (!messages || !Array.isArray(messages) || messages.length === 0) {
+      console.log('[WEBHOOK NO MESSAGES]');
+      return;
+    }
+    
     console.log('[WEBHOOK HAS MESSAGES]');
     
-    // Extraire message entrant
-    const messages = req.body.entry[0].changes[0].value.messages;
-    const message = messages[0];
-    
-    // Obtenir infos expéditeur
-    const senderPhone = message.from;
-    const messageText = message.text?.body || '';
-    const messageType = message.type;
-    
-    console.log('[MESSAGE INFO]', {
-      sender: senderPhone,
-      type: messageType,
-      text: messageText
-    });
-    
-    // Auto-reply seulement pour messages texte
-    if (messageType === 'text' && messageText) {
-      sendWhatsAppReply(senderPhone, messageText);
+    // Traiter chaque message
+    for (const message of messages) {
+      if (!message) {
+        console.log('[WEBHOOK EMPTY MESSAGE]');
+        continue;
+      }
+      
+      // Validation structure message
+      const senderPhone = message.from;
+      const messageType = message.type;
+      const messageText = message.text?.body || '';
+      
+      if (!senderPhone) {
+        console.log('[WEBHOOK NO SENDER]');
+        continue;
+      }
+      
+      console.log('[MESSAGE INFO]', {
+        sender: senderPhone,
+        type: messageType,
+        text: messageText
+      });
+      
+      // Auto-reply uniquement pour messages texte avec contenu
+      if (messageType === 'text' && messageText && messageText.trim()) {
+        console.log('[AUTO-REPLY TRIGGERED]');
+        sendWhatsAppReply(senderPhone, messageText);
+      } else {
+        console.log('[AUTO-REPLY SKIPPED]', { 
+          reason: !messageType ? 'no_type' : 
+                  messageType !== 'text' ? 'not_text' : 
+                  !messageText.trim() ? 'empty_text' : 'unknown'
+        });
+      }
     }
-  } else {
-    console.log('[WEBHOOK NO MESSAGES]');
+    
+  } catch (error) {
+    console.log('[WEBHOOK PARSING ERROR]', error.message);
   }
 });
 
