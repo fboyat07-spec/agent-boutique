@@ -1,3 +1,5 @@
+console.log("SERVER FINAL UNIQUE");
+
 // Load environment variables (optional for Railway)
 if (process.env.NODE_ENV !== 'production') {
   require('dotenv').config();
@@ -189,13 +191,8 @@ app.get('/webhook-test', (req, res) => {
 
 // Route test unique pour identifier serveur
 app.get('/webhook/test', (req, res) => {
-  console.log('[WEBHOOK TEST ROUTE HIT]');
-  res.json({
-    success: true,
-    server: 'EXPRESS V4',
-    timestamp: new Date().toISOString(),
-    message: 'Serveur Express correct exécuté'
-  });
+  console.log("TEST ROUTE HIT");
+  res.json({ server: "EXPRESS FINAL OK" });
 });
 
 // 404 handler
