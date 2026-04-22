@@ -14,10 +14,7 @@ function initFirebase() {
   if (!projectId || !privateKey || !clientEmail ||
       projectId === 'ton-projet-firebase' ||
       privateKey === '' || clientEmail === '') {
-    if (isProduction && !allowMemoryFallback) {
-      throw new Error('Firebase non configure en production. Definis FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL et FIREBASE_PRIVATE_KEY.');
-    }
-    console.log('Firebase: mode demo (donnees en memoire)');
+    console.log("Firebase disabled");
     persistenceMode = 'memory';
     return null;
   }
@@ -42,10 +39,7 @@ function initFirebase() {
     console.log('Firebase connecte');
     return admin.app();
   } catch (err) {
-    if (isProduction && !allowMemoryFallback) {
-      throw err;
-    }
-    console.log('Firebase erreur, mode demo active:', err.message);
+    console.log("Firebase disabled");
     persistenceMode = 'memory';
     return null;
   }
