@@ -32,6 +32,15 @@ if (process.env.NODE_ENV !== 'production') {
   }
 }
 
+// Global axios (reuse for performance)
+let axios = null;
+try {
+  axios = require('axios');
+  console.log('axios loaded successfully');
+} catch (error) {
+  console.log('axios load failed:', error.message);
+}
+
 // DEPLOYMENT VERSION CHECK - V4
 console.log('DEPLOY VERSION CHECK - V4');
 console.log('WEBHOOK V4 ACTIF');
