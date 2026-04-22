@@ -124,14 +124,85 @@ app.post('/webhook/whatsapp', (req, res) => {
   // RESPONSE 200 IMMEDIATE
   res.sendStatus(200);
   
-  // Traitement async si nécessaire
+  // Traitement async des messages
   if (req.body?.entry?.[0]?.changes?.[0]?.value?.messages) {
     console.log('[WEBHOOK HAS MESSAGES]');
-    // TODO: Traiter messages ici
+    
+    // Extraire message entrant
+    const messages = req.body.entry[0].changes[0].value.messages;
+    const message = messages[0];
+    
+    // Obtenir infos expéditeur
+    const senderPhone = message.from;
+    const messageText = message.text?.body || '';
+    const messageType = message.type;
+    
+    console.log('[MESSAGE INFO]', {
+      sender: senderPhone,
+      type: messageType,
+      text: messageText
+    });
+    
+    // Auto-reply seulement pour messages texte
+    if (messageType === 'text' && messageText) {
+      sendWhatsAppReply(senderPhone, messageText);
+    }
   } else {
     console.log('[WEBHOOK NO MESSAGES]');
   }
 });
+
+// Fonction auto-reply WhatsApp
+async function sendWhatsAppReply(recipientPhone, originalMessage) {
+  try {
+    console.log('[AUTO-REPLY START]', { recipient: recipientPhone, original: originalMessage });
+    
+    // Configuration WhatsApp API
+    const WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN;
+    const PHONE_NUMBER_ID = process.env.PHONE_NUMBER_ID;
+    
+    if (!WHATSAPP_TOKEN || !PHONE_NUMBER_ID) {
+      console.log('[AUTO-REPLY ERROR] Missing WHATSAPP_TOKEN or PHONE_NUMBER_ID');
+      return;
+    }
+    
+    // Message de réponse
+    const replyText = `Auto-reply: Received "${originalMessage}". Thank you for your message!`;
+    
+    // API WhatsApp Graph
+    const apiUrl = `https://graph.facebook.com/v18.0/${PHONE_NUMBER_ID}/messages`;
+    
+    const payload = {
+      messaging_product: "whatsapp",
+      to: recipientPhone,
+      text: {
+        body: replyText
+      }
+    };
+    
+    console.log('[AUTO-REPLY SENDING]', { url: apiUrl, payload });
+    
+    // Envoyer via axios
+    if (axios) {
+      const response = await axios.post(apiUrl, payload, {
+        headers: {
+          'Authorization': `Bearer ${WHATSAPP_TOKEN}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      console.log('[AUTO-REPLY SUCCESS]', response.data);
+    } else {
+      console.log('[AUTO-REPLY ERROR] axios not available');
+    }
+    
+  } catch (error) {
+    console.log('[AUTO-REPLY ERROR]', error.message);
+    if (error.response) {
+      console.log('[AUTO-REPLY ERROR DETAILS]', error.response.data);
+    }
+  }
+}
 
 app.get('/health', (req, res) => {
   res.json({
