@@ -2,7 +2,11 @@ console.log("SERVER FINAL UNIQUE");
 
 // Load environment variables (optional for Railway)
 if (process.env.NODE_ENV !== 'production') {
-  require('dotenv').config();
+  try {
+    require('dotenv').config();
+  } catch (error) {
+    console.log('dotenv config failed:', error.message);
+  }
 }
 
 // DEPLOYMENT VERSION CHECK - V4
@@ -16,10 +20,11 @@ console.log('BOOT ENV:', {
   NODE_ENV: process.env.NODE_ENV
 });
 
+// Core Express setup - MUST START IMMEDIATELY
 const express = require('express');
 const cors = require('cors');
-const { isFirestoreEnabled, getPersistenceMode } = require('./database/firebase');
-const { provider: aiProvider } = require('./services/openaiService');
+
+const app = express();
 
 // Environment validation for production
 const isProduction = process.env.NODE_ENV === 'production';
@@ -28,21 +33,39 @@ const VERIFY_TOKEN = process.env.VERIFY_TOKEN;
 // Anti-duplicate message tracking
 const processedMessages = new Set();
 
+// Global axios (reuse for performance)
+let axios = null;
+try {
+  axios = require('axios');
+} catch (error) {
+  console.log('axios load failed:', error.message);
+}
+
 // Global OpenAI client (reuse for performance)
 let openaiClient = null;
+let aiProvider = 'none';
 if (process.env.OPENAI_API_KEY) {
   try {
     const openai = require('openai');
     openaiClient = new openai.OpenAI({
       apiKey: process.env.OPENAI_API_KEY
     });
+    aiProvider = 'openai';
   } catch (error) {
     console.log('[ERROR] OpenAI client init failed:', error.message);
   }
 }
 
-// Global axios (reuse for performance)
-const axios = require('axios');
+// Firebase - safe load
+let isFirestoreEnabled = () => false;
+let getPersistenceMode = () => 'memory';
+try {
+  const firebase = require('./database/firebase');
+  isFirestoreEnabled = firebase.isFirestoreEnabled;
+  getPersistenceMode = firebase.getPersistenceMode;
+} catch (error) {
+  console.log('Firebase load failed:', error.message);
+}
 
 // Debug ENV global
 console.log('[ENV CHECK] VERIFY_TOKEN:', process.env.VERIFY_TOKEN);
@@ -80,7 +103,13 @@ if (isProduction) {
   }
 }
 
-const app = express();
+// START SERVER IMMEDIATELY BEFORE ANY BLOCKING OPERATIONS
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`[SERVER START] Server listening on 0.0.0.0:${PORT}`);
+  console.log(`[SERVER START] PORT from env:`, process.env.PORT);
+  console.log(`[SERVER START] Health endpoint ready: GET /health`);
+});
 
 // Log ALL incoming requests - BEFORE ANY MIDDLEWARE
 app.use((req, res, next) => {
@@ -211,13 +240,4 @@ app.use('*', (req, res) => {
 app.use((err, req, res, next) => {
   console.error('[GLOBAL ERROR]', err);
   res.status(500).json({ error: 'Erreur serveur', message: err.message });
-});
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`[SERVER START] Webhook route ready: GET /webhook/whatsapp`);
-  console.log(`[SERVER START] Webhook route ready: POST /webhook/whatsapp`);
-  console.log(`[SERVER START] Test endpoints ready: GET /ping, GET /webhook-test`);
-  console.log(`[SERVER START] Server listening on 0.0.0.0:${PORT}`);
-  console.log(`[SERVER START] PORT from env:`, process.env.PORT);
 });
