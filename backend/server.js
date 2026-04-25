@@ -21,6 +21,15 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`[SERVER START] Server listening on 0.0.0.0:${PORT}`);
   console.log(`[SERVER START] Health endpoint ready: GET /health`);
+  
+  // Initialize production systems
+  initRedis();
+  
+  console.log('[PRODUCTION SYSTEMS]', {
+    redis: redis ? 'connected' : 'fallback',
+    messageTracker: messageTracker ? 'initialized' : 'failed',
+    rateLimiter: 'initialized'
+  });
 });
 
 // Load environment variables AFTER server starts
@@ -39,6 +48,163 @@ try {
   console.log('axios loaded successfully');
 } catch (error) {
   console.log('axios load failed:', error.message);
+}
+
+// Production-grade message tracking
+const crypto = require('crypto');
+let redis = null;
+let messageTracker = null;
+
+// Initialize Redis for persistent duplicate detection
+function initRedis() {
+  try {
+    const Redis = require('redis');
+    redis = Redis.createClient({
+      url: process.env.REDIS_URL || 'redis://localhost:6379',
+      retry_delay_on_failover: 100,
+      enable_ready_check: false,
+      max_retries_per_request: null
+    });
+    
+    redis.on('error', (err) => {
+      console.log('[REDIS ERROR]', err.message);
+      messageTracker = new MemoryMessageTracker();
+    });
+    
+    redis.on('connect', () => {
+      console.log('[REDIS CONNECTED]');
+      messageTracker = new RedisMessageTracker();
+    });
+    
+    redis.connect().catch(() => {
+      console.log('[REDIS FALLBACK] Using memory tracker');
+      messageTracker = new MemoryMessageTracker();
+    });
+  } catch (error) {
+    console.log('[REDIS UNAVAILABLE]', error.message);
+    messageTracker = new MemoryMessageTracker();
+  }
+}
+
+// Memory fallback for duplicate detection
+class MemoryMessageTracker {
+  constructor() {
+    this.messages = new Map();
+    this.cleanupInterval = setInterval(() => this.cleanup(), 60000); // Cleanup every minute
+  }
+  
+  async hasMessage(messageId) {
+    return this.messages.has(messageId);
+  }
+  
+  async addMessage(messageId, ttl = 3600) {
+    this.messages.set(messageId, Date.now() + ttl * 1000);
+  }
+  
+  cleanup() {
+    const now = Date.now();
+    for (const [id, expiry] of this.messages.entries()) {
+      if (now > expiry) {
+        this.messages.delete(id);
+      }
+    }
+  }
+}
+
+// Redis-based message tracking
+class RedisMessageTracker {
+  constructor() {
+    this.redis = redis;
+  }
+  
+  async hasMessage(messageId) {
+    try {
+      const exists = await this.redis.exists(`msg:${messageId}`);
+      return exists === 1;
+    } catch (error) {
+      console.log('[REDIS HAS ERROR]', error.message);
+      return false;
+    }
+  }
+  
+  async addMessage(messageId, ttl = 3600) {
+    try {
+      await this.redis.setEx(`msg:${messageId}`, ttl, '1');
+    } catch (error) {
+      console.log('[REDIS ADD ERROR]', error.message);
+    }
+  }
+}
+
+// Rate limiting per user
+class RateLimiter {
+  constructor() {
+    this.limits = new Map();
+    this.cleanupInterval = setInterval(() => this.cleanup(), 60000);
+  }
+  
+  async canSendMessage(senderPhone, limit = 5, window = 3600) {
+    const key = `rate:${senderPhone}`;
+    const now = Date.now();
+    const windowStart = now - (window * 1000);
+    
+    let userRequests = this.limits.get(key) || [];
+    
+    // Clean old requests
+    userRequests = userRequests.filter(timestamp => timestamp > windowStart);
+    
+    if (userRequests.length >= limit) {
+      console.log('[RATE LIMIT]', { sender: senderPhone, count: userRequests.length, limit });
+      return false;
+    }
+    
+    userRequests.push(now);
+    this.limits.set(key, userRequests);
+    return true;
+  }
+  
+  cleanup() {
+    const now = Date.now();
+    const windowStart = now - 3600000; // 1 hour
+    
+    for (const [key, requests] of this.limits.entries()) {
+      const filtered = requests.filter(timestamp => timestamp > windowStart);
+      if (filtered.length === 0) {
+        this.limits.delete(key);
+      } else {
+        this.limits.set(key, filtered);
+      }
+    }
+  }
+}
+
+const rateLimiter = new RateLimiter();
+
+// Verify Meta webhook signature
+function verifyWebhookSignature(body, signature, secret) {
+  if (!signature || !secret) {
+    return false;
+  }
+  
+  try {
+    const [version, hash] = signature.split('=');
+    if (version !== 'sha256') {
+      return false;
+    }
+    
+    const expectedHash = crypto
+      .createHmac('sha256', secret)
+      .update(JSON.stringify(body))
+      .digest('hex');
+    
+    return crypto.timingSafeEqual(
+      Buffer.from(hash, 'hex'),
+      Buffer.from(expectedHash, 'hex')
+    );
+  } catch (error) {
+    console.log('[SIGNATURE VERIFY ERROR]', error.message);
+    return false;
+  }
 }
 
 // DEPLOYMENT VERSION CHECK - V4
@@ -128,6 +294,17 @@ app.get('/webhook/whatsapp', (req, res) => {
 // WhatsApp Webhook Messages (POST)
 app.post('/webhook/whatsapp', (req, res) => {
   console.log('[WEBHOOK POST HIT]');
+  
+  // Verify webhook signature
+  const signature = req.headers['x-hub-signature-256'];
+  const appSecret = process.env.APP_SECRET;
+  
+  if (!verifyWebhookSignature(req.body, signature, appSecret)) {
+    console.log('[WEBHOOK SIGNATURE INVALID]');
+    return res.sendStatus(403);
+  }
+  
+  console.log('[WEBHOOK SIGNATURE VALID]');
   console.log('[WEBHOOK POST BODY]', JSON.stringify(req.body, null, 2));
   
   // RESPONSE 200 IMMEDIATE - DO NOT AWAIT
@@ -135,7 +312,7 @@ app.post('/webhook/whatsapp', (req, res) => {
   
   // Process messages asynchronously (fire and forget)
   processWhatsAppMessages(req.body).catch(error => {
-    console.log('[WEBHOOK PROCESSING ERROR]', error.message);
+    console.log('[WEBHOOK PROCESSING ERROR]', error.message, error.stack);
   });
 });
 
@@ -179,7 +356,7 @@ async function processWhatsAppMessages(webhookBody) {
   }
 }
 
-// Process single message with duplicate prevention
+// Process single message with production-grade features
 async function processSingleMessage(message) {
   try {
     if (!message) {
@@ -187,26 +364,21 @@ async function processSingleMessage(message) {
       return;
     }
     
-    // Check for duplicate message using message.id
+    // Check for duplicate message using persistent tracker
     const messageId = message.id;
     if (!messageId) {
       console.log('[WEBHOOK NO MESSAGE ID]');
       return;
     }
     
-    if (processedMessages.has(messageId)) {
+    const isDuplicate = await messageTracker.hasMessage(messageId);
+    if (isDuplicate) {
       console.log('[WEBHOOK DUPLICATE MESSAGE]', { messageId });
       return;
     }
     
-    // Mark as processed
-    processedMessages.add(messageId);
-    
-    // Cleanup old message IDs (keep last 1000)
-    if (processedMessages.size > 1000) {
-      const firstKey = processedMessages.values().next().value;
-      processedMessages.delete(firstKey);
-    }
+    // Mark as processed with TTL (1 hour)
+    await messageTracker.addMessage(messageId, 3600);
     
     // Validation structure message
     const senderPhone = message.from;
@@ -227,12 +399,24 @@ async function processSingleMessage(message) {
     
     // Auto-reply uniquement pour messages texte avec contenu
     if (messageType === 'text' && messageText && messageText.trim()) {
+      // Check rate limiting
+      const canSend = await rateLimiter.canSendMessage(senderPhone, 5, 3600); // 5 messages per hour
+      if (!canSend) {
+        console.log('[RATE LIMIT EXCEEDED]', { messageId, sender: senderPhone });
+        return;
+      }
+      
       console.log('[AUTO-REPLY TRIGGERED]', { messageId });
       try {
         await sendWhatsAppReply(senderPhone, messageText);
         console.log('[AUTO-REPLY COMPLETED]', { messageId });
       } catch (replyError) {
-        console.log('[AUTO-REPLY FAILED]', { messageId, error: replyError.message, stack: replyError.stack });
+        console.log('[AUTO-REPLY FAILED]', { 
+          messageId, 
+          sender: senderPhone,
+          error: replyError.message, 
+          stack: replyError.stack 
+        });
       }
     } else {
       console.log('[AUTO-REPLY SKIPPED]', { 
