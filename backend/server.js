@@ -126,17 +126,24 @@ app.get('/webhook/whatsapp', (req, res) => {
 });
 
 // WhatsApp Webhook Messages (POST)
-app.post('/webhook/whatsapp', async (req, res) => {
+app.post('/webhook/whatsapp', (req, res) => {
   console.log('[WEBHOOK POST HIT]');
   console.log('[WEBHOOK POST BODY]', JSON.stringify(req.body, null, 2));
   
-  // RESPONSE 200 IMMEDIATE
+  // RESPONSE 200 IMMEDIATE - DO NOT AWAIT
   res.sendStatus(200);
   
-  // Traitement sécurisé des messages
+  // Process messages asynchronously (fire and forget)
+  processWhatsAppMessages(req.body).catch(error => {
+    console.log('[WEBHOOK PROCESSING ERROR]', error.message);
+  });
+});
+
+// Separate async function for message processing
+async function processWhatsAppMessages(webhookBody) {
   try {
     // Validation structure webhook
-    const entry = req.body?.entry;
+    const entry = webhookBody?.entry;
     if (!entry || !Array.isArray(entry) || entry.length === 0) {
       console.log('[WEBHOOK NO ENTRY]');
       return;
@@ -164,49 +171,82 @@ app.post('/webhook/whatsapp', async (req, res) => {
     
     // Traiter chaque message
     for (const message of messages) {
-      if (!message) {
-        console.log('[WEBHOOK EMPTY MESSAGE]');
-        continue;
-      }
-      
-      // Validation structure message
-      const senderPhone = message.from;
-      const messageType = message.type;
-      const messageText = message.text?.body || '';
-      
-      if (!senderPhone) {
-        console.log('[WEBHOOK NO SENDER]');
-        continue;
-      }
-      
-      console.log('[MESSAGE RECEIVED]', {
-        sender: senderPhone,
-        type: messageType,
-        text: messageText
-      });
-      
-      // Auto-reply uniquement pour messages texte avec contenu
-      if (messageType === 'text' && messageText && messageText.trim()) {
-        console.log('[AUTO-REPLY TRIGGERED]');
-        try {
-          await sendWhatsAppReply(senderPhone, messageText);
-          console.log('[AUTO-REPLY COMPLETED]');
-        } catch (replyError) {
-          console.log('[AUTO-REPLY FAILED]', replyError.message);
-        }
-      } else {
-        console.log('[AUTO-REPLY SKIPPED]', { 
-          reason: !messageType ? 'no_type' : 
-                  messageType !== 'text' ? 'not_text' : 
-                  !messageText.trim() ? 'empty_text' : 'unknown'
-        });
-      }
+      await processSingleMessage(message);
     }
     
   } catch (error) {
-    console.log('[WEBHOOK PARSING ERROR]', error.message);
+    console.log('[WEBHOOK PARSING ERROR]', error.message, error.stack);
   }
-});
+}
+
+// Process single message with duplicate prevention
+async function processSingleMessage(message) {
+  try {
+    if (!message) {
+      console.log('[WEBHOOK EMPTY MESSAGE]');
+      return;
+    }
+    
+    // Check for duplicate message using message.id
+    const messageId = message.id;
+    if (!messageId) {
+      console.log('[WEBHOOK NO MESSAGE ID]');
+      return;
+    }
+    
+    if (processedMessages.has(messageId)) {
+      console.log('[WEBHOOK DUPLICATE MESSAGE]', { messageId });
+      return;
+    }
+    
+    // Mark as processed
+    processedMessages.add(messageId);
+    
+    // Cleanup old message IDs (keep last 1000)
+    if (processedMessages.size > 1000) {
+      const firstKey = processedMessages.values().next().value;
+      processedMessages.delete(firstKey);
+    }
+    
+    // Validation structure message
+    const senderPhone = message.from;
+    const messageType = message.type;
+    const messageText = message.text?.body || '';
+    
+    if (!senderPhone) {
+      console.log('[WEBHOOK NO SENDER]');
+      return;
+    }
+    
+    console.log('[MESSAGE RECEIVED]', {
+      messageId,
+      sender: senderPhone,
+      type: messageType,
+      text: messageText
+    });
+    
+    // Auto-reply uniquement pour messages texte avec contenu
+    if (messageType === 'text' && messageText && messageText.trim()) {
+      console.log('[AUTO-REPLY TRIGGERED]', { messageId });
+      try {
+        await sendWhatsAppReply(senderPhone, messageText);
+        console.log('[AUTO-REPLY COMPLETED]', { messageId });
+      } catch (replyError) {
+        console.log('[AUTO-REPLY FAILED]', { messageId, error: replyError.message, stack: replyError.stack });
+      }
+    } else {
+      console.log('[AUTO-REPLY SKIPPED]', { 
+        messageId,
+        reason: !messageType ? 'no_type' : 
+                messageType !== 'text' ? 'not_text' : 
+                !messageText.trim() ? 'empty_text' : 'unknown'
+      });
+    }
+    
+  } catch (error) {
+    console.log('[MESSAGE PROCESSING ERROR]', error.message, error.stack);
+  }
+}
 
 // Fonction auto-reply WhatsApp
 async function sendWhatsAppReply(recipientPhone, originalMessage) {
@@ -245,7 +285,8 @@ async function sendWhatsAppReply(recipientPhone, originalMessage) {
         headers: {
           'Authorization': `Bearer ${WHATSAPP_TOKEN}`,
           'Content-Type': 'application/json'
-        }
+        },
+        timeout: 10000 // 10 seconds timeout
       });
       
       console.log('[AUTO-REPLY SUCCESS]', response.data);
