@@ -179,7 +179,7 @@ app.post('/webhook/whatsapp', async (req, res) => {
         continue;
       }
       
-      console.log('[MESSAGE INFO]', {
+      console.log('[MESSAGE RECEIVED]', {
         sender: senderPhone,
         type: messageType,
         text: messageText
@@ -231,6 +231,7 @@ async function sendWhatsAppReply(recipientPhone, originalMessage) {
     const payload = {
       messaging_product: "whatsapp",
       to: recipientPhone,
+      type: "text",
       text: {
         body: replyText
       }
