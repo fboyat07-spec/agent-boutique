@@ -400,7 +400,6 @@ async function processWhatsAppMessages(webhookBody) {
         messageId: message?.id,
         from: message?.from
       });
-      await forceSendDebugPing(message);
       await processSingleMessage(message);
     }
     
@@ -493,41 +492,6 @@ async function processSingleMessage(message) {
     
   } catch (error) {
     console.log('[MESSAGE PROCESSING ERROR]', error.message, error.stack);
-  }
-}
-
-async function forceSendDebugPing(message) {
-  try {
-    console.log('[FORCE SEND TEST]');
-
-    const token = getWhatsAppToken();
-    const phoneNumberId = getPhoneNumberId();
-    const recipientPhone = message?.from;
-
-    const test = await axios.post(
-      `https://graph.facebook.com/v18.0/${phoneNumberId}/messages`,
-      {
-        messaging_product: 'whatsapp',
-        to: recipientPhone,
-        type: 'text',
-        text: { body: 'PING DEBUG' }
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        timeout: 10000
-      }
-    );
-
-    console.log('[FORCE SEND SUCCESS]', test.data);
-  } catch (err) {
-    console.log('[FORCE SEND ERROR]', {
-      status: err.response?.status,
-      data: err.response?.data,
-      message: err.message
-    });
   }
 }
 
