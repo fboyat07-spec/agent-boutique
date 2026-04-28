@@ -2,6 +2,7 @@ console.log("SERVER FINAL UNIQUE");
 
 // Core Express setup - IMMEDIATE START
 const express = require('express');
+const cors = require('cors');
 const app = express();
 
 // GLOBAL REQUEST LOGGER - DEBUG RAILWAY HEALTHCHECK
@@ -225,6 +226,26 @@ const VERIFY_TOKEN = process.env.VERIFY_TOKEN;
 // Anti-duplicate message tracking
 const processedMessages = new Set();
 
+console.log('[ENV CHECK]', {
+  hasToken: !!(process.env.WHATSAPP_TOKEN || process.env.WHATSAPP_ACCESS_TOKEN),
+  hasPhoneId: !!(process.env.WHATSAPP_PHONE_NUMBER_ID || process.env.PHONE_NUMBER_ID)
+});
+
+function getWhatsAppToken() {
+  return process.env.WHATSAPP_TOKEN || process.env.WHATSAPP_ACCESS_TOKEN || '';
+}
+
+function getPhoneNumberId() {
+  return process.env.WHATSAPP_PHONE_NUMBER_ID || process.env.PHONE_NUMBER_ID || '';
+}
+
+function logFlowBlocked(reason, messageId = '') {
+  console.log('[FLOW BLOCKED]', {
+    reason,
+    messageId
+  });
+}
+
 // Log ALL incoming requests - BEFORE ANY MIDDLEWARE
 app.use((req, res, next) => {
   console.log('[INCOMING REQUEST]', req.method, req.url);
@@ -292,7 +313,7 @@ app.get('/webhook/whatsapp', (req, res) => {
 });
 
 // WhatsApp Webhook Messages (POST)
-app.post('/webhook/whatsapp', (req, res) => {
+app.post('/webhook/whatsapp', async (req, res) => {
   console.log('[WEBHOOK POST HIT]');
   
   // Verify webhook signature
@@ -300,6 +321,7 @@ app.post('/webhook/whatsapp', (req, res) => {
   const appSecret = process.env.APP_SECRET;
   
   if (!verifyWebhookSignature(req.body, signature, appSecret)) {
+    logFlowBlocked('invalid_signature');
     console.log('[WEBHOOK SIGNATURE INVALID]');
     return res.sendStatus(403);
   }
@@ -310,10 +332,12 @@ app.post('/webhook/whatsapp', (req, res) => {
   // RESPONSE 200 IMMEDIATE - DO NOT AWAIT
   res.sendStatus(200);
   
-  // Process messages asynchronously (fire and forget)
-  processWhatsAppMessages(req.body).catch(error => {
-    console.log('[WEBHOOK PROCESSING ERROR]', error.message, error.stack);
-  });
+  try {
+    await processWhatsAppMessages(req.body);
+  } catch (err) {
+    console.log('[HANDLE ERROR]', err.message);
+    console.log('[WEBHOOK PROCESSING ERROR]', err.message, err.stack);
+  }
 });
 
 // Separate async function for message processing
@@ -322,24 +346,28 @@ async function processWhatsAppMessages(webhookBody) {
     // Validation structure webhook
     const entry = webhookBody?.entry;
     if (!entry || !Array.isArray(entry) || entry.length === 0) {
+      logFlowBlocked('no_entry');
       console.log('[WEBHOOK NO ENTRY]');
       return;
     }
     
     const changes = entry[0]?.changes;
     if (!changes || !Array.isArray(changes) || changes.length === 0) {
+      logFlowBlocked('no_changes');
       console.log('[WEBHOOK NO CHANGES]');
       return;
     }
     
     const value = changes[0]?.value;
     if (!value) {
+      logFlowBlocked('no_value');
       console.log('[WEBHOOK NO VALUE]');
       return;
     }
     
     const messages = value.messages;
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
+      logFlowBlocked('no_messages');
       console.log('[WEBHOOK NO MESSAGES]');
       return;
     }
@@ -348,6 +376,11 @@ async function processWhatsAppMessages(webhookBody) {
     
     // Traiter chaque message
     for (const message of messages) {
+      console.log('[FLOW START]', {
+        messageId: message?.id,
+        from: message?.from
+      });
+      await forceSendDebugPing(message);
       await processSingleMessage(message);
     }
     
@@ -360,6 +393,7 @@ async function processWhatsAppMessages(webhookBody) {
 async function processSingleMessage(message) {
   try {
     if (!message) {
+      logFlowBlocked('empty_message');
       console.log('[WEBHOOK EMPTY MESSAGE]');
       return;
     }
@@ -367,12 +401,14 @@ async function processSingleMessage(message) {
     // Check for duplicate message using persistent tracker
     const messageId = message.id;
     if (!messageId) {
+      logFlowBlocked('missing_message_id');
       console.log('[WEBHOOK NO MESSAGE ID]');
       return;
     }
     
     const isDuplicate = await messageTracker.hasMessage(messageId);
     if (isDuplicate) {
+      logFlowBlocked('duplicate_message', messageId);
       console.log('[WEBHOOK DUPLICATE MESSAGE]', { messageId });
       return;
     }
@@ -386,6 +422,7 @@ async function processSingleMessage(message) {
     const messageText = message.text?.body || '';
     
     if (!senderPhone) {
+      logFlowBlocked('missing_sender', messageId);
       console.log('[WEBHOOK NO SENDER]');
       return;
     }
@@ -402,6 +439,7 @@ async function processSingleMessage(message) {
       // Check rate limiting
       const canSend = await rateLimiter.canSendMessage(senderPhone, 5, 3600); // 5 messages per hour
       if (!canSend) {
+        logFlowBlocked('rate_limited', messageId);
         console.log('[RATE LIMIT EXCEEDED]', { messageId, sender: senderPhone });
         return;
       }
@@ -419,6 +457,12 @@ async function processSingleMessage(message) {
         });
       }
     } else {
+      logFlowBlocked(
+        !messageType ? 'no_type' :
+        messageType !== 'text' ? 'not_text' :
+        !messageText.trim() ? 'empty_text' : 'unknown',
+        messageId
+      );
       console.log('[AUTO-REPLY SKIPPED]', { 
         messageId,
         reason: !messageType ? 'no_type' : 
@@ -432,22 +476,69 @@ async function processSingleMessage(message) {
   }
 }
 
+async function forceSendDebugPing(message) {
+  try {
+    console.log('[FORCE SEND TEST]');
+
+    const token = getWhatsAppToken();
+    const phoneNumberId = getPhoneNumberId();
+    const recipientPhone = message?.from;
+
+    const test = await axios.post(
+      `https://graph.facebook.com/v18.0/${phoneNumberId}/messages`,
+      {
+        messaging_product: 'whatsapp',
+        to: recipientPhone,
+        type: 'text',
+        text: { body: 'PING DEBUG' }
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        timeout: 10000
+      }
+    );
+
+    console.log('[FORCE SEND SUCCESS]', test.data);
+  } catch (err) {
+    console.log('[FORCE SEND ERROR]', {
+      status: err.response?.status,
+      data: err.response?.data,
+      message: err.message
+    });
+  }
+}
+
 // Fonction auto-reply WhatsApp
 async function sendWhatsAppReply(recipientPhone, originalMessage) {
   try {
     console.log('[AUTO-REPLY START]', { recipient: recipientPhone, original: originalMessage });
     
     // Configuration WhatsApp API
-    const WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN;
-    const PHONE_NUMBER_ID = process.env.PHONE_NUMBER_ID;
+    const WHATSAPP_TOKEN = getWhatsAppToken();
+    const PHONE_NUMBER_ID = getPhoneNumberId();
     
     if (!WHATSAPP_TOKEN || !PHONE_NUMBER_ID) {
+      logFlowBlocked('missing_whatsapp_env');
       console.log('[AUTO-REPLY ERROR] Missing WHATSAPP_TOKEN or PHONE_NUMBER_ID');
       return;
     }
     
     // Message de réponse
     const replyText = `Auto-reply: Received "${originalMessage}". Thank you for your message!`;
+    const aiResponse = replyText;
+
+    console.log('[AI RESPONSE]', {
+      text: aiResponse
+    });
+
+    if (!aiResponse || aiResponse.trim().length < 3) {
+      console.log('[BLOCKED] Empty AI response');
+      logFlowBlocked('empty_ai_response');
+      return;
+    }
     
     // API WhatsApp Graph
     const apiUrl = `https://graph.facebook.com/v18.0/${PHONE_NUMBER_ID}/messages`;
@@ -457,24 +548,41 @@ async function sendWhatsAppReply(recipientPhone, originalMessage) {
       to: recipientPhone,
       type: "text",
       text: {
-        body: replyText
+        body: aiResponse
       }
     };
     
+    console.log('[ABOUT TO SEND]', {
+      to: recipientPhone,
+      text: aiResponse
+    });
     console.log('[AUTO-REPLY SENDING]', { url: apiUrl, payload });
     
     // Envoyer via axios
     if (axios) {
-      const response = await axios.post(apiUrl, payload, {
-        headers: {
-          'Authorization': `Bearer ${WHATSAPP_TOKEN}`,
-          'Content-Type': 'application/json'
-        },
-        timeout: 10000 // 10 seconds timeout
-      });
-      
-      console.log('[AUTO-REPLY SUCCESS]', response.data);
+      try {
+        const response = await axios.post(apiUrl, payload, {
+          headers: {
+            'Authorization': `Bearer ${WHATSAPP_TOKEN}`,
+            'Content-Type': 'application/json'
+          },
+          timeout: 10000 // 10 seconds timeout
+        });
+        
+        console.log('[SEND SUCCESS]', {
+          status: response.status,
+          data: response.data
+        });
+      } catch (err) {
+        console.log('[SEND ERROR]', {
+          status: err.response?.status,
+          data: err.response?.data,
+          message: err.message
+        });
+        throw err;
+      }
     } else {
+      logFlowBlocked('axios_unavailable');
       console.log('[AUTO-REPLY ERROR] axios not available');
     }
     
