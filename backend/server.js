@@ -58,13 +58,19 @@ let messageTracker = null;
 
 // Initialize Redis for persistent duplicate detection
 function initRedis() {
+  if (!process.env.REDIS_URL) {
+    console.log('[REDIS DISABLED] Using memory tracker');
+    messageTracker = new MemoryMessageTracker();
+    return;
+  }
+
   try {
     const Redis = require('redis');
     redis = Redis.createClient({
-      url: process.env.REDIS_URL || 'redis://localhost:6379',
-      retry_delay_on_failover: 100,
-      enable_ready_check: false,
-      max_retries_per_request: null
+      url: process.env.REDIS_URL,
+      socket: {
+        reconnectStrategy: false
+      }
     });
     
     redis.on('error', (err) => {
@@ -182,7 +188,7 @@ class RateLimiter {
 const rateLimiter = new RateLimiter();
 
 // Verify Meta webhook signature
-function verifyWebhookSignature(body, signature, secret) {
+function verifyWebhookSignature(rawBody, signature, secret) {
   if (!signature || !secret) {
     return false;
   }
@@ -192,10 +198,15 @@ function verifyWebhookSignature(body, signature, secret) {
     if (version !== 'sha256') {
       return false;
     }
+
+    if (!rawBody || !Buffer.isBuffer(rawBody)) {
+      console.log('[SIGNATURE VERIFY ERROR] missing raw body');
+      return false;
+    }
     
     const expectedHash = crypto
       .createHmac('sha256', secret)
-      .update(JSON.stringify(body))
+      .update(rawBody)
       .digest('hex');
     
     return crypto.timingSafeEqual(
@@ -239,6 +250,10 @@ function getPhoneNumberId() {
   return process.env.WHATSAPP_PHONE_NUMBER_ID || process.env.PHONE_NUMBER_ID || '';
 }
 
+function getAppSecret() {
+  return process.env.APP_SECRET || process.env.WHATSAPP_APP_SECRET || process.env.META_APP_SECRET || '';
+}
+
 function logFlowBlocked(reason, messageId = '') {
   console.log('[FLOW BLOCKED]', {
     reason,
@@ -260,7 +275,12 @@ app.use(cors({
 }));
 
 // JSON body parser - CRITICAL FOR WEBHOOK
-app.use(express.json({ limit: '1mb' }));
+app.use(express.json({
+  limit: '1mb',
+  verify: (req, res, buf) => {
+    req.rawBody = buf;
+  }
+}));
 
 // Log after body parser to confirm parsing
 app.use((req, res, next) => {
@@ -318,9 +338,9 @@ app.post('/webhook/whatsapp', async (req, res) => {
   
   // Verify webhook signature
   const signature = req.headers['x-hub-signature-256'];
-  const appSecret = process.env.APP_SECRET;
+  const appSecret = getAppSecret();
   
-  if (!verifyWebhookSignature(req.body, signature, appSecret)) {
+  if (!verifyWebhookSignature(req.rawBody, signature, appSecret)) {
     logFlowBlocked('invalid_signature');
     console.log('[WEBHOOK SIGNATURE INVALID]');
     return res.sendStatus(403);
