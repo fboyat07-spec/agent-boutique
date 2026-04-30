@@ -1,6 +1,6 @@
-import { getMemory, updateMemory } from "../memory.js";
+const { getMemory, updateMemory } = require("../memory.js");
 
-export async function handleSales(payload, memory) {
+async function handleSales(payload, memory) {
   const { message } = payload;
   const text = message.toLowerCase();
 
@@ -60,3 +60,7 @@ function getStageResponse(stage) {
       return "Tu fais quoi comme business ?";
   }
 }
+
+module.exports = {
+  handleSales
+};

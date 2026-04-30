@@ -1,6 +1,6 @@
 const memoryDB = new Map();
 
-export async function getMemory(userId) {
+async function getMemory(userId) {
   return memoryDB.get(userId) || {
     history: [],
     score: 0,
@@ -11,7 +11,7 @@ export async function getMemory(userId) {
   };
 }
 
-export async function updateMemory(userId, newData) {
+async function updateMemory(userId, newData) {
   const existing = await getMemory(userId);
 
   const updated = {
@@ -31,3 +31,8 @@ function updateScore(score, data) {
   if (data.intent === "ignore") return score - 10;
   return score;
 }
+
+module.exports = {
+  getMemory,
+  updateMemory
+};

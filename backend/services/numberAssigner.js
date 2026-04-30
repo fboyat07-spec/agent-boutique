@@ -39,7 +39,7 @@ availableNumbers.forEach(phone => {
   });
 });
 
-export function assignNumber() {
+function assignNumber() {
 
   let best = null;
   let minUsage = Infinity;
@@ -68,11 +68,11 @@ export function assignNumber() {
   return best;
 }
 
-export function getAssignedNumber(numberId) {
+function getAssignedNumber(numberId) {
   return availableNumbers.find(phone => phone.id === numberId);
 }
 
-export function pauseNumber(numberId, reason = "Rate limit") {
+function pauseNumber(numberId, reason = "Rate limit") {
   const usage = dailyUsage.get(numberId);
   if (usage) {
     usage.isPaused = true;
@@ -86,7 +86,7 @@ export function pauseNumber(numberId, reason = "Rate limit") {
   }
 }
 
-export function getNumberStats() {
+function getNumberStats() {
   const stats = {};
   dailyUsage.forEach((usage, numberId) => {
     const rateLimitCount = numberUsage[numberId] ? numberUsage[numberId].length : 0;
@@ -98,3 +98,10 @@ export function getNumberStats() {
   });
   return stats;
 }
+
+module.exports = {
+  assignNumber,
+  getAssignedNumber,
+  pauseNumber,
+  getNumberStats
+};

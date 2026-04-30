@@ -1,10 +1,10 @@
-import { decideNextAction } from "./engine/decisionEngine.js";
-import { getMemory, updateMemory } from "./memory.js";
-import { handleSales } from "./agents/salesAgent.js";
-import { followUp } from "./followUpEngine.js";
-import { assignNumber, getAssignedNumber } from "./numberAssigner.js";
+const { decideNextAction } = require("./engine/decisionEngine.js");
+const { getMemory, updateMemory } = require("./memory.js");
+const { handleSales } = require("./agents/salesAgent.js");
+const { followUp } = require("./followUpEngine.js");
+const { assignNumber, getAssignedNumber } = require("./numberAssigner.js");
 
-export async function orchestrate(event) {
+async function orchestrate(event) {
   console.log('[ORCHESTRATOR EVENT]', event.type);
 
   const { payload } = event;
@@ -124,3 +124,7 @@ async function handleFollowUp(payload, memory) {
     intent: "follow_up_general"
   };
 }
+
+module.exports = {
+  orchestrate
+};

@@ -1,9 +1,13 @@
-export async function injectLead(phone, message) {
+async function injectLead(phone, message) {
   return {
     type: "incoming_message",
     payload: {
       user_id: phone,
-      message
+      message: message
     }
   };
 }
+
+module.exports = {
+  injectLead
+};
