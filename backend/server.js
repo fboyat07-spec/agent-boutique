@@ -453,13 +453,9 @@ async function processWebhook(webhookBody) {
 
           if (!userText) continue;
 
-<<<<<<< HEAD
-          // Process single message with production-grade features
+// Process single message with production-grade features
           await processSingleMessage(message);
         }
-=======
-                  }
->>>>>>> cedc14b (final clean: orchestrator only pipeline)
       }
     }
     
