@@ -2,7 +2,6 @@ console.log("SERVER FINAL UNIQUE");
 
 // Core Express setup - IMMEDIATE START
 const express = require('express');
-const cors = require('cors');
 const app = express();
 
 // GLOBAL REQUEST LOGGER - DEBUG RAILWAY HEALTHCHECK
@@ -26,10 +25,18 @@ app.listen(PORT, '0.0.0.0', () => {
   // Initialize production systems
   initRedis();
   
+  // Start follow-up scheduler
+  setInterval(() => {
+    processFollowUps().catch(err => {
+      console.log('[FOLLOW UP ERROR]', err.message);
+    });
+  }, 60000); // every minute
+  
   console.log('[PRODUCTION SYSTEMS]', {
     redis: redis ? 'connected' : 'fallback',
     messageTracker: messageTracker ? 'initialized' : 'failed',
-    rateLimiter: 'initialized'
+    rateLimiter: 'initialized',
+    followUpScheduler: 'started'
   });
 });
 
@@ -41,6 +48,10 @@ if (process.env.NODE_ENV !== 'production') {
     console.log('dotenv config failed:', error.message);
   }
 }
+
+// Import orchestrate service
+const { orchestrate } = require('./services/orchestrator');
+const { sendWhatsAppMessage } = require('./services/messageSender');
 
 // Global axios (reuse for performance)
 let axios = null;
@@ -58,19 +69,13 @@ let messageTracker = null;
 
 // Initialize Redis for persistent duplicate detection
 function initRedis() {
-  if (!process.env.REDIS_URL) {
-    console.log('[REDIS DISABLED] Using memory tracker');
-    messageTracker = new MemoryMessageTracker();
-    return;
-  }
-
   try {
     const Redis = require('redis');
     redis = Redis.createClient({
-      url: process.env.REDIS_URL,
-      socket: {
-        reconnectStrategy: false
-      }
+      url: process.env.REDIS_URL || 'redis://localhost:6379',
+      retry_delay_on_failover: 100,
+      enable_ready_check: false,
+      max_retries_per_request: null
     });
     
     redis.on('error', (err) => {
@@ -129,7 +134,7 @@ class RedisMessageTracker {
       const exists = await this.redis.exists(`msg:${messageId}`);
       return exists === 1;
     } catch (error) {
-      console.log('[REDIS HAS ERROR]', error.message);
+      console.log('[REDIS HAS MESSAGE ERROR]', error.message);
       return false;
     }
   }
@@ -138,44 +143,39 @@ class RedisMessageTracker {
     try {
       await this.redis.setEx(`msg:${messageId}`, ttl, '1');
     } catch (error) {
-      console.log('[REDIS ADD ERROR]', error.message);
+      console.log('[REDIS ADD MESSAGE ERROR]', error.message);
     }
   }
 }
 
-// Rate limiting per user
+// Rate limiting for production
 class RateLimiter {
   constructor() {
     this.limits = new Map();
-    this.cleanupInterval = setInterval(() => this.cleanup(), 60000);
+    this.cleanupInterval = setInterval(() => this.cleanup(), 60000); // Cleanup every minute
   }
   
-  async canSendMessage(senderPhone, limit = 5, window = 3600) {
-    const key = `rate:${senderPhone}`;
-    const now = Date.now();
-    const windowStart = now - (window * 1000);
+  async canSendMessage(userId, maxMessages = 5, windowSeconds = 3600) {
+    const key = `${userId}_${Math.floor(Date.now() / (windowSeconds * 1000))}`;
+    const userLimits = this.limits.get(userId) || [];
     
-    let userRequests = this.limits.get(key) || [];
+    const recentMessages = userLimits.filter(msg => 
+      Date.now() - msg.timestamp < windowSeconds * 1000
+    );
     
-    // Clean old requests
-    userRequests = userRequests.filter(timestamp => timestamp > windowStart);
-    
-    if (userRequests.length >= limit) {
-      console.log('[RATE LIMIT]', { sender: senderPhone, count: userRequests.length, limit });
+    if (recentMessages.length >= maxMessages) {
       return false;
     }
     
-    userRequests.push(now);
-    this.limits.set(key, userRequests);
+    recentMessages.push({ timestamp: Date.now() });
+    this.limits.set(userId, recentMessages);
     return true;
   }
   
   cleanup() {
     const now = Date.now();
-    const windowStart = now - 3600000; // 1 hour
-    
-    for (const [key, requests] of this.limits.entries()) {
-      const filtered = requests.filter(timestamp => timestamp > windowStart);
+    for (const [key, messages] of this.limits.entries()) {
+      const filtered = messages.filter(msg => now - msg.timestamp < 3600000); // 1 hour
       if (filtered.length === 0) {
         this.limits.delete(key);
       } else {
@@ -188,7 +188,7 @@ class RateLimiter {
 const rateLimiter = new RateLimiter();
 
 // Verify Meta webhook signature
-function verifyWebhookSignature(rawBody, signature, secret) {
+function verifyWebhookSignature(req, signature, secret) {
   if (!signature || !secret) {
     return false;
   }
@@ -198,15 +198,10 @@ function verifyWebhookSignature(rawBody, signature, secret) {
     if (version !== 'sha256') {
       return false;
     }
-
-    if (!rawBody || !Buffer.isBuffer(rawBody)) {
-      console.log('[SIGNATURE VERIFY ERROR] missing raw body');
-      return false;
-    }
     
     const expectedHash = crypto
       .createHmac('sha256', secret)
-      .update(rawBody)
+      .update(req.rawBody)
       .digest('hex');
     
     return crypto.timingSafeEqual(
@@ -234,31 +229,72 @@ console.log('BOOT ENV:', {
 const isProduction = process.env.NODE_ENV === 'production';
 const VERIFY_TOKEN = process.env.VERIFY_TOKEN;
 
-// Anti-duplicate message tracking
-const processedMessages = new Set();
+// Global duplicate message prevention (MongoDB-based)
+const ProcessedMessage = require('./models/ProcessedMessage');
+const Conversation = require('./models/Conversation');
 
-console.log('[ENV CHECK]', {
-  hasToken: !!(process.env.WHATSAPP_TOKEN || process.env.WHATSAPP_ACCESS_TOKEN),
-  hasPhoneId: !!(process.env.WHATSAPP_PHONE_NUMBER_ID || process.env.PHONE_NUMBER_ID)
-});
+// Follow-up processor
+async function processFollowUps() {
+  const now = new Date();
+  const conversations = await Conversation.find({
+    nextFollowUpAt: { $lte: now },
+    stage: { $ne: 'won' }
+  }).sort({ priority: -1, nextFollowUpAt: 1 }).limit(20);
 
-function getWhatsAppToken() {
-  return process.env.WHATSAPP_TOKEN || process.env.WHATSAPP_ACCESS_TOKEN || '';
+  console.log('[PRIORITY PROCESSING]', conversations.length, 'leads');
+
+  for (const convo of conversations) {
+    if (convo.stage === 'won') continue;
+
+    let message;
+    const stageFollowUps = {
+      new: ["Tu fais quoi comme business ?"],
+      qualified: ["Tu fais combien de CA par mois ?"],
+      interested: ["Tu veux plus de clients chaque semaine ?"],
+      closing: ["Je t'active ça maintenant 👉 " + process.env.SALES_PAYMENT_LINK]
+    };
+
+    const stageOptions = stageFollowUps[convo.stage] || stageFollowUps.new;
+    message = stageOptions[Math.floor(Math.random() * stageOptions.length)];
+
+    await Conversation.updateOne(
+      { _id: convo._id },
+      {
+        $set: {
+          nextFollowUpAt: new Date(Date.now() + 3600000), // +1h
+          followUpType: 'recovery'
+        }
+      }
+    );
+
+    try {
+      await sendWhatsAppMessage(convo.phone, message);
+    } catch (err) {
+      console.log('[FOLLOW UP ERROR]', err.message);
+    }
+  }
 }
 
-function getPhoneNumberId() {
-  return process.env.WHATSAPP_PHONE_NUMBER_ID || process.env.PHONE_NUMBER_ID || '';
-}
+// Global rate limiting (MongoDB-based)
+const RateLimit = require('./models/RateLimit');
 
-function getAppSecret() {
-  return process.env.APP_SECRET || process.env.WHATSAPP_APP_SECRET || process.env.META_APP_SECRET || '';
-}
+async function canSendMessage() {
+  const currentMinute = new Date().toISOString().slice(0,16);
 
-function logFlowBlocked(reason, messageId = '') {
-  console.log('[FLOW BLOCKED]', {
-    reason,
-    messageId
-  });
+  const record = await RateLimit.findOne({ minute: currentMinute });
+
+  if (record && record.count >= 20) {
+    console.log('[RATE LIMIT BLOCKED GLOBAL]');
+    return false;
+  }
+
+  await RateLimit.updateOne(
+    { minute: currentMinute },
+    { $inc: { count: 1 } },
+    { upsert: true }
+  );
+
+  return true;
 }
 
 // Log ALL incoming requests - BEFORE ANY MIDDLEWARE
@@ -274,12 +310,12 @@ app.use(cors({
   credentials: true
 }));
 
-// JSON body parser - CRITICAL FOR WEBHOOK
+// JSON body parser - CRITICAL FOR WEBHOOK with raw body capture
 app.use(express.json({
-  limit: '1mb',
   verify: (req, res, buf) => {
     req.rawBody = buf;
-  }
+  },
+  limit: '1mb'
 }));
 
 // Log after body parser to confirm parsing
@@ -336,12 +372,26 @@ app.get('/webhook/whatsapp', (req, res) => {
 app.post('/webhook/whatsapp', async (req, res) => {
   console.log('[WEBHOOK POST HIT]');
   
+  // Diagnose raw body integrity
+  console.log('[RAW BODY CHECK]', {
+    hasRaw: !!req.rawBody,
+    rawLength: req.rawBody?.length
+  });
+  console.log('[RAW BODY STRING]', req.rawBody?.toString());
+  console.log('[PARSED BODY]', JSON.stringify(req.body));
+  
+  try {
+    JSON.parse(req.rawBody.toString());
+    console.log('[RAW BODY VALID JSON]');
+  } catch (e) {
+    console.log('[RAW BODY INVALID JSON]', e.message);
+  }
+  
   // Verify webhook signature
   const signature = req.headers['x-hub-signature-256'];
-  const appSecret = getAppSecret();
+  const appSecret = process.env.APP_SECRET;
   
-  if (!verifyWebhookSignature(req.rawBody, signature, appSecret)) {
-    logFlowBlocked('invalid_signature');
+  if (!verifyWebhookSignature(req, signature, appSecret)) {
     console.log('[WEBHOOK SIGNATURE INVALID]');
     return res.sendStatus(403);
   }
@@ -352,55 +402,61 @@ app.post('/webhook/whatsapp', async (req, res) => {
   // RESPONSE 200 IMMEDIATE - DO NOT AWAIT
   res.sendStatus(200);
   
-  try {
-    await processWhatsAppMessages(req.body);
-  } catch (err) {
-    console.log('[HANDLE ERROR]', err.message);
-    console.log('[WEBHOOK PROCESSING ERROR]', err.message, err.stack);
-  }
+  // Process webhook asynchronously (fire and forget)
+  processWebhook(req.body).catch(error => {
+    console.log('[WEBHOOK PROCESS ERROR]', error.message);
+  });
 });
 
-// Separate async function for message processing
-async function processWhatsAppMessages(webhookBody) {
+// Separate async function for webhook processing
+async function processWebhook(webhookBody) {
   try {
-    // Validation structure webhook
-    const entry = webhookBody?.entry;
-    if (!entry || !Array.isArray(entry) || entry.length === 0) {
-      logFlowBlocked('no_entry');
-      console.log('[WEBHOOK NO ENTRY]');
+    console.log('[PROCESS STARTED]');
+    console.log('[RAW BODY STRING]', webhookBody);
+    
+    // Safety check for body structure
+    if (!webhookBody || !webhookBody.entry) {
+      console.log('[WEBHOOK ERROR] Invalid body structure');
       return;
     }
-    
-    const changes = entry[0]?.changes;
-    if (!changes || !Array.isArray(changes) || changes.length === 0) {
-      logFlowBlocked('no_changes');
-      console.log('[WEBHOOK NO CHANGES]');
-      return;
-    }
-    
-    const value = changes[0]?.value;
-    if (!value) {
-      logFlowBlocked('no_value');
-      console.log('[WEBHOOK NO VALUE]');
-      return;
-    }
-    
-    const messages = value.messages;
-    if (!messages || !Array.isArray(messages) || messages.length === 0) {
-      logFlowBlocked('no_messages');
-      console.log('[WEBHOOK NO MESSAGES]');
-      return;
-    }
-    
-    console.log('[WEBHOOK HAS MESSAGES]');
-    
-    // Traiter chaque message
-    for (const message of messages) {
-      console.log('[FLOW START]', {
-        messageId: message?.id,
-        from: message?.from
-      });
-      await processSingleMessage(message);
+
+    const entries = webhookBody.entry || [];
+
+    for (const entry of entries) {
+      const changes = entry.changes || [];
+
+      for (const change of changes) {
+        const value = change.value;
+
+        if (!value || !value.messages) continue;
+
+        for (const message of value.messages) {
+
+          console.log('[MESSAGE STRUCTURE]', {
+            id: message.id,
+            from: message.from,
+            text: message.text?.body
+          });
+
+          if (!message?.id || !message?.from) continue;
+
+          const exists = await ProcessedMessage.findOne({ messageId: message.id });
+
+          if (exists) {
+            console.log('[DUPLICATE GLOBAL]', message.id);
+            continue;
+          }
+
+          await ProcessedMessage.create({ messageId: message.id });
+
+          const userText = message.text?.body;
+
+          if (!userText) continue;
+
+          // Process single message with production-grade features
+          await processSingleMessage(message);
+        }
+      }
     }
     
   } catch (error) {
@@ -412,7 +468,6 @@ async function processWhatsAppMessages(webhookBody) {
 async function processSingleMessage(message) {
   try {
     if (!message) {
-      logFlowBlocked('empty_message');
       console.log('[WEBHOOK EMPTY MESSAGE]');
       return;
     }
@@ -420,14 +475,12 @@ async function processSingleMessage(message) {
     // Check for duplicate message using persistent tracker
     const messageId = message.id;
     if (!messageId) {
-      logFlowBlocked('missing_message_id');
       console.log('[WEBHOOK NO MESSAGE ID]');
       return;
     }
     
     const isDuplicate = await messageTracker.hasMessage(messageId);
     if (isDuplicate) {
-      logFlowBlocked('duplicate_message', messageId);
       console.log('[WEBHOOK DUPLICATE MESSAGE]', { messageId });
       return;
     }
@@ -437,11 +490,18 @@ async function processSingleMessage(message) {
     
     // Validation structure message
     const senderPhone = message.from;
-    const messageType = message.type;
-    const messageText = message.text?.body || '';
+    const messageType = message?.type;
+    const messageText = message?.text?.body;
+    
+    // Debug logs for extracted message
+    console.log('[EXTRACTED]', {
+      messageType,
+      messageText,
+      hasMessage: !!message,
+      messageKeys: message ? Object.keys(message) : []
+    });
     
     if (!senderPhone) {
-      logFlowBlocked('missing_sender', messageId);
       console.log('[WEBHOOK NO SENDER]');
       return;
     }
@@ -453,41 +513,57 @@ async function processSingleMessage(message) {
       text: messageText
     });
     
-    // Auto-reply uniquement pour messages texte avec contenu
-    if (messageType === 'text' && messageText && messageText.trim()) {
+    // Orchestrator-based logic for messages texte avec contenu
+    if (messageType === 'text' && messageText) {
       // Check rate limiting
       const canSend = await rateLimiter.canSendMessage(senderPhone, 5, 3600); // 5 messages per hour
       if (!canSend) {
-        logFlowBlocked('rate_limited', messageId);
         console.log('[RATE LIMIT EXCEEDED]', { messageId, sender: senderPhone });
         return;
       }
       
-      console.log('[AUTO-REPLY TRIGGERED]', { messageId });
+      console.log('[PIPELINE ACTIVE] orchestrator');
+      console.log('[ORCHESTRATOR TRIGGERED]', { messageId });
+      console.log('[SEND TRIGGER]', { messageId, sender: senderPhone, messageText });
+      
       try {
-        await sendWhatsAppReply(senderPhone, messageText);
-        console.log('[AUTO-REPLY COMPLETED]', { messageId });
-      } catch (replyError) {
-        console.log('[AUTO-REPLY FAILED]', { 
+        const response = await orchestrate({
+          type: "incoming_message",
+          payload: {
+            user_id: senderPhone,
+            message: messageText
+          }
+        });
+
+        console.log("[ORCHESTRATOR RESPONSE]", response.reply);
+
+        // Block any other response
+        if (!response || !response.reply) {
+          console.log("[BLOCKED EMPTY RESPONSE]");
+          return;
+        }
+
+        // Send message using only sendWhatsAppMessage
+        await sendWhatsAppMessage(senderPhone, response.reply);
+        
+        console.log('[ORCHESTRATOR COMPLETED]', { messageId, intent: response.intent });
+
+      } catch (orchError) {
+        console.log('[ORCHESTRATOR ERROR]', { 
           messageId, 
           sender: senderPhone,
-          error: replyError.message, 
-          stack: replyError.stack 
+          error: orchError.message, 
+          stack: orchError.stack 
         });
       }
     } else {
-      logFlowBlocked(
-        !messageType ? 'no_type' :
-        messageType !== 'text' ? 'not_text' :
-        !messageText.trim() ? 'empty_text' : 'unknown',
-        messageId
-      );
-      console.log('[AUTO-REPLY SKIPPED]', { 
+      console.log('[PIPELINE BLOCKED]', { 
         messageId,
         reason: !messageType ? 'no_type' : 
                 messageType !== 'text' ? 'not_text' : 
                 !messageText.trim() ? 'empty_text' : 'unknown'
       });
+      return;
     }
     
   } catch (error) {
@@ -495,102 +571,12 @@ async function processSingleMessage(message) {
   }
 }
 
-// Fonction auto-reply WhatsApp
-async function sendWhatsAppReply(recipientPhone, originalMessage) {
-  try {
-    console.log('[AUTO-REPLY START]', { recipient: recipientPhone, original: originalMessage });
-    
-    // Configuration WhatsApp API
-    const WHATSAPP_TOKEN = getWhatsAppToken();
-    const PHONE_NUMBER_ID = getPhoneNumberId();
-    
-    if (!WHATSAPP_TOKEN || !PHONE_NUMBER_ID) {
-      logFlowBlocked('missing_whatsapp_env');
-      console.log('[AUTO-REPLY ERROR] Missing WHATSAPP_TOKEN or PHONE_NUMBER_ID');
-      return;
-    }
-    
-    // Message de réponse
-    const replyText = `Auto-reply: Received "${originalMessage}". Thank you for your message!`;
-    const aiResponse = replyText;
-
-    console.log('[AI RESPONSE]', {
-      text: aiResponse
-    });
-
-    if (!aiResponse || aiResponse.trim().length < 3) {
-      console.log('[BLOCKED] Empty AI response');
-      logFlowBlocked('empty_ai_response');
-      return;
-    }
-    
-    // API WhatsApp Graph
-    const apiUrl = `https://graph.facebook.com/v18.0/${PHONE_NUMBER_ID}/messages`;
-    
-    const payload = {
-      messaging_product: "whatsapp",
-      to: recipientPhone,
-      type: "text",
-      text: {
-        body: aiResponse
-      }
-    };
-    
-    console.log('[ABOUT TO SEND]', {
-      to: recipientPhone,
-      text: aiResponse
-    });
-    console.log('[AUTO-REPLY SENDING]', { url: apiUrl, payload });
-    
-    // Envoyer via axios
-    if (axios) {
-      try {
-        const response = await axios.post(apiUrl, payload, {
-          headers: {
-            'Authorization': `Bearer ${WHATSAPP_TOKEN}`,
-            'Content-Type': 'application/json'
-          },
-          timeout: 10000 // 10 seconds timeout
-        });
-        
-        console.log('[SEND SUCCESS]', {
-          status: response.status,
-          data: response.data
-        });
-      } catch (err) {
-        console.log('[SEND ERROR]', {
-          status: err.response?.status,
-          data: err.response?.data,
-          message: err.message
-        });
-        throw err;
-      }
-    } else {
-      logFlowBlocked('axios_unavailable');
-      console.log('[AUTO-REPLY ERROR] axios not available');
-    }
-    
-  } catch (error) {
-    console.log('[AUTO-REPLY ERROR]', error.message);
-    if (error.response) {
-      console.log('[AUTO-REPLY ERROR DETAILS]', error.response.data);
-    }
-  }
-}
-
 app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
     version: '1.0.0',
-    aiProvider,
-    persistenceMode: getPersistenceMode(),
-    firestoreEnabled: isFirestoreEnabled(),
     timestamp: new Date().toISOString()
   });
-});
-
-app.get('/health', (req, res) => {
-  res.status(200).send("OK");
 });
 
 app.get('/ping', (req, res) => {
@@ -612,16 +598,83 @@ app.get('/webhook/test', (req, res) => {
   res.json({ server: "EXPRESS FINAL OK" });
 });
 
-// 404 handler
-app.use('*', (req, res) => {
-  res.status(404).json({
-    error: 'Not Found',
-    message: `Route ${req.method} ${req.originalUrl} not found`
+// Analytics endpoints - read-only
+try {
+  const statsRoutes = require('./routes/statsRoutes');
+  app.use('/stats', statsRoutes);
+  console.log('[STATS ROUTES] Analytics endpoints loaded');
+} catch (error) {
+  console.log('[STATS ROUTES] Failed to load analytics routes:', error.message);
+}
+
+// Lead import endpoints
+try {
+  const leadsRoutes = require('./routes/leadsRoutes');
+  app.use('/leads', leadsRoutes);
+  console.log('[LEADS ROUTES] Lead import endpoints loaded');
+} catch (error) {
+  console.log('[LEADS ROUTES] Failed to load lead routes:', error.message);
+}
+
+// Initialize campaign system
+try {
+  const { createDefaultCampaigns } = require('./services/campaignService');
+  createDefaultCampaigns();
+  console.log('[CAMPAIGNS] Campaign system initialized');
+} catch (error) {
+  console.log('[CAMPAIGNS] Failed to initialize campaign system:', error.message);
+}
+
+// Outbound messaging system
+try {
+  const outboundRoutes = require('./routes/outboundRoutes');
+  app.use('/outbound', outboundRoutes);
+  console.log('[OUTBOUND ROUTES] Outbound messaging endpoints loaded');
+} catch (error) {
+  console.log('[OUTBOUND ROUTES] Failed to load outbound routes:', error.message);
+}
+
+// Outbound scheduler (automation)
+try {
+  const { startOutboundScheduler } = require('./services/outboundScheduler');
+
+  if (process.env.OUTBOUND_ENABLED === "true") {
+    startOutboundScheduler();
+    console.log('[OUTBOUND SCHEDULER] Started');
+  } else {
+    console.log('[OUTBOUND SCHEDULER] Disabled (set OUTBOUND_ENABLED=true to enable)');
+  }
+} catch (error) {
+  console.log('[OUTBOUND SCHEDULER] Failed to start scheduler:', error.message);
+}
+
+// Helper functions for environment validation
+function getPersistenceMode() {
+  return process.env.MONGODB_URI ? 'mongodb' : 'memory';
+}
+
+function isFirestoreEnabled() {
+  return !!process.env.FIREBASE_PROJECT_ID;
+}
+
+// Global error handler
+app.use((error, req, res, next) => {
+  console.log('[GLOBAL ERROR]', error.message, error.stack);
+  res.status(500).json({
+    error: 'Internal server error',
+    message: isProduction ? 'Something went wrong' : error.message
   });
 });
 
-// Global error handler
-app.use((err, req, res, next) => {
-  console.error('[GLOBAL ERROR]', err);
-  res.status(500).json({ error: 'Erreur serveur', message: err.message });
+// 404 handler
+app.use((req, res) => {
+  console.log('[404 NOT FOUND]', req.method, req.url);
+  res.status(404).json({
+    error: 'Not found',
+    message: `Route ${req.method} ${req.url} not found`
+  });
 });
+
+console.log('[SERVER INITIALIZATION COMPLETE]');
+console.log('[ORCHESTRATOR PIPELINE ACTIVE]');
+console.log('[AUTO-REPLY SYSTEMS REMOVED]');
