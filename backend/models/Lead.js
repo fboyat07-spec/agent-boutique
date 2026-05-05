@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 
 const leadSchema = new mongoose.Schema({
+  tenant_id: { type: String, required: true, ref: 'SaaSTenant' },
   phone: {
     type: String,
     required: true,
@@ -25,7 +26,7 @@ const leadSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['new', 'queued', 'contacted', 'failed'],
+    enum: ['new', 'qualified', 'interested', 'closing', 'won', 'lost', 'queued', 'contacted', 'failed'],
     default: 'new'
   },
   score: {
@@ -33,6 +34,16 @@ const leadSchema = new mongoose.Schema({
     default: 0
   },
   lastContactedAt: {
+    type: Date
+  },
+  lastMessage: {
+    type: String,
+    trim: true
+  },
+  budget: {
+    type: Number
+  },
+  updatedAt: {
     type: Date
   },
   createdAt: {

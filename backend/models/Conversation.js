@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 
 const conversationSchema = new mongoose.Schema({
+  tenant_id: { type: String, required: true, ref: 'SaaSTenant' },
   phone: {
     type: String,
     required: true,

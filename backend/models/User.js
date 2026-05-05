@@ -18,6 +18,10 @@ class User {
     this.phone = data.phone || '';
     this.avatar = data.avatar || 'default';
     
+    // SaaS fields
+    this.stripe_customer_id = data.stripe_customer_id || null;
+    this.subscription_status = data.subscription_status || 'trial'; // 'trial', 'active', 'cancelled', 'past_due'
+    
     // Role-specific data
     this.profile = data.profile || {};
     

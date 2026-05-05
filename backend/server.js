@@ -1,8 +1,40 @@
+require('dotenv').config();
+
+const express = require('express');
+const cors = require('cors');
+const mongoose = require('mongoose');
+
+// Environment security check - allow local mode for development
+if (!process.env.MONGODB_URI) {
+  console.log("MONGODB_URI manquant - using local mode");
+  process.env.MONGODB_URI = 'mongodb://localhost:27017/agent-boutique-local';
+}
+
 console.log("SERVER FINAL UNIQUE");
+console.log("MONGO:", process.env.MONGODB_URI);
+console.log('VERIFY_TOKEN:', process.env.VERIFY_TOKEN);
+
+const VERIFY_TOKEN = process.env.VERIFY_TOKEN;
+
+console.log('[ENV CHECK]', {
+  VERIFY_TOKEN: !!process.env.VERIFY_TOKEN,
+  MONGODB_URI: !!process.env.MONGODB_URI,
+  NODE_ENV: process.env.NODE_ENV
+});
 
 // Core Express setup - IMMEDIATE START
-const express = require('express');
 const app = express();
+
+async function connectDB() {
+  try {
+    console.log('[MONGO] connecting...');
+    await mongoose.connect(process.env.MONGODB_URI);
+    console.log('[MONGO] connected');
+  } catch (err) {
+    console.log('[MONGO ERROR]', err.message);
+    process.exit(1); // stop si DB KO
+  }
+}
 
 // GLOBAL REQUEST LOGGER - DEBUG RAILWAY HEALTHCHECK
 app.use((req, res, next) => {
@@ -16,42 +48,15 @@ app.get('/health', (req, res) => {
   res.status(200).send("OK");
 });
 
-// START SERVER IMMEDIATELY
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`[SERVER START] Server listening on 0.0.0.0:${PORT}`);
-  console.log(`[SERVER START] Health endpoint ready: GET /health`);
-  
-  // Initialize production systems
-  initRedis();
-  
-  // Start follow-up scheduler
-  setInterval(() => {
-    processFollowUps().catch(err => {
-      console.log('[FOLLOW UP ERROR]', err.message);
-    });
-  }, 60000); // every minute
-  
-  console.log('[PRODUCTION SYSTEMS]', {
-    redis: redis ? 'connected' : 'fallback',
-    messageTracker: messageTracker ? 'initialized' : 'failed',
-    rateLimiter: 'initialized',
-    followUpScheduler: 'started'
-  });
-});
-
 // Load environment variables AFTER server starts
-if (process.env.NODE_ENV !== 'production') {
-  try {
-    require('dotenv').config();
-  } catch (error) {
-    console.log('dotenv config failed:', error.message);
-  }
-}
+
 
 // Import orchestrate service
 const { orchestrate } = require('./services/orchestrator');
 const { sendWhatsAppMessage } = require('./services/messageSender');
+const { processLead } = require('./services/closingService');
+const { updateScore } = require('./services/scoringService');
+const { scheduleFollowUps } = require('./services/followupService');
 
 // Global axios (reuse for performance)
 let axios = null;
@@ -227,7 +232,6 @@ console.log('BOOT ENV:', {
 
 // Environment validation for production
 const isProduction = process.env.NODE_ENV === 'production';
-const VERIFY_TOKEN = process.env.VERIFY_TOKEN;
 
 // Global duplicate message prevention (MongoDB-based)
 const ProcessedMessage = require('./models/ProcessedMessage');
@@ -334,6 +338,19 @@ app.use('/api/diagnostic', require('./routes/diagnostic'));
 app.use('/api/missions', require('./routes/missions'));
 app.use('/api/ai', require('./routes/ai'));
 
+// ACTION 6 - Monitoring conversion endpoint
+try {
+  app.use('/api/agent', require('./routes/agentStats'));
+} catch (error) {
+  console.log('[AGENT_STATS_ROUTE_ERROR]', error.message);
+  app.use('/api/agent', (req, res) => {
+    res.status(503).json({
+      error: 'Agent stats service unavailable',
+      message: 'Monitoring endpoints temporarily disabled'
+    });
+  });
+}
+
 // Modules incomplets explicitement desactives
 app.use('/api/progress', (req, res) => {
   res.status(410).json({
@@ -387,16 +404,39 @@ app.post('/webhook/whatsapp', async (req, res) => {
     console.log('[RAW BODY INVALID JSON]', e.message);
   }
   
-  // Verify webhook signature
-  const signature = req.headers['x-hub-signature-256'];
-  const appSecret = process.env.APP_SECRET;
+  // WhatsApp webhook endpoint
+  const criticalConfigs = ['VERIFY_TOKEN', 'APP_SECRET', 'WHATSAPP_TOKEN', 'PHONE_NUMBER_ID'];
+  const missingConfigs = criticalConfigs.filter(key => !process.env[key]);
   
-  if (!verifyWebhookSignature(req, signature, appSecret)) {
-    console.log('[WEBHOOK SIGNATURE INVALID]');
+  if (missingConfigs.length > 0) {
+    console.log('[WEBHOOK SKIPPED] Missing config', { missing: missingConfigs });
+    return res.sendStatus(200); // Réponse OK rapide
+  }
+  
+  // Fallback mémoire si messageTracker null
+  if (!global.messageTracker) {
+    global.messageTracker = new Map();
+    console.log('[WEBHOOK FALLBACK] Memory tracker initialized');
+  }
+  
+  const signature = req.headers['x-hub-signature-256'];
+  
+  if (!signature) {
+    console.log('[WEBHOOK SKIPPED] No signature');
+    return res.sendStatus(200);
+  }
+  
+  const expectedSignature = 'sha256=' + crypto
+    .createHmac('sha256', process.env.APP_SECRET)
+    .update(JSON.stringify(req.body))
+    .digest('hex');
+  
+  if (signature !== expectedSignature) {
+    console.log('[WEBHOOK SKIPPED] Invalid signature');
     return res.sendStatus(403);
   }
   
-  console.log('[WEBHOOK SIGNATURE VALID]');
+  console.log('[WEBHOOK RECEIVED]'); // Log business obligatoire
   console.log('[WEBHOOK POST BODY]', JSON.stringify(req.body, null, 2));
   
   // RESPONSE 200 IMMEDIATE - DO NOT AWAIT
@@ -427,6 +467,35 @@ async function processWebhook(webhookBody) {
 
       for (const change of changes) {
         const value = change.value;
+        
+        // Extraire phone_number_id au bon niveau AVANT la boucle messages
+        const phone_number_id = change.value?.metadata?.phone_number_id;
+        
+        console.log('[PHONE_ID EXTRACTED]', { 
+          phone_number_id,
+          entry_id: entry.id 
+        });
+        
+        // ACTION 7 - Résoudre tenant_id avec validation multi-tenant
+        const { resolveTenantId } = require('./services/tenantResolver');
+        let tenant_id = null;
+        
+        if (phone_number_id) {
+          tenant_id = await resolveTenantId(phone_number_id);
+          
+          if (!tenant_id) {
+            console.log('[TENANT_RESOLUTION_FAILED] - STOP PROCESSING', { phone_number_id });
+            continue;
+          }
+          
+          console.log('[TENANT_RESOLVED]', { 
+            phone_number_id, 
+            tenant_id
+          });
+        } else {
+          console.log('[NO PHONE_NUMBER_ID] - STOP PROCESSING');
+          continue;
+        }
 
         if (!value || !value.messages) continue;
 
@@ -440,21 +509,21 @@ async function processWebhook(webhookBody) {
 
           if (!message?.id || !message?.from) continue;
 
-          const exists = await ProcessedMessage.findOne({ messageId: message.id });
+          const exists = await ProcessedMessage.findOne({ messageId: message.id, tenant_id });
 
           if (exists) {
             console.log('[DUPLICATE GLOBAL]', message.id);
             continue;
           }
 
-          await ProcessedMessage.create({ messageId: message.id });
+          await ProcessedMessage.create({ messageId: message.id, tenant_id });
 
           const userText = message.text?.body;
 
           if (!userText) continue;
 
 // Process single message with production-grade features
-          await processSingleMessage(message);
+          await processSingleMessage(message, tenant_id);
         }
       }
     }
@@ -465,7 +534,7 @@ async function processWebhook(webhookBody) {
 }
 
 // Process single message with production-grade features
-async function processSingleMessage(message) {
+async function processSingleMessage(message, tenant_id) {
   try {
     if (!message) {
       console.log('[WEBHOOK EMPTY MESSAGE]');
@@ -510,8 +579,38 @@ async function processSingleMessage(message) {
       messageId,
       sender: senderPhone,
       type: messageType,
-      text: messageText
+      text: messageText,
+      tenant_id
     });
+    
+    // Vérifier l'abonnement via User - OBLIGATOIRE
+    if (tenant_id) {
+      const User = require('./models/User');
+      const user = await User.findOne({ tenant_id });
+      
+      if (!user) {
+        console.log('[USER MAPPING FAILED] - User not found', { tenant_id });
+        console.log('[USER MAPPING FAILED] - STOP PROCESSING');
+        return;
+      }
+      
+      if (user.subscription_status !== 'active' && user.subscription_status !== 'trial') {
+        console.log('[SUBSCRIPTION FAILED] - Inactive subscription', { 
+          tenant_id, 
+          subscription_status: user.subscription_status 
+        });
+        console.log('[SUBSCRIPTION FAILED] - STOP PROCESSING');
+        return;
+      }
+      
+      console.log('[SUBSCRIPTION CHECK] OK', { 
+        tenant_id, 
+        subscription_status: user.subscription_status 
+      });
+    } else {
+      console.log('[TENANT ID MISSING] - STOP PROCESSING');
+      return;
+    }
     
     // Orchestrator-based logic for messages texte avec contenu
     if (messageType === 'text' && messageText) {
@@ -522,38 +621,57 @@ async function processSingleMessage(message) {
         return;
       }
       
-      console.log('[PIPELINE ACTIVE] orchestrator');
-      console.log('[ORCHESTRATOR TRIGGERED]', { messageId });
+      console.log('[PIPELINE ACTIVE] closing funnel');
+      console.log('[CLOSING TRIGGERED]', { messageId });
       console.log('[SEND TRIGGER]', { messageId, sender: senderPhone, messageText });
       
+      // Connect inbound → pipeline
+      const { processIncomingReply } = require('./services/outboundPipeline');
+      await processIncomingReply(senderPhone, messageText);
+      
+      // Update lead score based on message content
+      await updateScore(senderPhone, messageText, tenant_id);
+      
+      // Créer/mettre à jour Conversation avec tenant_id
+      const Conversation = require('./models/Conversation');
+      await Conversation.findOneAndUpdate(
+        { phone: senderPhone, tenant_id },
+        { 
+          $push: { 
+            messages: { 
+              content: messageText, 
+              sender: senderPhone, 
+              timestamp: new Date(),
+              type: 'text'
+            }
+          },
+          lastInteractionAt: new Date()
+        },
+        { upsert: true, new: true }
+      );
+      
       try {
-        const response = await orchestrate({
-          type: "incoming_message",
-          payload: {
-            user_id: senderPhone,
-            message: messageText
-          }
-        });
+        const reply = await processLead(senderPhone, messageText, tenant_id);
 
-        console.log("[ORCHESTRATOR RESPONSE]", response.reply);
+        console.log("[CLOSING RESPONSE]", reply);
 
         // Block any other response
-        if (!response || !response.reply) {
+        if (!reply) {
           console.log("[BLOCKED EMPTY RESPONSE]");
           return;
         }
 
-        // Send message using only sendWhatsAppMessage
-        await sendWhatsAppMessage(senderPhone, response.reply);
+        // Send message using only sendWhatsAppMessage with tenant token
+        await sendWhatsAppMessage(senderPhone, reply, tenant_id);
         
-        console.log('[ORCHESTRATOR COMPLETED]', { messageId, intent: response.intent });
+        console.log('[CLOSING COMPLETED]', { messageId });
 
-      } catch (orchError) {
-        console.log('[ORCHESTRATOR ERROR]', { 
+      } catch (closingError) {
+        console.log('[CLOSING ERROR]', { 
           messageId, 
           sender: senderPhone,
-          error: orchError.message, 
-          stack: orchError.stack 
+          error: closingError.message, 
+          stack: closingError.stack 
         });
       }
     } else {
@@ -601,6 +719,14 @@ app.get('/webhook/test', (req, res) => {
 // Analytics endpoints - read-only
 try {
   const statsRoutes = require('./routes/statsRoutes');
+  const agentRoutes = require('./routes/agentRoutes');
+  const tenantRoutes = require('./routes/tenantRoutes');
+  const agentStatsRoutes = require('./routes/agentStatsRoutes');
+  const saasRoutes = require('./routes/saasRoutes'); // ACTION 9 - Monitoring SaaS
+  app.use('/api/agent', agentRoutes);
+  app.use('/api/agent', tenantRoutes); // ACTION 2 - Onboarding client
+  app.use('/api/agent', saasRoutes); // ACTION 9 - Monitoring SaaS
+  app.use('/api/agent/stats', agentStatsRoutes);
   app.use('/stats', statsRoutes);
   console.log('[STATS ROUTES] Analytics endpoints loaded');
 } catch (error) {
@@ -678,3 +804,98 @@ app.use((req, res) => {
 console.log('[SERVER INITIALIZATION COMPLETE]');
 console.log('[ORCHESTRATOR PIPELINE ACTIVE]');
 console.log('[AUTO-REPLY SYSTEMS REMOVED]');
+
+const PORT = process.env.PORT || 3000;
+
+async function startServer() {
+  await connectDB(); // CRITIQUE
+
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`[SERVER START] Server listening on 0.0.0.0:${PORT}`);
+    console.log(`[SERVER START] Health endpoint ready: GET /health`);
+
+    // init systèmes existants (NE PAS SUPPRIMER)
+    if (typeof initRedis === "function") initRedis();
+
+    setInterval(() => {
+      if (typeof processFollowUps === "function") {
+        processFollowUps().catch(err => {
+          console.log('[FOLLOW UP ERROR]', err.message);
+        });
+      }
+      
+      // Schedule automated follow-ups
+      scheduleFollowUps().catch(err => {
+        console.log('[SCHEDULE FOLLOWUP ERROR]', err.message);
+      });
+    }, 60000);
+
+    console.log('[PRODUCTION SYSTEMS READY]');
+  });
+}
+
+startServer();
+
+// Démarrage du système outbound - ISOLATION TOTALE
+require('./services/outboundSystemScheduler');
+
+// Lead Generator - Acquisition automatique
+const { generateLeads } = require('./services/leadGenerator');
+
+// CSV Lead Import - Leads réels
+const { importCSVLeads } = require('./services/csvLeadImporter');
+
+// Lead Enrichment - Scoring automatique
+const { enrichLeads } = require('./services/leadEnrichment');
+
+// AI Optimizer - Auto-amélioration
+const { optimize } = require('./services/aiOptimizer');
+
+setInterval(async () => {
+  try {
+    await generateLeads();
+  } catch (err) {
+    console.log('[LEAD GENERATOR ERROR]', err.message);
+  }
+}, 60000); // 1 min
+
+setTimeout(async () => {
+  try {
+    await importCSVLeads('./backend/data/leads.csv');
+  } catch (err) {
+    console.log('[CSV IMPORT ERROR]', err.message);
+  }
+}, 5000);
+
+setInterval(async () => {
+  try {
+    await enrichLeads();
+  } catch (err) {
+    console.log('[ENRICHMENT ERROR]', err.message);
+  }
+}, 300000); // 5 minutes
+
+setInterval(async () => {
+  try {
+    await optimize();
+  } catch (e) {
+    console.log('[AI OPTIMIZER ERROR]', e.message);
+  }
+}, 600000); // 10 min
+
+setTimeout(async () => {
+  try {
+    console.log('[FORCE SEND TEST]');
+
+    const { sendWhatsAppMessage } = require('./services/messageSender');
+
+    await sendWhatsAppMessage(
+      "+33788199089",
+      "TEST REEL - message outbound OK"
+    );
+
+    console.log('[FORCE SEND SUCCESS]');
+  } catch (err) {
+    console.log('[FORCE SEND ERROR]', err.message);
+  }
+}, 5000);

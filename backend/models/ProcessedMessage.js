@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 
 const processedMessageSchema = new mongoose.Schema({
+  tenant_id: { type: String, required: true, ref: 'SaaSTenant' },
   messageId: {
     type: String,
     required: true,
