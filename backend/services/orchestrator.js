@@ -1,45 +1,52 @@
 'use strict';
 
 /**
- * AGENT BOUTIQUE — ORCHESTRATEUR AGENTIQUE v1.0
- * ------------------------------------------------
- * Architecture : Classify → Decide → Act
+ * AGENT BOUTIQUE — ORCHESTRATEUR AGENTIQUE v2.0 (LangGraph.js)
+ * -------------------------------------------------------------
+ * Architecture : StateGraph LangGraph
  *
- * Le flux séquentiel fixe (message → closingService → send) est remplacé
- * par un agent GPT-4 qui raisonne sur le contexte complet avant d'agir.
- *
- * Étapes :
- *  1. CLASSIFY  — GPT-4 analyse le message + historique → intent + stage
- *  2. DECIDE    — l'agent choisit quelle action exécuter (tool calling)
- *  3. ACT       — exécution de l'action choisie
- *  4. RESPOND   — génération de la réponse finale adaptée au contexte
+ * Nœuds : load_state → classify_intent → route →
+ *   [qualify_lead | present_offer | handle_objection |
+ *    close_sale | schedule_followup | end_conversation]
+ *   → persist_state → send_whatsapp
  */
 
+const { Annotation, StateGraph, START, END } = require('@langchain/langgraph');
 const OpenAI = require('openai');
 
-// Services existants (inchangés — l'orchestrateur les pilote)
 const { sendWhatsAppMessage } = require('./messageSender');
-const { processLead }          = require('./closingService');
 const { updateScore }          = require('./scoringService');
-const { scheduleFollowUps }    = require('./followupService');
 
-// Modèles MongoDB
-const Conversation      = require('../models/Conversation');
-const ProcessedMessage  = require('../models/ProcessedMessage');
-const User              = require('../models/User');
+const Conversation = require('../models/Conversation');
+const User         = require('../models/User');
 
-// ─── Client OpenAI ────────────────────────────────────────────────────────────
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+let _openai = null;
+function getOpenAI() {
+  if (!_openai) _openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  return _openai;
+}
 
-// ─── OUTILS DISPONIBLES POUR L'AGENT ─────────────────────────────────────────
-// L'agent GPT-4 choisit parmi ces tools selon le contexte du message.
+// ─── ÉTAT PARTAGÉ ─────────────────────────────────────────────────────────────
+
+const OrchestratorState = Annotation.Root({
+  phone:      Annotation({ reducer: (_, y) => y ?? _, default: () => null }),
+  tenant_id:  Annotation({ reducer: (_, y) => y ?? _, default: () => null }),
+  message:    Annotation({ reducer: (_, y) => y ?? _, default: () => null }),
+  intent:     Annotation({ reducer: (_, y) => y ?? _, default: () => null }),
+  context:    Annotation({ reducer: (_, y) => y ?? _, default: () => null }),
+  toolName:   Annotation({ reducer: (_, y) => y ?? _, default: () => null }),
+  toolArgs:   Annotation({ reducer: (_, y) => y ?? _, default: () => null }),
+  reply:      Annotation({ reducer: (_, y) => y ?? _, default: () => null }),
+});
+
+// ─── OUTILS AGENT GPT-4 ───────────────────────────────────────────────────────
 
 const AGENT_TOOLS = [
   {
     type: 'function',
     function: {
       name: 'qualify_lead',
-      description: 'Poser une question de qualification pour mieux comprendre le prospect (business, CA, besoins). Utiliser quand le prospect est nouveau ou qu\'on manque d\'info.',
+      description: 'Poser une question de qualification pour mieux comprendre le prospect. Utiliser quand le prospect est nouveau ou qu\'on manque d\'info.',
       parameters: {
         type: 'object',
         properties: {
@@ -47,7 +54,6 @@ const AGENT_TOOLS = [
           focus: {
             type: 'string',
             enum: ['business_type', 'revenue', 'pain_point', 'decision_timeline'],
-            description: 'Le point sur lequel se concentrer'
           }
         },
         required: ['question', 'focus']
@@ -58,11 +64,11 @@ const AGENT_TOOLS = [
     type: 'function',
     function: {
       name: 'present_offer',
-      description: 'Présenter l\'offre Agent Boutique avec les bénéfices adaptés au profil du prospect. Utiliser quand le prospect est qualifié et réceptif.',
+      description: 'Présenter l\'offre Agent Boutique avec les bénéfices adaptés au profil du prospect.',
       parameters: {
         type: 'object',
         properties: {
-          pitch: { type: 'string', description: 'Le pitch personnalisé à envoyer' },
+          pitch:         { type: 'string',  description: 'Le pitch personnalisé à envoyer' },
           include_price: { type: 'boolean', description: 'Inclure le prix dans ce message' }
         },
         required: ['pitch', 'include_price']
@@ -73,14 +79,13 @@ const AGENT_TOOLS = [
     type: 'function',
     function: {
       name: 'handle_objection',
-      description: 'Répondre à une objection (prix, besoin, timing, concurrence). Utiliser quand le prospect exprime un doute ou une résistance.',
+      description: 'Répondre à une objection (prix, besoin, timing, concurrence).',
       parameters: {
         type: 'object',
         properties: {
           objection_type: {
             type: 'string',
             enum: ['price', 'need', 'timing', 'trust', 'competitor', 'other'],
-            description: 'Type d\'objection détecté'
           },
           response: { type: 'string', description: 'La réponse à l\'objection' }
         },
@@ -92,7 +97,7 @@ const AGENT_TOOLS = [
     type: 'function',
     function: {
       name: 'close_sale',
-      description: 'Envoyer le lien de paiement et inviter à passer à l\'action. Utiliser uniquement quand le prospect a montré un intérêt fort et clair.',
+      description: 'Envoyer le lien de paiement. Utiliser uniquement quand le prospect a montré un intérêt fort.',
       parameters: {
         type: 'object',
         properties: {
@@ -100,7 +105,6 @@ const AGENT_TOOLS = [
           urgency_trigger: {
             type: 'string',
             enum: ['none', 'limited_spots', 'time_offer', 'competitor_risk'],
-            description: 'Levier d\'urgence à utiliser'
           }
         },
         required: ['closing_message', 'urgency_trigger']
@@ -111,12 +115,12 @@ const AGENT_TOOLS = [
     type: 'function',
     function: {
       name: 'schedule_followup',
-      description: 'Programmer un suivi automatique dans le futur. Utiliser quand le prospect n\'est pas prêt maintenant mais garde de l\'intérêt.',
+      description: 'Programmer un suivi automatique dans le futur.',
       parameters: {
         type: 'object',
         properties: {
-          message: { type: 'string', description: 'Message à envoyer lors du suivi' },
-          delay_hours: { type: 'number', description: 'Délai en heures avant le suivi (ex: 24, 48, 72)' }
+          message:     { type: 'string', description: 'Message à envoyer lors du suivi' },
+          delay_hours: { type: 'number', description: 'Délai en heures avant le suivi' }
         },
         required: ['message', 'delay_hours']
       }
@@ -126,7 +130,7 @@ const AGENT_TOOLS = [
     type: 'function',
     function: {
       name: 'end_conversation',
-      description: 'Clore poliment la conversation. Utiliser quand le prospect est clairement désintéressé ou hostile.',
+      description: 'Clore poliment la conversation quand le prospect est désintéressé.',
       parameters: {
         type: 'object',
         properties: {
@@ -138,12 +142,11 @@ const AGENT_TOOLS = [
   }
 ];
 
-// ─── SYSTEM PROMPT DE L'AGENT ─────────────────────────────────────────────────
+// ─── HELPERS ──────────────────────────────────────────────────────────────────
 
 function buildSystemPrompt(user) {
   const paymentLink = process.env.SALES_PAYMENT_LINK || '[LIEN_PAIEMENT]';
   const storeName   = user?.store_name || 'Agent Boutique';
-
   return `Tu es un agent commercial IA expert en closing pour ${storeName}.
 Tu aides des entrepreneurs et commerçants français à automatiser leurs ventes via WhatsApp avec de l'IA.
 
@@ -158,56 +161,56 @@ CONTEXTE PRODUIT :
 RÈGLES ABSOLUES :
 1. Tu analyses TOUJOURS l'historique complet avant de répondre
 2. Tu ne répètes JAMAIS une question déjà posée
-3. Tu adaptes ton ton au profil du prospect (décontracté si eux décontractés, pro si pro)
+3. Tu adaptes ton ton au profil du prospect
 4. Tu n'envoies le lien de paiement QUE si le prospect a montré un intérêt réel
-5. Tes messages sont courts, percutants, en français courant (pas de jargon)
+5. Tes messages sont courts, percutants, en français courant
 6. Maximum 2-3 phrases par message WhatsApp
-
-STADES DU FUNNEL :
-- new       → qualifier le business
-- qualified → présenter l'offre
-- interested → gérer les objections, avancer vers le closing
-- closing   → envoyer le lien, créer de l'urgence
-- won       → confirmer et onboarder
-- lost      → clore poliment
 
 Choisis l'outil le plus adapté au contexte. Ne fais qu'UNE seule action par message.`;
 }
 
-// ─── RÉCUPÉRATION DU CONTEXTE CONVERSATION ───────────────────────────────────
+// ─── NŒUDS DU GRAPH ───────────────────────────────────────────────────────────
 
-async function getConversationContext(phone, tenant_id) {
+async function nodeLoadState(state) {
+  const { phone, tenant_id } = state;
   try {
-    const convo = await Conversation.findOne({ phone, tenant_id });
-    if (!convo) return { stage: 'new', history: [], score: 0 };
+    const [user, convo] = await Promise.all([
+      User.findOne({ tenant_id }),
+      Conversation.findOne({ phone, tenant_id })
+    ]);
 
-    // Formater l'historique pour GPT-4 (10 derniers messages max)
-    const history = (convo.messages || [])
+    if (!user) {
+      console.warn('[ORCHESTRATOR] User not found for tenant:', tenant_id);
+    }
+
+    const history = (convo?.messages || [])
       .slice(-10)
       .map(m => ({
         role: m.sender === phone ? 'user' : 'assistant',
         content: m.content
       }));
 
-    return {
-      stage:   convo.stage || 'new',
+    const context = {
+      stage:    convo?.stage    || 'new',
       history,
-      score:   convo.score || 0,
-      name:    convo.name || null,
-      business: convo.business || null
+      score:    convo?.score    || 0,
+      name:     convo?.name     || null,
+      business: convo?.business || null,
+      user,
     };
+
+    return { context };
   } catch (err) {
-    console.warn('[ORCHESTRATOR] getConversationContext error:', err.message);
-    return { stage: 'new', history: [], score: 0 };
+    console.warn('[ORCHESTRATOR] load_state error:', err.message);
+    return { context: { stage: 'new', history: [], score: 0, user: null } };
   }
 }
 
-// ─── CLASSIFY — INTENT RAPIDE (sans tool call, juste du texte) ───────────────
-
-async function classifyIntent(message, context) {
+async function nodeClassifyIntent(state) {
+  const { message, context } = state;
   try {
-    const res = await openai.chat.completions.create({
-      model: 'gpt-4o-mini', // rapide + économique pour la classification
+    const res = await getOpenAI().chat.completions.create({
+      model: 'gpt-4o-mini',
       max_tokens: 60,
       temperature: 0,
       messages: [
@@ -221,21 +224,20 @@ async function classifyIntent(message, context) {
         }
       ]
     });
-
     const text = res.choices[0]?.message?.content?.trim() || '{}';
-    return JSON.parse(text.replace(/```json|```/g, '').trim());
+    const intent = JSON.parse(text.replace(/```json|```/g, '').trim());
+    console.log('[ORCHESTRATOR] Intent:', intent);
+    return { intent };
   } catch (err) {
-    console.warn('[ORCHESTRATOR] classifyIntent error:', err.message);
-    return { intent: 'question', sentiment: 'neutral' };
+    console.warn('[ORCHESTRATOR] classify_intent error:', err.message);
+    return { intent: { intent: 'question', sentiment: 'neutral' } };
   }
 }
 
-// ─── DECIDE + ACT — GPT-4 choisit et exécute l'outil ────────────────────────
-
-async function decideAndAct(message, context, intent, user) {
-  // Construction du prompt conversationnel avec historique
+async function nodeRoute(state) {
+  const { message, context, intent } = state;
   const messages = [
-    { role: 'system', content: buildSystemPrompt(user) },
+    { role: 'system', content: buildSystemPrompt(context.user) },
     ...context.history,
     {
       role: 'user',
@@ -244,37 +246,30 @@ async function decideAndAct(message, context, intent, user) {
   ];
 
   try {
-    const response = await openai.chat.completions.create({
+    const response = await getOpenAI().chat.completions.create({
       model: 'gpt-4o',
       max_tokens: 400,
       temperature: 0.7,
       tools: AGENT_TOOLS,
-      tool_choice: 'required', // force l'agent à choisir un outil
+      tool_choice: 'required',
       messages
     });
 
     const choice = response.choices[0];
-
-    // L'agent a choisi un outil
     if (choice.message.tool_calls?.length > 0) {
       const toolCall = choice.message.tool_calls[0];
       const toolName = toolCall.function.name;
       const toolArgs = JSON.parse(toolCall.function.arguments);
-
       console.log('[ORCHESTRATOR] Tool choisi:', toolName, toolArgs);
-
       return { toolName, toolArgs };
     }
 
-    // Fallback texte pur (ne devrait pas arriver avec tool_choice: required)
     return {
       toolName: 'qualify_lead',
       toolArgs: { question: choice.message.content, focus: 'business_type' }
     };
-
   } catch (err) {
-    console.error('[ORCHESTRATOR] decideAndAct error:', err.message);
-    // Fallback safe : poser une question neutre
+    console.error('[ORCHESTRATOR] route error:', err.message);
     return {
       toolName: 'qualify_lead',
       toolArgs: { question: 'Tu fais quoi comme business ?', focus: 'business_type' }
@@ -282,116 +277,76 @@ async function decideAndAct(message, context, intent, user) {
   }
 }
 
-// ─── EXÉCUTION DES ACTIONS ────────────────────────────────────────────────────
-
-async function executeAction(toolName, toolArgs, phone, tenant_id, context) {
-  const paymentLink = process.env.SALES_PAYMENT_LINK || '[LIEN_PAIEMENT]';
-  let reply    = null;
-  let newStage = context.stage;
-  let scoreInc = 0;
-
-  switch (toolName) {
-
-    case 'qualify_lead':
-      reply    = toolArgs.question;
-      newStage = 'qualified';
-      scoreInc = 5;
-      break;
-
-    case 'present_offer':
-      reply    = toolArgs.include_price
-        ? toolArgs.pitch
-        : toolArgs.pitch;
-      newStage = 'interested';
-      scoreInc = 15;
-      break;
-
-    case 'handle_objection':
-      reply    = toolArgs.response;
-      scoreInc = 10;
-      // Le stage reste le même, l'agent repassera en closing après l'objection
-      break;
-
-    case 'close_sale':
-      reply    = `${toolArgs.closing_message}\n\n👉 ${paymentLink}`;
-      newStage = 'closing';
-      scoreInc = 25;
-      break;
-
-    case 'schedule_followup':
-      reply = toolArgs.message;
-      await Conversation.findOneAndUpdate(
-        { phone, tenant_id },
-        {
-          $set: {
-            nextFollowUpAt: new Date(Date.now() + toolArgs.delay_hours * 3600000),
-            followUpType: 'orchestrated'
-          }
-        }
-      );
-      scoreInc = 5;
-      break;
-
-    case 'end_conversation':
-      reply    = toolArgs.farewell;
-      newStage = 'lost';
-      scoreInc = -10;
-      break;
-
-    default:
-      reply = 'Je reviens vers toi très vite !';
-  }
-
-  // Mise à jour du stage + score dans la conversation
-  if (newStage !== context.stage || scoreInc !== 0) {
-    await Conversation.findOneAndUpdate(
-      { phone, tenant_id },
-      {
-        $set:  { stage: newStage },
-        $inc:  { score: scoreInc }
-      },
-      { upsert: true }
-    );
-  }
-
-  return reply;
+async function nodeQualifyLead(state) {
+  const { toolArgs, phone, tenant_id } = state;
+  await Conversation.findOneAndUpdate(
+    { phone, tenant_id },
+    { $set: { stage: 'qualified' }, $inc: { score: 5 } },
+    { upsert: true }
+  );
+  return { reply: toolArgs.question };
 }
 
-// ─── POINT D'ENTRÉE PRINCIPAL : orchestrate() ────────────────────────────────
-/**
- * Appelé depuis server.js à la place de l'ancien pipeline fixe.
- *
- * @param {string} phone      - Numéro du prospect
- * @param {string} message    - Texte reçu
- * @param {string} tenant_id  - ID du tenant (multi-tenant)
- * @returns {Promise<string>} - Réponse à envoyer
- */
-async function orchestrate(phone, message, tenant_id) {
-  console.log('[ORCHESTRATOR START]', { phone, tenant_id, message: message.slice(0, 60) });
+async function nodePresentOffer(state) {
+  const { toolArgs, phone, tenant_id } = state;
+  await Conversation.findOneAndUpdate(
+    { phone, tenant_id },
+    { $set: { stage: 'interested' }, $inc: { score: 15 } },
+    { upsert: true }
+  );
+  return { reply: toolArgs.pitch };
+}
 
+async function nodeHandleObjection(state) {
+  const { toolArgs, phone, tenant_id } = state;
+  await Conversation.findOneAndUpdate(
+    { phone, tenant_id },
+    { $inc: { score: 10 } },
+    { upsert: true }
+  );
+  return { reply: toolArgs.response };
+}
+
+async function nodeCloseSale(state) {
+  const { toolArgs, phone, tenant_id } = state;
+  const paymentLink = process.env.SALES_PAYMENT_LINK || '[LIEN_PAIEMENT]';
+  await Conversation.findOneAndUpdate(
+    { phone, tenant_id },
+    { $set: { stage: 'closing' }, $inc: { score: 25 } },
+    { upsert: true }
+  );
+  return { reply: `${toolArgs.closing_message}\n\n👉 ${paymentLink}` };
+}
+
+async function nodeScheduleFollowup(state) {
+  const { toolArgs, phone, tenant_id } = state;
+  await Conversation.findOneAndUpdate(
+    { phone, tenant_id },
+    {
+      $set: {
+        nextFollowUpAt: new Date(Date.now() + toolArgs.delay_hours * 3600000),
+        followUpType: 'orchestrated'
+      },
+      $inc: { score: 5 }
+    },
+    { upsert: true }
+  );
+  return { reply: toolArgs.message };
+}
+
+async function nodeEndConversation(state) {
+  const { toolArgs, phone, tenant_id } = state;
+  await Conversation.findOneAndUpdate(
+    { phone, tenant_id },
+    { $set: { stage: 'lost' }, $inc: { score: -10 } },
+    { upsert: true }
+  );
+  return { reply: toolArgs.farewell };
+}
+
+async function nodePersistState(state) {
+  const { phone, tenant_id, message, reply } = state;
   try {
-    // 1. Charger user + contexte conversation en parallèle
-    const [user, context] = await Promise.all([
-      User.findOne({ tenant_id }),
-      getConversationContext(phone, tenant_id)
-    ]);
-
-    if (!user) {
-      console.warn('[ORCHESTRATOR] User not found for tenant:', tenant_id);
-      return null;
-    }
-
-    // 2. CLASSIFY — intent rapide
-    const intent = await classifyIntent(message, context);
-    console.log('[ORCHESTRATOR] Intent:', intent);
-
-    // 3. DECIDE — GPT-4 choisit l'action
-    const { toolName, toolArgs } = await decideAndAct(message, context, intent, user);
-
-    // 4. ACT — exécuter l'action choisie
-    const reply = await executeAction(toolName, toolArgs, phone, tenant_id, context);
-
-    // 5. Persister le message entrant + la réponse dans l'historique
     await Conversation.findOneAndUpdate(
       { phone, tenant_id },
       {
@@ -407,15 +362,81 @@ async function orchestrate(phone, message, tenant_id) {
       },
       { upsert: true, new: true }
     );
-
-    // 6. Mettre à jour le score via le service existant
     await updateScore(phone, message, tenant_id).catch(err =>
       console.warn('[ORCHESTRATOR] updateScore error:', err.message)
     );
+  } catch (err) {
+    console.error('[ORCHESTRATOR] persist_state error:', err.message);
+  }
+  return {};
+}
 
-    console.log('[ORCHESTRATOR DONE]', { toolName, replyPreview: reply?.slice(0, 60) });
-    return reply;
+async function nodeSendWhatsApp(state) {
+  const { phone, reply, tenant_id } = state;
+  if (reply) {
+    try {
+      await sendWhatsAppMessage(phone, reply, tenant_id);
+    } catch (err) {
+      console.error('[ORCHESTRATOR] send_whatsapp error:', err.message);
+    }
+  }
+  return {};
+}
 
+// ─── CONSTRUCTION DU GRAPH ────────────────────────────────────────────────────
+
+const workflow = new StateGraph(OrchestratorState);
+
+workflow.addNode('load_state',       nodeLoadState);
+workflow.addNode('classify_intent',  nodeClassifyIntent);
+workflow.addNode('route',            nodeRoute);
+workflow.addNode('qualify_lead',     nodeQualifyLead);
+workflow.addNode('present_offer',    nodePresentOffer);
+workflow.addNode('handle_objection', nodeHandleObjection);
+workflow.addNode('close_sale',       nodeCloseSale);
+workflow.addNode('schedule_followup', nodeScheduleFollowup);
+workflow.addNode('end_conversation', nodeEndConversation);
+workflow.addNode('persist_state',    nodePersistState);
+workflow.addNode('send_whatsapp',    nodeSendWhatsApp);
+
+// Arêtes fixes
+workflow.addEdge(START, 'load_state');
+workflow.addEdge('load_state',      'classify_intent');
+workflow.addEdge('classify_intent', 'route');
+
+// Arêtes conditionnelles depuis route → nœud action selon toolName
+workflow.addConditionalEdges('route', (state) => state.toolName, {
+  qualify_lead:     'qualify_lead',
+  present_offer:    'present_offer',
+  handle_objection: 'handle_objection',
+  close_sale:       'close_sale',
+  schedule_followup: 'schedule_followup',
+  end_conversation: 'end_conversation',
+});
+
+// Tous les nœuds action → persist_state → send_whatsapp → END
+for (const node of ['qualify_lead', 'present_offer', 'handle_objection', 'close_sale', 'schedule_followup', 'end_conversation']) {
+  workflow.addEdge(node, 'persist_state');
+}
+workflow.addEdge('persist_state', 'send_whatsapp');
+workflow.addEdge('send_whatsapp', END);
+
+const app = workflow.compile();
+
+// ─── POINT D'ENTRÉE ───────────────────────────────────────────────────────────
+
+/**
+ * @param {string} phone
+ * @param {string} message
+ * @param {string} tenant_id
+ * @returns {Promise<string|null>}
+ */
+async function orchestrate(phone, message, tenant_id) {
+  console.log('[ORCHESTRATOR START]', { phone, tenant_id, message: message.slice(0, 60) });
+  try {
+    const result = await app.invoke({ phone, message, tenant_id });
+    console.log('[ORCHESTRATOR DONE]', { toolName: result.toolName, replyPreview: result.reply?.slice(0, 60) });
+    return result.reply;
   } catch (err) {
     console.error('[ORCHESTRATOR ERROR]', err.message, err.stack);
     return null;
