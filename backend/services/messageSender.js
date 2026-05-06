@@ -14,28 +14,30 @@ function updateConversation(phone, data) {
   conversations[phone] = { ...conversations[phone], ...data };
 }
 
+const ENV_TOKEN     = () => process.env.WHATSAPP_TOKEN     || process.env.WHATSAPP_ACCESS_TOKEN;
+const ENV_PHONE_ID  = () => process.env.PHONE_NUMBER_ID    || process.env.WHATSAPP_PHONE_NUMBER_ID;
+
 async function sendWhatsAppMessage(to, message, tenant_id = null) {
   try {
     let WHATSAPP_TOKEN, PHONE_NUMBER_ID;
-    
+
     if (tenant_id) {
       // Get tenant-specific configuration
       const SaaSTenant = require('../models/SaaSTenant');
       const tenant = await SaaSTenant.findOne({ tenant_id });
-      
-      if (!tenant) {
-        console.log('[SEND ERROR] Tenant non trouvé:', tenant_id);
-        return;
+
+      if (tenant) {
+        WHATSAPP_TOKEN  = tenant.whatsapp_token;
+        PHONE_NUMBER_ID = tenant.phone_number_id;
+      } else {
+        console.log('[SEND WARN] Tenant non trouvé:', tenant_id, '- fallback env vars');
       }
-      
-      WHATSAPP_TOKEN = tenant.whatsapp_token;
-      PHONE_NUMBER_ID = tenant.phone_number_id;
-    } else {
-      // Fallback to environment variables (for webhook compatibility)
-      WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN;
-      PHONE_NUMBER_ID = process.env.WHATSAPP_PHONE_NUMBER_ID;
     }
-    
+
+    // Fallback env vars si tenant absent ou champs vides
+    if (!WHATSAPP_TOKEN)  WHATSAPP_TOKEN  = ENV_TOKEN();
+    if (!PHONE_NUMBER_ID) PHONE_NUMBER_ID = ENV_PHONE_ID();
+
     if (!WHATSAPP_TOKEN || !PHONE_NUMBER_ID) {
       console.log('[SEND ERROR] Missing WHATSAPP_TOKEN or PHONE_NUMBER_ID');
       return;
