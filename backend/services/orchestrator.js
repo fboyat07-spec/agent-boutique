@@ -50,7 +50,7 @@ const AGENT_TOOLS = [
     type: 'function',
     function: {
       name: 'qualify_lead',
-      description: 'Poser une question de qualification pour mieux comprendre le prospect. Utiliser quand le prospect est nouveau ou qu\'on manque d\'info.',
+      description: 'Utiliser pour TOUT premier contact et TOUTE réponse décrivant un métier ou secteur d\'activité. L\'agent s\'adapte à tous types de business.',
       parameters: {
         type: 'object',
         properties: {
@@ -134,7 +134,7 @@ const AGENT_TOOLS = [
     type: 'function',
     function: {
       name: 'end_conversation',
-      description: 'Clore poliment la conversation quand le prospect est désintéressé.',
+      description: 'Clore la conversation UNIQUEMENT si le prospect dit explicitement qu\'il n\'est pas intéressé ou demande d\'arrêter. JAMAIS sur un premier message, JAMAIS sur une réponse courte comme un type de métier.',
       parameters: {
         type: 'object',
         properties: {
@@ -436,6 +436,15 @@ const app = workflow.compile();
  * @returns {Promise<string|null>}
  */
 async function orchestrate(phone, message, tenant_id) {
+  if (!global._orchProcessing) global._orchProcessing = new Map();
+  const dedupKey = phone + '_' + message;
+  if (global._orchProcessing.has(dedupKey)) {
+    console.log('[ORCHESTRATOR DEDUP] Message ignoré (doublon):', dedupKey);
+    return null;
+  }
+  global._orchProcessing.set(dedupKey, true);
+  setTimeout(() => global._orchProcessing.delete(dedupKey), 15000);
+
   console.log('[ORCHESTRATOR START]', { phone, tenant_id, message: message.slice(0, 60) });
   try {
     const result = await app.invoke({ phone, message, tenant_id });
