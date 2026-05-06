@@ -881,7 +881,7 @@ setInterval(async () => {
 
 setTimeout(async () => {
   try {
-    await importCSVLeads('./data/leads.csv'); // FIX 9 — chemin corrigé (était './backend/data/leads.csv')
+    await importCSVLeads('./backend/data/leads.csv');
   } catch (err) {
     console.log('[CSV IMPORT ERROR]', err.message);
   }
