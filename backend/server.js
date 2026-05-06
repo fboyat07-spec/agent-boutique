@@ -280,6 +280,7 @@ const isProduction = process.env.NODE_ENV === 'production';
 // Global duplicate message prevention (MongoDB-based)
 const ProcessedMessage = require('./models/ProcessedMessage');
 const Conversation = require('./models/Conversation');
+const User = require('./models/User');
 
 // Follow-up processor
 async function processFollowUps() {
@@ -630,7 +631,6 @@ async function processSingleMessage(message, tenant_id) {
     
     // Vérifier l'abonnement via User - OBLIGATOIRE
     if (tenant_id) {
-      const User = require('./models/User');
       const user = await User.findOne({ tenant_id });
       
       if (!user) {
