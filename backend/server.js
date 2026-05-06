@@ -14,7 +14,8 @@ console.log("SERVER FINAL UNIQUE");
 console.log("MONGO:", process.env.MONGODB_URI);
 console.log('VERIFY_TOKEN:', process.env.VERIFY_TOKEN);
 
-const VERIFY_TOKEN = process.env.VERIFY_TOKEN;
+// FIX 1 — Lire les deux noms possibles du token
+const VERIFY_TOKEN = process.env.VERIFY_TOKEN || process.env.WHATSAPP_VERIFY_TOKEN;
 
 console.log('[ENV CHECK]', {
   VERIFY_TOKEN: !!process.env.VERIFY_TOKEN,
@@ -42,16 +43,12 @@ app.use((req, res, next) => {
   next();
 });
 
-// HEALTH ROUTE - MUST BE FIRST
-app.get('/health', (req, res) => {
-  console.log('[HEALTH ROUTE HIT]');
-  res.status(200).send("OK");
-});
+// NOTE: /health est défini plus bas avec JSON complet (status, version, timestamp)
 
 // Load environment variables AFTER server starts
 
 
-// Import orchestrate service
+// ── ORCHESTRATEUR AGENTIQUE (Classify → Decide → Act) ──
 const { orchestrate } = require('./services/orchestrator');
 const { sendWhatsAppMessage } = require('./services/messageSender');
 const { processLead } = require('./services/closingService');
@@ -72,8 +69,27 @@ const crypto = require('crypto');
 let redis = null;
 let messageTracker = null;
 
+// Redis availability management
+let redisAvailable = false;
+let redisRetryCount = 0;
+const MAX_REDIS_RETRY = 3;
+
+// Safe Redis availability checker
+function isRedisAvailable() {
+  return redisAvailable === true;
+}
+
 // Initialize Redis for persistent duplicate detection
 function initRedis() {
+  if (redisRetryCount >= MAX_REDIS_RETRY) {
+    if (!global.redisWarned) {
+      console.warn('[REDIS PERMANENTLY DISABLED]');
+      global.redisWarned = true;
+    }
+    messageTracker = new MemoryMessageTracker();
+    return;
+  }
+
   try {
     const Redis = require('redis');
     redis = Redis.createClient({
@@ -84,21 +100,39 @@ function initRedis() {
     });
     
     redis.on('error', (err) => {
-      console.log('[REDIS ERROR]', err.message);
+      if (!global.redisWarned) {
+        console.warn('[REDIS DISABLED - FALLBACK MEMORY]');
+        global.redisWarned = true;
+      }
+      redisAvailable = false;
       messageTracker = new MemoryMessageTracker();
     });
     
     redis.on('connect', () => {
       console.log('[REDIS CONNECTED]');
+      redisAvailable = true;
       messageTracker = new RedisMessageTracker();
     });
     
-    redis.connect().catch(() => {
-      console.log('[REDIS FALLBACK] Using memory tracker');
+    redis.connect().then(() => {
+      redisAvailable = true;
+      redisRetryCount = 0;
+    }).catch((err) => {
+      redisRetryCount++;
+      redisAvailable = false;
+      if (!global.redisWarned) {
+        console.warn('[REDIS DISABLED - FALLBACK MEMORY]');
+        global.redisWarned = true;
+      }
       messageTracker = new MemoryMessageTracker();
     });
   } catch (error) {
-    console.log('[REDIS UNAVAILABLE]', error.message);
+    redisRetryCount++;
+    redisAvailable = false;
+    if (!global.redisWarned) {
+      console.warn('[REDIS DISABLED - FALLBACK MEMORY]');
+      global.redisWarned = true;
+    }
     messageTracker = new MemoryMessageTracker();
   }
 }
@@ -132,23 +166,33 @@ class MemoryMessageTracker {
 class RedisMessageTracker {
   constructor() {
     this.redis = redis;
+    this.memoryFallback = new MemoryMessageTracker();
   }
   
   async hasMessage(messageId) {
+    if (!isRedisAvailable()) {
+      return this.memoryFallback.hasMessage(messageId);
+    }
+    
     try {
       const exists = await this.redis.exists(`msg:${messageId}`);
       return exists === 1;
     } catch (error) {
-      console.log('[REDIS HAS MESSAGE ERROR]', error.message);
-      return false;
+      redisAvailable = false;
+      return this.memoryFallback.hasMessage(messageId);
     }
   }
   
   async addMessage(messageId, ttl = 3600) {
+    if (!isRedisAvailable()) {
+      return this.memoryFallback.addMessage(messageId, ttl);
+    }
+    
     try {
       await this.redis.setEx(`msg:${messageId}`, ttl, '1');
     } catch (error) {
-      console.log('[REDIS ADD MESSAGE ERROR]', error.message);
+      redisAvailable = false;
+      this.memoryFallback.addMessage(messageId, ttl);
     }
   }
 }
@@ -301,16 +345,16 @@ async function canSendMessage() {
   return true;
 }
 
-// Log ALL incoming requests - BEFORE ANY MIDDLEWARE
+// FIX 2 — Un seul logger de requêtes, sans fuite de headers
 app.use((req, res, next) => {
   console.log('[INCOMING REQUEST]', req.method, req.url);
-  console.log('[INCOMING HEADERS]', JSON.stringify(req.headers, null, 2));
   next();
 });
 
-// CORS middleware
+// FIX 4 — CORS dynamique depuis .env (inclut Railway + localhost)
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:3000,http://localhost:8081,http://localhost:8082,http://localhost:8083,http://localhost:8084').split(',').map(o => o.trim());
 app.use(cors({
-  origin: ['http://localhost:8081', 'http://localhost:8082', 'http://localhost:8083', 'http://localhost:8084'],
+  origin: allowedOrigins,
   credentials: true
 }));
 
@@ -404,13 +448,11 @@ app.post('/webhook/whatsapp', async (req, res) => {
     console.log('[RAW BODY INVALID JSON]', e.message);
   }
   
-  // WhatsApp webhook endpoint
+  // FIX 6 — Vérifier configs critiques sans bloquer le traitement (log warning uniquement)
   const criticalConfigs = ['VERIFY_TOKEN', 'APP_SECRET', 'WHATSAPP_TOKEN', 'PHONE_NUMBER_ID'];
-  const missingConfigs = criticalConfigs.filter(key => !process.env[key]);
-  
+  const missingConfigs = criticalConfigs.filter(key => !process.env[key] && key !== 'VERIFY_TOKEN');
   if (missingConfigs.length > 0) {
-    console.log('[WEBHOOK SKIPPED] Missing config', { missing: missingConfigs });
-    return res.sendStatus(200); // Réponse OK rapide
+    console.warn('[WEBHOOK WARNING] Configs manquantes:', missingConfigs);
   }
   
   // Fallback mémoire si messageTracker null
@@ -426,9 +468,10 @@ app.post('/webhook/whatsapp', async (req, res) => {
     return res.sendStatus(200);
   }
   
+  // FIX 5 — Signature calculée sur rawBody (bytes exacts comme Meta)
   const expectedSignature = 'sha256=' + crypto
     .createHmac('sha256', process.env.APP_SECRET)
-    .update(JSON.stringify(req.body))
+    .update(req.rawBody)
     .digest('hex');
   
   if (signature !== expectedSignature) {
@@ -548,6 +591,8 @@ async function processSingleMessage(message, tenant_id) {
       return;
     }
     
+    // FIX 7 — Guard null : messageTracker peut ne pas être encore initialisé
+    if (!messageTracker) messageTracker = new MemoryMessageTracker();
     const isDuplicate = await messageTracker.hasMessage(messageId);
     if (isDuplicate) {
       console.log('[WEBHOOK DUPLICATE MESSAGE]', { messageId });
@@ -612,66 +657,41 @@ async function processSingleMessage(message, tenant_id) {
       return;
     }
     
-    // Orchestrator-based logic for messages texte avec contenu
+    // ── ORCHESTRATEUR AGENTIQUE ──────────────────────────────────────────────
+    // Remplace l'ancien pipeline fixe (processIncomingReply → processLead → send)
+    // par un agent GPT-4 qui raisonne : Classify → Decide → Act
     if (messageType === 'text' && messageText) {
-      // Check rate limiting
-      const canSend = await rateLimiter.canSendMessage(senderPhone, 5, 3600); // 5 messages per hour
+      // Rate limiting inchangé
+      const canSend = await rateLimiter.canSendMessage(senderPhone, 5, 3600);
       if (!canSend) {
         console.log('[RATE LIMIT EXCEEDED]', { messageId, sender: senderPhone });
         return;
       }
-      
-      console.log('[PIPELINE ACTIVE] closing funnel');
-      console.log('[CLOSING TRIGGERED]', { messageId });
-      console.log('[SEND TRIGGER]', { messageId, sender: senderPhone, messageText });
-      
-      // Connect inbound → pipeline
-      const { processIncomingReply } = require('./services/outboundPipeline');
-      await processIncomingReply(senderPhone, messageText);
-      
-      // Update lead score based on message content
-      await updateScore(senderPhone, messageText, tenant_id);
-      
-      // Créer/mettre à jour Conversation avec tenant_id
-      const Conversation = require('./models/Conversation');
-      await Conversation.findOneAndUpdate(
-        { phone: senderPhone, tenant_id },
-        { 
-          $push: { 
-            messages: { 
-              content: messageText, 
-              sender: senderPhone, 
-              timestamp: new Date(),
-              type: 'text'
-            }
-          },
-          lastInteractionAt: new Date()
-        },
-        { upsert: true, new: true }
-      );
-      
+
+      console.log('[ORCHESTRATOR TRIGGERED]', { messageId, sender: senderPhone });
+
       try {
-        const reply = await processLead(senderPhone, messageText, tenant_id);
+        // L'orchestrateur gère : contexte + intent + décision + persistance + score
+        const reply = await orchestrate(senderPhone, messageText, tenant_id);
 
-        console.log("[CLOSING RESPONSE]", reply);
-
-        // Block any other response
         if (!reply) {
-          console.log("[BLOCKED EMPTY RESPONSE]");
+          console.log('[ORCHESTRATOR] No reply generated — skipping send');
           return;
         }
 
-        // Send message using only sendWhatsAppMessage with tenant token
-        await sendWhatsAppMessage(senderPhone, reply, tenant_id);
-        
-        console.log('[CLOSING COMPLETED]', { messageId });
+        console.log('[ORCHESTRATOR REPLY]', reply.slice(0, 80));
 
-      } catch (closingError) {
-        console.log('[CLOSING ERROR]', { 
-          messageId, 
+        // Envoi WhatsApp
+        await sendWhatsAppMessage(senderPhone, reply, tenant_id);
+
+        console.log('[ORCHESTRATOR SEND OK]', { messageId });
+
+      } catch (orchError) {
+        console.error('[ORCHESTRATOR ERROR]', {
+          messageId,
           sender: senderPhone,
-          error: closingError.message, 
-          stack: closingError.stack 
+          error: orchError.message,
+          stack: orchError.stack
         });
       }
     } else {
@@ -861,7 +881,7 @@ setInterval(async () => {
 
 setTimeout(async () => {
   try {
-    await importCSVLeads('./backend/data/leads.csv');
+    await importCSVLeads('./data/leads.csv'); // FIX 9 — chemin corrigé (était './backend/data/leads.csv')
   } catch (err) {
     console.log('[CSV IMPORT ERROR]', err.message);
   }
@@ -883,19 +903,4 @@ setInterval(async () => {
   }
 }, 600000); // 10 min
 
-setTimeout(async () => {
-  try {
-    console.log('[FORCE SEND TEST]');
-
-    const { sendWhatsAppMessage } = require('./services/messageSender');
-
-    await sendWhatsAppMessage(
-      "+33788199089",
-      "TEST REEL - message outbound OK"
-    );
-
-    console.log('[FORCE SEND SUCCESS]');
-  } catch (err) {
-    console.log('[FORCE SEND ERROR]', err.message);
-  }
-}, 5000);
+// FIX 8 — Test de send supprimé (numéro hardcodé envoyait un vrai message à chaque démarrage)
