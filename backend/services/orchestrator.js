@@ -1,5 +1,8 @@
-const crypto = require('crypto');
 'use strict';
+
+if (typeof globalThis.crypto === 'undefined') {
+  globalThis.crypto = require('crypto');
+}
 
 /**
  * AGENT BOUTIQUE — ORCHESTRATEUR AGENTIQUE v2.0 (LangGraph.js)
