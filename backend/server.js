@@ -662,7 +662,7 @@ async function processSingleMessage(message, tenant_id) {
     // par un agent GPT-4 qui raisonne : Classify → Decide → Act
     if (messageType === 'text' && messageText) {
       // Rate limiting inchangé
-      const canSend = await rateLimiter.canSendMessage(senderPhone, 5, 3600);
+      const canSend = await rateLimiter.canSendMessage(senderPhone, 50, 3600);
       if (!canSend) {
         console.log('[RATE LIMIT EXCEEDED]', { messageId, sender: senderPhone });
         return;
