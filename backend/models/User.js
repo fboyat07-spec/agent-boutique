@@ -1,239 +1,59 @@
+'use strict';
+
+const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
 
-/**
- * Multi-role User Model
- * Supports parents, teachers, and students
- */
-class User {
-  constructor(data = {}) {
-    this.user_id = data.user_id || uuidv4();
-    this.tenant_id = data.tenant_id || '';
-    this.email = data.email || '';
-    this.password_hash = data.password_hash || '';
-    this.role = data.role || 'parent'; // 'parent' | 'teacher' | 'student' | 'admin'
-    this.first_name = data.first_name || '';
-    this.last_name = data.last_name || '';
-    this.phone = data.phone || '';
-    this.avatar = data.avatar || 'default';
-    
-    // SaaS fields
-    this.stripe_customer_id = data.stripe_customer_id || null;
-    this.subscription_status = data.subscription_status || 'trial'; // 'trial', 'active', 'cancelled', 'past_due'
-    
-    // Role-specific data
-    this.profile = data.profile || {};
-    
-    // Authentication
-    this.last_login = data.last_login || null;
-    this.login_count = data.login_count || 0;
-    this.failed_attempts = data.failed_attempts || 0;
-    this.locked_until = data.locked_until || null;
-    this.email_verified = data.email_verified || false;
-    this.email_verification_token = data.email_verification_token || null;
-    this.password_reset_token = data.password_reset_token || null;
-    this.password_reset_expires = data.password_reset_expires || null;
-    
-    // Permissions
-    this.permissions = data.permissions || this.getDefaultPermissions(this.role);
-    
-    // Settings
-    this.settings = data.settings || {
-      language: 'fr',
-      timezone: 'Europe/Paris',
-      notifications: {
-        email: true,
-        push: true,
-        sms: false
-      }
-    };
-    
-    // Status
-    this.status = data.status || 'active'; // 'active' | 'inactive' | 'suspended' | 'deleted'
-    this.created_at = data.created_at || new Date().toISOString();
-    this.updated_at = data.updated_at || new Date().toISOString();
-  }
+const UserSchema = new mongoose.Schema({
+  user_id:             { type: String, default: () => uuidv4(), unique: true, index: true },
+  tenant_id:           { type: String, required: true, index: true },
+  email:               { type: String, required: true, unique: true, lowercase: true, trim: true, index: true },
+  password_hash:       { type: String, required: true },
 
-  getDefaultPermissions(role) {
-    const permissions = {
-      parent: [
-        'view_own_children',
-        'manage_children_profiles',
-        'view_child_progress',
-        'set_goals',
-        'manage_rewards',
-        'view_reports',
-        'invite_friends'
-      ],
-      teacher: [
-        'view_assigned_students',
-        'manage_class_progress',
-        'assign_exercises',
-        'view_class_reports',
-        'manage_class_settings'
-      ],
-      student: [
-        'view_own_profile',
-        'do_exercises',
-        'view_own_progress',
-        'earn_rewards',
-        'use_ai_tutor'
-      ],
-      admin: [
-        'manage_all_users',
-        'manage_tenants',
-        'view_system_reports',
-        'manage_subscriptions',
-        'system_configuration'
-      ]
-    };
-    return permissions[role] || [];
-  }
+  role:                { type: String, enum: ['admin', 'parent', 'teacher', 'student'], default: 'admin' },
 
-  async setPassword(password) {
-    const saltRounds = 12;
-    this.password_hash = await bcrypt.hash(password, saltRounds);
-  }
+  first_name:          { type: String, default: '' },
+  last_name:           { type: String, default: '' },
+  phone:               { type: String, default: '' },
+  store_name:          { type: String, default: '' },
 
-  async verifyPassword(password) {
-    if (!this.password_hash) return false;
-    return bcrypt.compare(password, this.password_hash);
-  }
+  // SaaS / Stripe
+  subscription_status: { type: String, enum: ['trial', 'active', 'cancelled', 'past_due', 'inactive'], default: 'inactive' },
+  plan:                { type: String, default: 'starter' },
+  stripe_customer_id:  { type: String, default: null },
 
-  generateJWT() {
-    const payload = {
-      user_id: this.user_id,
-      tenant_id: this.tenant_id,
-      email: this.email,
-      role: this.role,
-      permissions: this.permissions
-    };
-    
-    return jwt.sign(payload, process.env.JWT_SECRET || 'fallback-secret', {
-      expiresIn: '7d'
-    });
-  }
+  // Auth
+  last_login:          { type: Date, default: null },
+  login_count:         { type: Number, default: 0 },
+  failed_attempts:     { type: Number, default: 0 },
+  locked_until:        { type: Date, default: null },
+  email_verified:      { type: Boolean, default: false },
 
-  static verifyJWT(token) {
-    try {
-      return jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret');
-    } catch (error) {
-      return null;
-    }
-  }
+  status:              { type: String, enum: ['active', 'inactive', 'suspended', 'deleted'], default: 'active' },
+}, {
+  timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
+});
 
-  hasPermission(permission) {
-    return this.permissions.includes(permission);
+// Hash automatique du mot de passe si modifié
+UserSchema.pre('save', async function(next) {
+  if (!this.isModified('password_hash')) return next();
+  // Si déjà un hash bcrypt ($2a$/$2b$/$2y$), on ne re-hash pas
+  if (/^\$2[aby]\$/.test(this.password_hash)) return next();
+  try {
+    this.password_hash = await bcrypt.hash(this.password_hash, 12);
+    next();
+  } catch (err) {
+    next(err);
   }
+});
 
-  addPermission(permission) {
-    if (!this.permissions.includes(permission)) {
-      this.permissions.push(permission);
-      this.updated_at = new Date().toISOString();
-    }
-  }
+UserSchema.methods.comparePassword = function(plain) {
+  if (!this.password_hash) return Promise.resolve(false);
+  return bcrypt.compare(plain, this.password_hash);
+};
 
-  removePermission(permission) {
-    const index = this.permissions.indexOf(permission);
-    if (index > -1) {
-      this.permissions.splice(index, 1);
-      this.updated_at = new Date().toISOString();
-    }
-  }
+UserSchema.methods.isLocked = function() {
+  return this.locked_until && this.locked_until > new Date();
+};
 
-  recordLogin() {
-    this.last_login = new Date().toISOString();
-    this.login_count += 1;
-    this.failed_attempts = 0;
-    this.updated_at = new Date().toISOString();
-  }
-
-  recordFailedLogin() {
-    this.failed_attempts += 1;
-    
-    // Lock account after 5 failed attempts for 30 minutes
-    if (this.failed_attempts >= 5) {
-      this.locked_until = new Date(Date.now() + 30 * 60 * 1000).toISOString();
-    }
-    
-    this.updated_at = new Date().toISOString();
-  }
-
-  isLocked() {
-    return this.locked_until && new Date(this.locked_until) > new Date();
-  }
-
-  generateEmailVerificationToken() {
-    this.email_verification_token = uuidv4();
-    this.updated_at = new Date().toISOString();
-    return this.email_verification_token;
-  }
-
-  verifyEmail(token) {
-    if (this.email_verification_token === token) {
-      this.email_verified = true;
-      this.email_verification_token = null;
-      this.updated_at = new Date().toISOString();
-      return true;
-    }
-    return false;
-  }
-
-  generatePasswordResetToken() {
-    this.password_reset_token = uuidv4();
-    this.password_reset_expires = new Date(Date.now() + 60 * 60 * 1000).toISOString(); // 1 hour
-    this.updated_at = new Date().toISOString();
-    return this.password_reset_token;
-  }
-
-  verifyPasswordResetToken(token) {
-    return this.password_reset_token === token && 
-           this.password_reset_expires && 
-           new Date(this.password_reset_expires) > new Date();
-  }
-
-  clearPasswordReset() {
-    this.password_reset_token = null;
-    this.password_reset_expires = null;
-    this.updated_at = new Date().toISOString();
-  }
-
-  updateProfile(profileData) {
-    this.profile = { ...this.profile, ...profileData };
-    this.updated_at = new Date().toISOString();
-  }
-
-  updateSettings(settingsData) {
-    this.settings = { ...this.settings, ...settingsData };
-    this.updated_at = new Date().toISOString();
-  }
-
-  toJSON() {
-    return {
-      user_id: this.user_id,
-      tenant_id: this.tenant_id,
-      email: this.email,
-      role: this.role,
-      first_name: this.first_name,
-      last_name: this.last_name,
-      phone: this.phone,
-      avatar: this.avatar,
-      profile: this.profile,
-      last_login: this.last_login,
-      login_count: this.login_count,
-      email_verified: this.email_verified,
-      permissions: this.permissions,
-      settings: this.settings,
-      status: this.status,
-      created_at: this.created_at,
-      updated_at: this.updated_at
-    };
-  }
-
-  static fromJSON(data) {
-    return new User(data);
-  }
-}
-
-module.exports = User;
+module.exports = mongoose.model('User', UserSchema);
