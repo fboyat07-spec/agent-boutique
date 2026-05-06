@@ -566,6 +566,15 @@ async function processWebhook(webhookBody) {
 
           if (!userText) continue;
 
+          const contentKey = tenant_id + '_' + message.from + '_' + (message.text?.body || '').trim().toLowerCase().slice(0, 50);
+          const recentMessages = global._recentMessages || (global._recentMessages = new Map());
+          if (recentMessages.has(contentKey)) {
+            console.log('[CONTENT DEDUP] Message identique ignoré:', contentKey);
+            continue;
+          }
+          recentMessages.set(contentKey, true);
+          setTimeout(() => recentMessages.delete(contentKey), 60000);
+
 // Process single message with production-grade features
           await processSingleMessage(message, tenant_id);
         }
