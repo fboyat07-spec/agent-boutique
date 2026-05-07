@@ -566,14 +566,18 @@ async function processWebhook(webhookBody) {
 
           if (!userText) continue;
 
-          const contentKey = tenant_id + '_' + message.from + '_' + (message.text?.body || '').trim().toLowerCase().slice(0, 50);
-          const recentMessages = global._recentMessages || (global._recentMessages = new Map());
-          if (recentMessages.has(contentKey)) {
-            console.log('[CONTENT DEDUP] Message identique ignoré:', contentKey);
-            continue;
+          const contentKey = (message.from + '_' + (message.text?.body || '').trim().toLowerCase().slice(0, 50));
+          try {
+            await ProcessedMessage.create({
+              messageId: 'content_' + contentKey + '_' + Math.floor(Date.now()/60000),
+              tenant_id
+            });
+          } catch (e) {
+            if (e.code === 11000) {
+              console.log('[CONTENT DEDUP MONGO] Doublon ignoré:', contentKey);
+              continue;
+            }
           }
-          recentMessages.set(contentKey, true);
-          setTimeout(() => recentMessages.delete(contentKey), 60000);
 
 // Process single message with production-grade features
           await processSingleMessage(message, tenant_id);

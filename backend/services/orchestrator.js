@@ -436,15 +436,6 @@ const app = workflow.compile();
  * @returns {Promise<string|null>}
  */
 async function orchestrate(phone, message, tenant_id) {
-  if (!global._orchProcessing) global._orchProcessing = new Map();
-  const dedupKey = phone + '_' + message.trim().toLowerCase().slice(0, 50);
-  if (global._orchProcessing.has(dedupKey)) {
-    console.log('[ORCHESTRATOR DEDUP] Message ignoré (doublon):', dedupKey);
-    return null;
-  }
-  global._orchProcessing.set(dedupKey, true);
-  setTimeout(() => global._orchProcessing.delete(dedupKey), 60000);
-
   console.log('[ORCHESTRATOR START]', { phone, tenant_id, message: message.slice(0, 60) });
   try {
     const result = await app.invoke({ phone, message, tenant_id });
