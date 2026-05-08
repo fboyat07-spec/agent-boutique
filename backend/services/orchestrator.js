@@ -21,8 +21,9 @@ const OpenAI = require('openai');
 const { sendWhatsAppMessage } = require('./messageSender');
 const { updateScore }          = require('./scoringService');
 
-const Conversation = require('../models/Conversation');
-const User         = require('../models/User');
+const Conversation   = require('../models/Conversation');
+const User           = require('../models/User');
+const paymentLinks   = require('../config/paymentLinks');
 
 let _openai = null;
 function getOpenAI() {
@@ -101,7 +102,7 @@ const AGENT_TOOLS = [
     type: 'function',
     function: {
       name: 'close_sale',
-      description: 'Envoyer le lien de paiement. Utiliser uniquement quand le prospect a montré un intérêt fort.',
+      description: 'Envoyer le lien de paiement du plan adapté. Utiliser uniquement quand le prospect a montré un intérêt fort. Choisir le plan (starter/pro/elite) selon le profil du prospect.',
       parameters: {
         type: 'object',
         properties: {
@@ -109,9 +110,14 @@ const AGENT_TOOLS = [
           urgency_trigger: {
             type: 'string',
             enum: ['none', 'limited_spots', 'time_offer', 'competitor_risk'],
+          },
+          plan: {
+            type: 'string',
+            enum: ['starter', 'pro', 'elite'],
+            description: 'Plan recommandé selon le profil : starter (indépendants), pro (PME), elite (agences/franchises)'
           }
         },
-        required: ['closing_message', 'urgency_trigger']
+        required: ['closing_message', 'urgency_trigger', 'plan']
       }
     }
   },
@@ -149,8 +155,8 @@ const AGENT_TOOLS = [
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
 
 function buildSystemPrompt(user) {
-  const paymentLink = process.env.SALES_PAYMENT_LINK || '[LIEN_PAIEMENT]';
-  const storeName   = user?.store_name || 'Agent Boutique';
+  const storeName = user?.store_name || 'Agent Boutique';
+  const { starter, pro, elite } = paymentLinks;
   return `Tu es un agent commercial IA expert en closing pour ${storeName}.
 Tu aides des entrepreneurs et commerçants français à automatiser leurs ventes via WhatsApp avec de l'IA.
 
@@ -164,10 +170,14 @@ CONTEXTE PRODUIT :
   * Starter 49€/mois — indépendants, artisans, petits commerces (1 numéro, 500 conversations/mois)
   * Pro 149€/mois — PME et commerces (conversations illimitées, GPT-4o, analytics)
   * Elite 399€/mois — agences et franchises (5 numéros, multi-tenant, support prioritaire)
-- Lien de paiement : ${paymentLink}
+
+Liens de paiement disponibles :
+- Starter (49€) : ${starter.link || '[LIEN_STARTER]'}
+- Pro (149€) : ${pro.link || '[LIEN_PRO]'}
+- Elite (399€) : ${elite.link || '[LIEN_ELITE]'}
 
 RÈGLE TARIF : Communique les prix quand le prospect les demande.
-Pour le closing, envoie toujours le lien de paiement.
+Pour le closing, envoie toujours le lien du plan adapté au profil du prospect.
 
 RÈGLES ABSOLUES :
 1. Tu analyses TOUJOURS l'historique complet avant de répondre
@@ -320,13 +330,16 @@ async function nodeHandleObjection(state) {
 
 async function nodeCloseSale(state) {
   const { toolArgs, phone, tenant_id } = state;
-  const paymentLink = process.env.SALES_PAYMENT_LINK || '[LIEN_PAIEMENT]';
+  const planKey  = (toolArgs.plan || 'starter').toLowerCase();
+  const plan     = paymentLinks[planKey] || paymentLinks.starter;
+  const link     = plan.link || '[LIEN_PAIEMENT]';
+  console.log('[CLOSE SALE] Plan sélectionné:', planKey, '| Link:', link);
   await Conversation.findOneAndUpdate(
     { phone, tenant_id },
     { $set: { stage: 'closing' }, $inc: { score: 25 } },
     { upsert: true }
   );
-  return { reply: `${toolArgs.closing_message}\n\n👉 ${paymentLink}` };
+  return { reply: `${toolArgs.closing_message}\n\n👉 ${plan.label} ${plan.price} : ${link}` };
 }
 
 async function nodeScheduleFollowup(state) {
