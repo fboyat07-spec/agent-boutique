@@ -567,34 +567,45 @@ app.get('/webhook/whatsapp', (req, res) => {
 
 // WhatsApp Webhook Messages (POST)
 app.post('/webhook/whatsapp', async (req, res) => {
-  console.log('[WEBHOOK POST HIT]');
+  console.log('[DIAGNOSTIC] WEBHOOK POST HIT - STEP 1');
   
   // Diagnose raw body integrity
-  console.log('[RAW BODY CHECK]', {
+  console.log('[DIAGNOSTIC] RAW BODY CHECK - STEP 2', {
     hasRaw: !!req.rawBody,
     rawLength: req.rawBody?.length
   });
-  console.log('[RAW BODY STRING]', req.rawBody?.toString());
-  console.log('[PARSED BODY]', JSON.stringify(req.body));
+  console.log('[DIAGNOSTIC] RAW BODY STRING - STEP 3', req.rawBody?.toString());
+  console.log('[DIAGNOSTIC] PARSED BODY - STEP 4', JSON.stringify(req.body));
   
   try {
     JSON.parse(req.rawBody.toString());
-    console.log('[RAW BODY VALID JSON]');
+    console.log('[DIAGNOSTIC] RAW BODY VALID JSON - STEP 5');
   } catch (e) {
-    console.log('[RAW BODY INVALID JSON]', e.message);
+    console.log('[DIAGNOSTIC] RAW BODY INVALID JSON - STEP 5 ERROR', e.message);
   }
+  
+  // DIAGNOSTIC: Check headers
+  console.log('[DIAGNOSTIC] HEADERS CHECK - STEP 6', {
+    'x-hub-signature-256': req.headers['x-hub-signature-256'],
+    'content-type': req.headers['content-type'],
+    'user-agent': req.headers['user-agent']
+  });
   
   // FIX 6 — Vérifier configs critiques sans bloquer le traitement (log warning uniquement)
   const criticalConfigs = ['VERIFY_TOKEN', 'APP_SECRET', 'WHATSAPP_TOKEN', 'PHONE_NUMBER_ID'];
   const missingConfigs = criticalConfigs.filter(key => !process.env[key] && key !== 'VERIFY_TOKEN');
   if (missingConfigs.length > 0) {
-    console.warn('[WEBHOOK WARNING] Configs manquantes:', missingConfigs);
+    console.log('[DIAGNOSTIC] CONFIGS MANQUANTES - STEP 7', missingConfigs);
+  } else {
+    console.log('[DIAGNOSTIC] CONFIGS OK - STEP 7');
   }
   
   // Fallback mémoire si messageTracker null
   if (!global.messageTracker) {
     global.messageTracker = new Map();
-    console.log('[WEBHOOK FALLBACK] Memory tracker initialized');
+    console.log('[DIAGNOSTIC] MEMORY TRACKER INITIALIZED - STEP 8');
+  } else {
+    console.log('[DIAGNOSTIC] MEMORY TRACKER EXISTS - STEP 8');
   }
   
   const signature = req.headers['x-hub-signature-256'];
@@ -606,25 +617,36 @@ app.post('/webhook/whatsapp', async (req, res) => {
   console.log('[WEBHOOK POST BODY]', JSON.stringify(req.body, null, 2));
   
   // RESPONSE 200 IMMEDIATE - DO NOT AWAIT
+  console.log('[DIAGNOSTIC] SENDING RESPONSE 200 - STEP 9');
   res.sendStatus(200);
+  console.log('[DIAGNOSTIC] RESPONSE 200 SENT - STEP 10');
   
   // Process webhook asynchronously (fire and forget)
+  console.log('[DIAGNOSTIC] STARTING ASYNC PROCESSING - STEP 11');
   processWebhook(req.body).catch(error => {
-    console.log('[WEBHOOK PROCESS ERROR]', error.message);
+    console.log('[DIAGNOSTIC] ASYNC PROCESSING ERROR - STEP 11 ERROR', error.message);
   });
+  console.log('[DIAGNOSTIC] ASYNC PROCESSING STARTED - STEP 12');
 });
 
 // Separate async function for webhook processing
 async function processWebhook(webhookBody) {
   try {
-    console.log('[PROCESS STARTED]');
-    console.log('[RAW BODY STRING]', webhookBody);
+    console.log('[DIAGNOSTIC] PROCESS WEBHOOK STARTED - STEP 13');
+    console.log('[DIAGNOSTIC] WEBHOOK BODY RECEIVED - STEP 14', webhookBody);
     
     // Safety check for body structure
     if (!webhookBody || !webhookBody.entry) {
-      console.log('[WEBHOOK ERROR] Invalid body structure');
+      console.log('[DIAGNOSTIC] INVALID BODY STRUCTURE - STEP 15 ERROR');
+      console.log('[DIAGNOSTIC] BODY STRUCTURE CHECK - STEP 15', {
+        hasBody: !!webhookBody,
+        hasEntry: !!webhookBody?.entry,
+        bodyKeys: webhookBody ? Object.keys(webhookBody) : []
+      });
       return;
     }
+    
+    console.log('[DIAGNOSTIC] BODY STRUCTURE OK - STEP 15');
 
     const entries = webhookBody.entry || [];
 
@@ -643,45 +665,59 @@ async function processWebhook(webhookBody) {
         });
         
         // ACTION 7 - Résoudre tenant_id avec validation multi-tenant
+        console.log('[DIAGNOSTIC] STARTING TENANT RESOLUTION - STEP 16');
         const { resolveTenantId } = require('./services/tenantResolver');
         let tenant_id = null;
         
         if (phone_number_id) {
+          console.log('[DIAGNOSTIC] RESOLVING TENANT FOR PHONE_ID - STEP 17', { phone_number_id });
           tenant_id = await resolveTenantId(phone_number_id);
           
           if (!tenant_id) {
-            console.log('[TENANT_RESOLUTION_FAILED] - STOP PROCESSING', { phone_number_id });
+            console.log('[DIAGNOSTIC] TENANT_RESOLUTION_FAILED - STEP 18 ERROR', { phone_number_id });
             continue;
           }
           
-          console.log('[TENANT_RESOLVED]', { 
+          console.log('[DIAGNOSTIC] TENANT_RESOLVED - STEP 18', { 
             phone_number_id, 
             tenant_id
           });
         } else {
-          console.log('[NO PHONE_NUMBER_ID] - STOP PROCESSING');
+          console.log('[DIAGNOSTIC] NO PHONE_NUMBER_ID - STEP 17 ERROR');
           continue;
         }
 
-        if (!value || !value.messages) continue;
+        if (!value || !value.messages) {
+          console.log('[DIAGNOSTIC] NO MESSAGES IN VALUE - STEP 19');
+          continue;
+        }
+
+        console.log('[DIAGNOSTIC] PROCESSING MESSAGES - STEP 19', { messageCount: value.messages.length });
 
         for (const message of value.messages) {
-
-          console.log('[MESSAGE STRUCTURE]', {
+          console.log('[DIAGNOSTIC] PROCESSING MESSAGE - STEP 20', {
             id: message.id,
             from: message.from,
             text: message.text?.body
           });
 
-          if (!message?.id || !message?.from) continue;
+          if (!message?.id || !message?.from) {
+            console.log('[DIAGNOSTIC] MESSAGE MISSING ID OR FROM - STEP 21 ERROR');
+            continue;
+          }
+          
+          console.log('[DIAGNOSTIC] MESSAGE STRUCTURE OK - STEP 21');
 
+          console.log('[DIAGNOSTIC] CHECKING MONGODB DUPLICATE - STEP 22');
           try {
             await ProcessedMessage.create({ messageId: message.id, tenant_id });
+            console.log('[DIAGNOSTIC] MONGODB UNIQUE CHECK PASSED - STEP 22');
           } catch (e) {
             if (e.code === 11000) {
-              console.log('[DUPLICATE GLOBAL]', message.id);
+              console.log('[DIAGNOSTIC] MONGODB DUPLICATE DETECTED - STEP 22 ERROR', message.id);
               continue;
             }
+            console.log('[DIAGNOSTIC] MONGODB ERROR - STEP 22 ERROR', e.message);
             throw e;
           }
 
@@ -703,7 +739,9 @@ async function processWebhook(webhookBody) {
           }
 
 // Process single message with production-grade features
+          console.log('[DIAGNOSTIC] STARTING PROCESS SINGLE MESSAGE - STEP 23');
           await processSingleMessage(message, tenant_id);
+          console.log('[DIAGNOSTIC] PROCESS SINGLE MESSAGE COMPLETED - STEP 23');
         }
       }
     }
@@ -716,27 +754,35 @@ async function processWebhook(webhookBody) {
 // Process single message with production-grade features
 async function processSingleMessage(message, tenant_id) {
   try {
+    console.log('[DIAGNOSTIC] PROCESS SINGLE MESSAGE STARTED - STEP 24');
     if (!message) {
-      console.log('[WEBHOOK EMPTY MESSAGE]');
+      console.log('[DIAGNOSTIC] EMPTY MESSAGE - STEP 24 ERROR');
       return;
     }
     
     // Check for duplicate message using persistent tracker
     const messageId = message.id;
     if (!messageId) {
-      console.log('[WEBHOOK NO MESSAGE ID]');
+      console.log('[DIAGNOSTIC] NO MESSAGE ID - STEP 25 ERROR');
       return;
     }
     
+    console.log('[DIAGNOSTIC] CHECKING MESSAGE TRACKER - STEP 25', { messageId });
+    
     // FIX 7 — Guard null : messageTracker peut ne pas être encore initialisé
-    if (!messageTracker) messageTracker = new MemoryMessageTracker();
+    if (!messageTracker) {
+      messageTracker = new MemoryMessageTracker();
+      console.log('[DIAGNOSTIC] MESSAGE TRACKER INITIALIZED - STEP 25');
+    }
     
     // Atomic duplicate prevention - addMessage returns false if duplicate
     const wasAdded = await messageTracker.addMessage(messageId, 3600);
     if (!wasAdded) {
-      console.log('[WEBHOOK DUPLICATE MESSAGE]', { messageId });
+      console.log('[DIAGNOSTIC] MESSAGE TRACKER DUPLICATE - STEP 26 ERROR', { messageId });
       return;
     }
+    
+    console.log('[DIAGNOSTIC] MESSAGE TRACKER CHECK PASSED - STEP 26');
     
     // Validation structure message
     const senderPhone = message.from;
@@ -765,30 +811,32 @@ async function processSingleMessage(message, tenant_id) {
     });
     
     // Vérifier l'abonnement via User - OBLIGATOIRE
+    console.log('[DIAGNOSTIC] CHECKING SUBSCRIPTION - STEP 27');
     if (tenant_id) {
+      console.log('[DIAGNOSTIC] FINDING USER FOR TENANT - STEP 27', { tenant_id });
       const user = await User.findOne({ tenant_id });
       
       if (!user) {
-        console.log('[USER MAPPING FAILED] - User not found', { tenant_id });
-        console.log('[USER MAPPING FAILED] - STOP PROCESSING');
+        console.log('[DIAGNOSTIC] USER NOT FOUND - STEP 27 ERROR', { tenant_id });
         return;
       }
       
-      if (user.subscription_status !== 'active' && user.subscription_status !== 'trial') {
-        console.log('[SUBSCRIPTION FAILED] - Inactive subscription', { 
-          tenant_id, 
-          subscription_status: user.subscription_status 
-        });
-        console.log('[SUBSCRIPTION FAILED] - STOP PROCESSING');
-        return;
-      }
-      
-      console.log('[SUBSCRIPTION CHECK] OK', { 
+      console.log('[DIAGNOSTIC] USER FOUND - STEP 27', { 
         tenant_id, 
         subscription_status: user.subscription_status 
       });
+      
+      if (user.subscription_status !== 'active' && user.subscription_status !== 'trial') {
+        console.log('[DIAGNOSTIC] INACTIVE SUBSCRIPTION - STEP 27 ERROR', { 
+          tenant_id, 
+          subscription_status: user.subscription_status 
+        });
+        return;
+      }
+      
+      console.log('[DIAGNOSTIC] SUBSCRIPTION CHECK PASSED - STEP 27');
     } else {
-      console.log('[TENANT ID MISSING] - STOP PROCESSING');
+      console.log('[DIAGNOSTIC] TENANT ID MISSING - STEP 27 ERROR');
       return;
     }
     
@@ -796,66 +844,82 @@ async function processSingleMessage(message, tenant_id) {
     // Remplace l'ancien pipeline fixe (processIncomingReply → processLead → send)
     // par un agent GPT-4 qui raisonne : Classify → Decide → Act
     if (messageType === 'text' && messageText) {
+      console.log('[DIAGNOSTIC] CHECKING RATE LIMIT - STEP 28');
       // Rate limiting inchangé
       const canSend = await rateLimiter.canSendMessage(senderPhone, 50, 3600);
       if (!canSend) {
-        console.log('[RATE LIMIT EXCEEDED]', { messageId, sender: senderPhone });
+        console.log('[DIAGNOSTIC] RATE LIMIT EXCEEDED - STEP 28 ERROR', { messageId, sender: senderPhone });
         return;
       }
 
-      console.log('[ORCHESTRATOR TRIGGERED]', { messageId, sender: senderPhone });
+      console.log('[DIAGNOSTIC] RATE LIMIT PASSED - STEP 28');
+      console.log('[DIAGNOSTIC] TRIGGERING ORCHESTRATOR - STEP 29', { messageId, sender: senderPhone });
 
       // WORKFLOW LOCK - Empêcher les workflows parallèles pour le même message.id
+      console.log('[DIAGNOSTIC] ACQUIRING WORKFLOW LOCK - STEP 30');
       let lockAcquired = false;
 
       try {
         lockAcquired = await acquireWorkflowLock(messageId);
         if (!lockAcquired) {
-          console.log('[WORKFLOW DUPLICATE BLOCKED]', { messageId, sender: senderPhone });
+          console.log('[DIAGNOSTIC] WORKFLOW LOCK FAILED - STEP 30 ERROR', { messageId, sender: senderPhone });
           return;
         }
+
+        console.log('[DIAGNOSTIC] WORKFLOW LOCK ACQUIRED - STEP 30');
 
         // Vérifier si l'agent est activé (toggle /api/console/power)
+        console.log('[DIAGNOSTIC] CHECKING AGENT ENABLED - STEP 31');
         if (!agentEnabled) {
-          console.log('[AGENT DISABLED] Skipping message', { messageId });
+          console.log('[DIAGNOSTIC] AGENT DISABLED - STEP 31 ERROR', { messageId });
           return;
         }
 
+        console.log('[DIAGNOSTIC] AGENT ENABLED - STEP 31');
+        console.log('[DIAGNOSTIC] CALLING ORCHESTRATE - STEP 32');
+        
         // L'orchestrateur gère : contexte + intent + décision + persistance + score
         const reply = await orchestrate(senderPhone, messageText, tenant_id);
 
         if (!reply) {
-          console.log('[ORCHESTRATOR] No reply generated — skipping send');
+          console.log('[DIAGNOSTIC] ORCHESTRATOR NO REPLY - STEP 32 ERROR');
           return;
         }
 
-        console.log('[ORCHESTRATOR REPLY]', reply.slice(0, 80));
+        console.log('[DIAGNOSTIC] ORCHESTRATOR REPLY RECEIVED - STEP 32', reply.slice(0, 80));
+        console.log('[DIAGNOSTIC] SENDING WHATSAPP MESSAGE - STEP 33');
 
         // Envoi WhatsApp
         await sendWhatsAppMessage(senderPhone, reply, tenant_id);
 
-        console.log('[ORCHESTRATOR SEND OK]', { messageId });
+        console.log('[DIAGNOSTIC] WHATSAPP MESSAGE SENT - STEP 33', { messageId });
 
       } catch (orchError) {
-        incError();
-        console.error('[ORCHESTRATOR ERROR]', {
+        console.log('[DIAGNOSTIC] ORCHESTRATOR ERROR - STEP 32 ERROR', {
           messageId,
           sender: senderPhone,
           error: orchError.message,
           stack: orchError.stack
         });
+        incError();
       } finally {
         // LIBÉRATION GARANTIE DU LOCK - finally exécuté même en cas d'erreur
+        console.log('[DIAGNOSTIC] RELEASING WORKFLOW LOCK - STEP 34');
         if (lockAcquired) {
           await releaseWorkflowLock(messageId, lockAcquired);
+          console.log('[DIAGNOSTIC] WORKFLOW LOCK RELEASED - STEP 34');
+        } else {
+          console.log('[DIAGNOSTIC] NO LOCK TO RELEASE - STEP 34');
         }
       }
     } else {
-      console.log('[PIPELINE BLOCKED]', { 
+      console.log('[DIAGNOSTIC] PIPELINE BLOCKED - STEP 28 ERROR', { 
         messageId,
         reason: !messageType ? 'no_type' : 
                 messageType !== 'text' ? 'not_text' : 
-                !messageText.trim() ? 'empty_text' : 'unknown'
+                !messageText.trim() ? 'empty_text' : 'unknown',
+        messageType,
+        hasText: !!messageText
       });
       return;
     }
