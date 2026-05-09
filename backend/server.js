@@ -807,6 +807,9 @@ try {
   console.log('[OUTBOUND SCHEDULER] Failed to start scheduler:', error.message);
 }
 
+// ─── Prospecting routes ───────────────────────────────────────────────────────
+app.use('/api/prospecting', require('./routes/prospecting.routes'));
+
 // Helper functions for environment validation
 function getPersistenceMode() {
   return process.env.MONGODB_URI ? 'mongodb' : 'memory';
