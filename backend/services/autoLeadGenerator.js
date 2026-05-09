@@ -3,6 +3,7 @@
 const { getLeadsByTenant } = require('./tenantIsolationSafe');
 const BusinessLogger = require('./businessLogger');
 const { trackLeadCreated } = require('./eventTracker');
+const { getUserPlan, getPlanFeatures } = require('./stripeService');
 
 // Générateur de leads automatique (SAFE)
 class AutoLeadGenerator {
@@ -63,6 +64,22 @@ class AutoLeadGenerator {
       // Déduplication
       const deduplication = this.deduplicateLeads(tenant_id, leads);
       
+      // SAFE: Plan limit check (ADDITIVE ONLY)
+      const currentLeads = await this.getCurrentLeadCount(tenant_id);
+      const user = await this.getTenantUser(tenant_id);
+      const plan = getUserPlan(user) || "starter";
+      const features = getPlanFeatures(plan);
+      
+      if (currentLeads >= features.maxLeads) {
+        console.warn('[LEAD LIMIT REACHED]', { plan });
+        return {
+          success: false,
+          reason: 'plan_limit_reached',
+          currentLeads,
+          maxLeads: features.maxLeads
+        };
+      }
+
       // Insérer via endpoint existant (simulation)
       const insertion = await this.insertLeadsViaEndpoint(tenant_id, deduplication.uniqueLeads);
       

@@ -1,0 +1,28 @@
+{
+  "object": "whatsapp_business_account",
+  "entry": [
+    {
+      "id": "test",
+      "changes": [
+        {
+          "value": {
+            "messaging_product": "whatsapp",
+            "metadata": {
+              "phone_number_id": "123456"
+            },
+            "messages": [
+              {
+                "id": "msg_test_123",
+                "from": "33612345678",
+                "type": "text",
+                "text": {
+                  "body": "test message"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

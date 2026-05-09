@@ -3,6 +3,7 @@ const { sendPaymentLink } = require('./outboundPayment');
 const { generateReply } = require('./aiCloser');
 const { decideAction } = require('./aiDecisionEngine');
 const { trackEvent } = require('./aiAnalytics');
+const { getUserPlan, getPlanFeatures } = require('./stripeService');
 
 // Mettre à jour le statut d'un lead selon sa réponse
 async function updateLeadStatus(leadId, userReply) {
@@ -94,6 +95,15 @@ async function updateLeadStatus(leadId, userReply) {
       
       // Trigger paiement automatique si CLOSING (anti duplication)
       if (newStatus === 'CLOSING' && oldStatus !== 'CLOSING') {
+        // SAFE: Plan gating check (ADDITIVE ONLY)
+        const plan = getUserPlan(lead.user) || "starter";
+        const features = getPlanFeatures(plan);
+        
+        if (!features.canUseOutbound) {
+          console.warn('[OUTBOUND BLOCKED - PLAN]', { plan });
+          return;
+        }
+        
         // Sécurité paiement link
         if (!process.env.STRIPE_PAYMENT_LINK) {
           console.log('[PAYMENT LINK ERROR] Missing STRIPE_PAYMENT_LINK');

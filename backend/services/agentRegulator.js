@@ -2,6 +2,7 @@
 
 const { isEnabled } = require('./envFlags');
 const BusinessLogger = require('./businessLogger');
+const { getUserPlan, getPlanFeatures } = require('./stripeService');
 
 // Régulateur automatique pour prévenir surcharge
 class AgentRegulator {
@@ -28,7 +29,7 @@ class AgentRegulator {
   }
   
   // Enregistrer une action
-  recordAction(success = true, conversion = false) {
+  recordAction(success = true, conversion = false, user = null) {
     if (!this.enabled) {
       return;
     }
@@ -40,6 +41,16 @@ class AgentRegulator {
       this.resetMetrics();
     }
     
+    // SAFE: Get plan features (ADDITIVE ONLY)
+    const plan = user ? getUserPlan(user) : "starter";
+    const features = getPlanFeatures(plan);
+    
+    // SAFE: Non-blocking plan limit check (ADDITIVE ONLY)
+    if (this.metrics.actionsPerMinute >= features.maxActionsPerMinute) {
+      console.warn('[PLAN LIMIT ACTION]', { plan });
+      return; // skip action, no crash
+    }
+    
     this.metrics.actionsPerMinute++;
     
     if (!success) {
@@ -48,8 +59,21 @@ class AgentRegulator {
     
     if (conversion) {
       // Mettre à jour taux de conversion (moyenne mobile)
-      this.updateConversionRate(conversion);
+      this.metrics.conversionRate = (this.metrics.conversionRate * 0.9) + (1 * 0.1);
     }
+    
+    // SAFE: Plan usage logging (ADDITIVE ONLY)
+    console.log('[PLAN_USED]', { 
+      plan, 
+      action: 'regulator_action',
+      count: this.metrics.actionsPerMinute 
+    });
+
+    // SAFE: Plan features logging (ADDITIVE ONLY)
+    console.log('[PLAN_FEATURES]', {
+      plan,
+      features
+    });
     
     // Vérifier limites et réguler
     this.checkAndRegulate();

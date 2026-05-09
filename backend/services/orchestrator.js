@@ -34,14 +34,15 @@ function getOpenAI() {
 // ─── ÉTAT PARTAGÉ ─────────────────────────────────────────────────────────────
 
 const OrchestratorState = Annotation.Root({
-  phone:      Annotation({ reducer: (_, y) => y ?? _, default: () => null }),
-  tenant_id:  Annotation({ reducer: (_, y) => y ?? _, default: () => null }),
-  message:    Annotation({ reducer: (_, y) => y ?? _, default: () => null }),
-  intent:     Annotation({ reducer: (_, y) => y ?? _, default: () => null }),
-  context:    Annotation({ reducer: (_, y) => y ?? _, default: () => null }),
-  toolName:   Annotation({ reducer: (_, y) => y ?? _, default: () => null }),
-  toolArgs:   Annotation({ reducer: (_, y) => y ?? _, default: () => null }),
-  reply:      Annotation({ reducer: (_, y) => y ?? _, default: () => null }),
+  phone:         Annotation({ reducer: (_, y) => y ?? _, default: () => null }),
+  tenant_id:     Annotation({ reducer: (_, y) => y ?? _, default: () => null }),
+  message:       Annotation({ reducer: (_, y) => y ?? _, default: () => null }),
+  intent:        Annotation({ reducer: (_, y) => y ?? _, default: () => null }),
+  context:       Annotation({ reducer: (_, y) => y ?? _, default: () => null }),
+  toolName:      Annotation({ reducer: (_, y) => y ?? _, default: () => null }),
+  toolArgs:      Annotation({ reducer: (_, y) => y ?? _, default: () => null }),
+  reply:         Annotation({ reducer: (_, y) => y ?? _, default: () => null }),
+  whatsapp_sent: Annotation({ reducer: (_, y) => y ?? _, default: () => false }),
 });
 
 // ─── OUTILS AGENT GPT-4 ───────────────────────────────────────────────────────
@@ -397,14 +398,26 @@ async function nodePersistState(state) {
 
 async function nodeSendWhatsApp(state) {
   const { phone, reply, tenant_id } = state;
+  
+  // PROTECTION ANTI-DOUBLE - Un seul envoi WhatsApp autorisé par workflow
+  if (state.whatsapp_sent) {
+    console.log('[ORCHESTRATOR] WhatsApp already sent, skipping');
+    return state;
+  }
+  
   if (reply) {
     try {
       await sendWhatsAppMessage(phone, reply, tenant_id);
+      
+      // Marquer l'envoi comme effectué UNIQUEMENT après succès réel
+      state.whatsapp_sent = true;
+      console.log('[ORCHESTRATOR] WhatsApp sent successfully', { phone, replyLength: reply.length });
     } catch (err) {
       console.error('[ORCHESTRATOR] send_whatsapp error:', err.message);
+      // Flag reste à false - permet les retries légitimes
     }
   }
-  return {};
+  return state;
 }
 
 // ─── CONSTRUCTION DU GRAPH ────────────────────────────────────────────────────

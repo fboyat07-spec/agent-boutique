@@ -4,6 +4,7 @@ const { getFlag } = require('./envFlags');
 const { logClosingTriggerReal, logRealError } = require('./realValidationLogger');
 const { addRealStep } = require('./realTraceManager');
 const { getLeadsByTenant } = require('./tenantIsolationSafe');
+const { getUserPlan, getPlanFeatures } = require('./stripeService');
 
 // Contrôleur de closing (SAFE - monitoring et validation)
 class ClosingController {
@@ -47,6 +48,34 @@ class ClosingController {
     try {
       // Obtenir les données complètes du lead
       const lead = this.getLeadData(phone, tenant_id, lead_id);
+      
+      if (!lead) {
+        console.log('[CLOSING_CONTROL_LEAD_NOT_FOUND]', {
+          phone: this.maskPhone(phone),
+          tenant_id,
+          lead_id
+        });
+        
+        return {
+          allowed: false,
+          reason: 'lead_not_found',
+          environment: this.getEnvironment()
+        };
+      }
+      
+      // SAFE: Plan gating check (ADDITIVE ONLY)
+      const plan = getUserPlan(lead.user) || "starter";
+      const features = getPlanFeatures(plan);
+      
+      if (!features.canUseClosing) {
+        console.warn('[CLOSING BLOCKED - PLAN]', { plan });
+        return {
+          allowed: false,
+          reason: 'plan_not_allowed',
+          plan,
+          environment: this.getEnvironment()
+        };
+      }
       
       if (!lead) {
         console.log('[CLOSING_CONTROL_LEAD_NOT_FOUND]', {

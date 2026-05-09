@@ -3,6 +3,7 @@ const router = express.Router();
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const User = require('../models/User');
 const SaaSTenant = require('../models/SaaSTenant');
+const { getPlanFromPriceId } = require('../services/stripeService');
 
 // Create Stripe checkout session
 router.post('/create-checkout-session', async (req, res) => {
@@ -94,6 +95,14 @@ router.post('/webhook/stripe', express.raw({ type: 'application/json' }), async 
         metadata: session.metadata
       });
       
+      // SAFE: Extract price ID from session
+      const priceId = session?.items?.data?.[0]?.price?.id
+        || session?.display_items?.[0]?.price?.id
+        || null;
+      
+      // SAFE: Map price ID to plan
+      const plan = getPlanFromPriceId(priceId);
+      
       // Update user subscription
       const user = await User.findOne({ 
         user_id: session.metadata.user_id,
@@ -109,6 +118,10 @@ router.post('/webhook/stripe', express.raw({ type: 'application/json' }), async 
         
         user.subscription_status = 'active';
         user.stripe_customer_id = session.customer;
+        
+        // SAFE: Store plan (ADDITIVE ONLY)
+        user.plan = plan || "starter";
+        
         await user.save();
         
         console.log('[STRIPE ACTIVATED]', {
@@ -116,6 +129,12 @@ router.post('/webhook/stripe', express.raw({ type: 'application/json' }), async 
           tenant_id: user.tenant_id,
           stripe_customer_id: session.customer,
           subscription_id: session.subscription
+        });
+        
+        console.log('[PLAN_ASSIGNED]', { 
+          userId: user.user_id, 
+          plan: user.plan,
+          priceId: priceId
         });
       } else {
         console.log('[STRIPE WEBHOOK] User NOT FOUND for activation', {
@@ -128,7 +147,8 @@ router.post('/webhook/stripe', express.raw({ type: 'application/json' }), async 
         { tenant_id: session.metadata.tenant_id },
         { 
           subscription_status: 'active',
-          stripe_subscription_id: session.subscription 
+          stripe_subscription_id: session.subscription,
+          plan: plan || "starter" // SAFE: Store plan in tenant
         }
       );
 

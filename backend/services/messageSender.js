@@ -53,7 +53,13 @@ async function sendWhatsAppMessage(to, message, tenant_id = null) {
       }
     };
     
-    console.log('[SENDING MESSAGE]', { to, message });
+    console.log('[WHATSAPP_SEND_CALL]', {
+      to,
+      message: message.substring(0, 50) + '...',
+      tenant_id,
+      stack: new Error().stack.split('\n').slice(1, 4),
+      timestamp: Date.now()
+    });
     
     const response = await axios.post(apiUrl, payload, {
       headers: {
@@ -63,9 +69,12 @@ async function sendWhatsAppMessage(to, message, tenant_id = null) {
       timeout: 10000
     });
     
-    console.log('[MESSAGE SENT SUCCESS]', {
+    console.log('[WHATSAPP_SEND_SUCCESS]', {
+      to,
       messageId: response.data?.messages?.[0]?.id,
-      status: response.status
+      tenant_id,
+      status: response.status,
+      timestamp: Date.now()
     });
     
     return response.data;

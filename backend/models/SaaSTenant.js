@@ -35,6 +35,8 @@ const SaaSTenantSchema = new mongoose.Schema({
     enum: ['trial', 'active', 'cancelled', 'past_due'], 
     default: 'trial' 
   },
+  trial_days: { type: Number, default: 7 },
+  plan: { type: String, default: 'starter' },
   stripe_subscription_id: { type: String, default: null },
   created_by: { type: String, required: true },
   created_at: { type: Date, default: Date.now },

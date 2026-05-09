@@ -1,0 +1,6 @@
+{
+  "tenant_id": "test_tenant",
+  "phone_number_id": "123456",
+  "whatsapp_token": "test_token",
+  "name": "Test Tenant"
+}
