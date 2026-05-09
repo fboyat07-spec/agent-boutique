@@ -854,7 +854,8 @@ try {
 app.use('/api/prospecting', require('./routes/prospecting.routes'));
 
 // ─── Console statique ─────────────────────────────────────────────────────────
-app.use('/console', express.static(path.join(__dirname, 'public')));
+// index: 'console.html' → /console et /console/ servent console.html directement
+app.use('/console', express.static(path.join(__dirname, 'public'), { index: 'console.html' }));
 
 // ─── /api/console/* ──────────────────────────────────────────────────────────
 const { computeROI } = require('./services/roiCalculator');
