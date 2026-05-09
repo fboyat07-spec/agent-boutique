@@ -1,7 +1,8 @@
 require('dotenv').config();
 
 const express = require('express');
-const cors = require('cors');
+const cors    = require('cors');
+const path    = require('path');
 const mongoose = require('mongoose');
 
 // Environment security check - allow local mode for development
@@ -810,12 +811,18 @@ try {
 // ─── Prospecting routes ───────────────────────────────────────────────────────
 app.use('/api/prospecting', require('./routes/prospecting.routes'));
 
+// ─── Console statique ─────────────────────────────────────────────────────────
+app.use('/console', express.static(path.join(__dirname, 'public')));
+
 // ─── Console ROI endpoint ─────────────────────────────────────────────────────
 {
   const { computeROI } = require('./services/roiCalculator');
   const _CONSOLE_TOKEN = process.env.CONSOLE_TOKEN || 'console_admin_2024';
   function _consoleAuth(req, res, next) {
-    const token = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+    // Accepte Bearer header OU query ?token= (pour EventSource qui ne supporte pas les headers)
+    const headerToken = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+    const queryToken  = req.query.token || '';
+    const token = headerToken || queryToken;
     if (token !== _CONSOLE_TOKEN) return res.status(401).json({ error: 'Unauthorized' });
     next();
   }

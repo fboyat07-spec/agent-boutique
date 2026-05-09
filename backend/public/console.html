@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agent Boutique — Console</title>
+  <style>
+    /* ── Reset & base ───────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #0d1117;
+      --surface:  #161b22;
+      --border:   #30363d;
+      --text:     #c9d1d9;
+      --muted:    #8b949e;
+      --green:    #3fb950;
+      --orange:   #f0883e;
+      --red:      #f85149;
+      --blue:     #58a6ff;
+      --purple:   #bc8cff;
+      --gold:     #d4a017;
+      --mono:     'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 14px;
+      padding: 24px;
+      min-height: 100vh;
+    }
+
+    h1 { font-size: 20px; font-weight: 600; letter-spacing: .5px; }
+    h2 { font-size: 13px; font-weight: 600; text-transform: uppercase;
+         letter-spacing: 1px; color: var(--muted); margin-bottom: 16px; }
+
+    .header {
+      display: flex; align-items: center; gap: 12px;
+      margin-bottom: 28px; border-bottom: 1px solid var(--border); padding-bottom: 16px;
+    }
+    .header-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+
+    /* ── Badge LIVE ──────────────────────────────────────────────────────── */
+    .live-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #1a2a1a; border: 1px solid #2d4a2d;
+      color: var(--green); border-radius: 20px;
+      padding: 4px 10px; font-size: 11px; font-weight: 700;
+      letter-spacing: .8px;
+    }
+    .live-badge .dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--green);
+    }
+    .live-badge.connected .dot { animation: pulse 1.4s ease-in-out infinite; }
+    .live-badge.disconnected { background: #2a1a1a; border-color: #4a2d2d; color: var(--red); }
+    .live-badge.disconnected .dot { background: var(--red); animation: none; }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: .4; transform: scale(.85); }
+    }
+
+    /* ── Card ────────────────────────────────────────────────────────────── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px 24px;
+      margin-bottom: 20px;
+    }
+    .card-header {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 20px;
+    }
+    .card-title { font-size: 15px; font-weight: 600; }
+    .card-badge {
+      margin-left: auto; font-size: 10px; font-weight: 700;
+      letter-spacing: .6px; color: var(--muted); border: 1px solid var(--border);
+      border-radius: 4px; padding: 2px 7px;
+    }
+
+    /* ── Stats généraux ──────────────────────────────────────────────────── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 14px;
+    }
+    .stat-box {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 16px;
+    }
+    .stat-value {
+      font-family: var(--mono);
+      font-size: 26px; font-weight: 700;
+      line-height: 1; margin-bottom: 6px;
+    }
+    .stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .7px; }
+
+    /* ── Section ROI ─────────────────────────────────────────────────────── */
+    .roi-top {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+    .roi-kpi {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 16px;
+      text-align: center;
+    }
+    .roi-kpi .kpi-value {
+      font-family: var(--mono);
+      font-size: 28px; font-weight: 700; line-height: 1;
+      margin-bottom: 6px;
+    }
+    .roi-kpi .kpi-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .7px; }
+
+    /* ── Barres plan ─────────────────────────────────────────────────────── */
+    .plan-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+    .plan-row { display: flex; align-items: center; gap: 10px; }
+    .plan-name {
+      width: 60px; font-size: 12px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: .6px;
+    }
+    .plan-name.starter { color: var(--blue); }
+    .plan-name.pro     { color: var(--purple); }
+    .plan-name.elite   { color: var(--gold); }
+
+    .plan-bar-track {
+      flex: 1; height: 8px; background: #21262d; border-radius: 4px; overflow: hidden;
+    }
+    .plan-bar-fill {
+      height: 100%; border-radius: 4px;
+      transition: width .6s ease;
+    }
+    .plan-bar-fill.starter { background: var(--blue); }
+    .plan-bar-fill.pro     { background: var(--purple); }
+    .plan-bar-fill.elite   { background: var(--gold); }
+
+    .plan-info {
+      width: 130px; font-family: var(--mono); font-size: 11px;
+      color: var(--muted); text-align: right;
+    }
+
+    /* ── ROI footer ──────────────────────────────────────────────────────── */
+    .roi-footer {
+      display: flex; justify-content: space-between; align-items: center;
+      border-top: 1px solid var(--border); padding-top: 14px; margin-top: 4px;
+    }
+    .roi-label { font-size: 12px; color: var(--muted); }
+    .roi-value {
+      font-family: var(--mono); font-size: 18px; font-weight: 700;
+    }
+    .roi-value.high   { color: var(--green); }
+    .roi-value.medium { color: var(--orange); }
+    .roi-value.low    { color: var(--red); }
+    .roi-value.none   { color: var(--muted); }
+
+    .since-text { font-size: 12px; color: var(--muted); }
+
+    /* ── Agent control ───────────────────────────────────────────────────── */
+    .control-row { display: flex; align-items: center; gap: 12px; }
+    .btn {
+      padding: 7px 16px; border-radius: 6px; border: 1px solid var(--border);
+      cursor: pointer; font-size: 13px; font-weight: 600; transition: .15s;
+      background: var(--surface); color: var(--text);
+    }
+    .btn:hover { border-color: var(--blue); color: var(--blue); }
+    .btn.danger:hover { border-color: var(--red); color: var(--red); }
+    .status-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;
+    }
+    .status-pill.running { background: #1a2d1a; border: 1px solid #2d4a2d; color: var(--green); }
+    .status-pill.stopped { background: #2d1a1a; border: 1px solid #4a2d2d; color: var(--red); }
+
+    /* ── Auth overlay ────────────────────────────────────────────────────── */
+    #auth-overlay {
+      position: fixed; inset: 0; background: var(--bg);
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;
+      z-index: 99;
+    }
+    #auth-overlay input {
+      background: var(--surface); border: 1px solid var(--border); color: var(--text);
+      padding: 10px 16px; border-radius: 8px; font-size: 14px; width: 280px;
+      outline: none;
+    }
+    #auth-overlay input:focus { border-color: var(--blue); }
+    #auth-overlay .btn { width: 280px; text-align: center; }
+    #auth-error { color: var(--red); font-size: 13px; }
+  </style>
+</head>
+<body>
+
+<!-- ── Auth overlay ───────────────────────────────────────────────────────── -->
+<div id="auth-overlay">
+  <div style="font-size:22px;font-weight:700;margin-bottom:8px;">🤖 Agent Boutique Console</div>
+  <div style="color:var(--muted);margin-bottom:8px;">Entrez votre token d'accès</div>
+  <input id="token-input" type="password" placeholder="console_admin_2024" autocomplete="off" />
+  <div id="auth-error" style="display:none">Token incorrect ou serveur inaccessible</div>
+  <button class="btn" onclick="doLogin()">Connexion →</button>
+</div>
+
+<!-- ── Console principale ─────────────────────────────────────────────────── -->
+<div id="app" style="display:none">
+
+  <div class="header">
+    <div>
+      <h1>🤖 Agent Boutique</h1>
+      <div style="color:var(--muted);font-size:12px;margin-top:3px">Console de contrôle</div>
+    </div>
+    <div class="header-right">
+      <span id="live-badge" class="live-badge disconnected">
+        <span class="dot"></span> SSE
+      </span>
+      <button class="btn danger" onclick="doLogout()">Déconnexion</button>
+    </div>
+  </div>
+
+  <!-- ── Stats généraux ─────────────────────────────────────────────────── -->
+  <div class="card">
+    <div class="card-header">
+      <span>📊</span>
+      <span class="card-title">Statistiques générales</span>
+      <span class="card-badge" id="uptime-badge">↑ 0s</span>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-box">
+        <div class="stat-value" id="s-messages">—</div>
+        <div class="stat-label">Messages aujourd'hui</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-value" id="s-conversations">—</div>
+        <div class="stat-label">Conversations actives</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-value" id="s-closings">—</div>
+        <div class="stat-label">Closings aujourd'hui</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-value" id="s-errors">—</div>
+        <div class="stat-label">Erreurs aujourd'hui</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Contrôle agent ──────────────────────────────────────────────────── -->
+  <div class="card">
+    <div class="card-header">
+      <span>⚡</span>
+      <span class="card-title">Contrôle agent</span>
+    </div>
+    <div class="control-row">
+      <span id="agent-status" class="status-pill stopped">● INCONNU</span>
+      <button class="btn" onclick="powerAgent('start')">▶ Démarrer</button>
+      <button class="btn danger" onclick="powerAgent('stop')">⏹ Arrêter</button>
+    </div>
+  </div>
+
+  <!-- ────────────────────────────────────────────────────────────────────── -->
+  <!-- ── BLOC ROI ────────────────────────────────────────────────────────── -->
+  <!-- ────────────────────────────────────────────────────────────────────── -->
+  <div class="card" id="roi-card">
+    <div class="card-header">
+      <span>💰</span>
+      <span class="card-title">Revenus générés</span>
+      <span class="card-badge" id="roi-live-badge">🔄 live</span>
+    </div>
+
+    <!-- KPIs principaux -->
+    <div class="roi-top">
+      <div class="roi-kpi">
+        <div class="kpi-value" id="roi-revenue" style="color:var(--green)">0 €</div>
+        <div class="kpi-label">CA total</div>
+      </div>
+      <div class="roi-kpi">
+        <div class="kpi-value" id="roi-rate" style="color:var(--blue)">0 %</div>
+        <div class="kpi-label">Taux conv.</div>
+      </div>
+      <div class="roi-kpi">
+        <div class="kpi-value" id="roi-converted" style="color:var(--purple)">0</div>
+        <div class="kpi-label">Ventes</div>
+      </div>
+    </div>
+
+    <!-- Barres par plan -->
+    <div class="plan-list">
+      <div class="plan-row">
+        <span class="plan-name starter">Starter</span>
+        <div class="plan-bar-track"><div class="plan-bar-fill starter" id="bar-starter" style="width:0%"></div></div>
+        <span class="plan-info" id="info-starter">0 ventes · 0 €</span>
+      </div>
+      <div class="plan-row">
+        <span class="plan-name pro">Pro</span>
+        <div class="plan-bar-track"><div class="plan-bar-fill pro" id="bar-pro" style="width:0%"></div></div>
+        <span class="plan-info" id="info-pro">0 ventes · 0 €</span>
+      </div>
+      <div class="plan-row">
+        <span class="plan-name elite">Elite</span>
+        <div class="plan-bar-track"><div class="plan-bar-fill elite" id="bar-elite" style="width:0%"></div></div>
+        <span class="plan-info" id="info-elite">0 ventes · 0 €</span>
+      </div>
+    </div>
+
+    <!-- Footer ROI + date -->
+    <div class="roi-footer">
+      <div>
+        <div class="roi-label">ROI estimé client</div>
+        <div class="since-text" id="roi-since">Depuis le —</div>
+      </div>
+      <div class="roi-value none" id="roi-pct">—</div>
+    </div>
+  </div>
+  <!-- ── FIN BLOC ROI ────────────────────────────────────────────────────── -->
+
+  <!-- ── Logs SSE ────────────────────────────────────────────────────────── -->
+  <div class="card">
+    <div class="card-header">
+      <span>📋</span>
+      <span class="card-title">Logs temps réel</span>
+    </div>
+    <div id="log-area" style="
+      font-family:var(--mono); font-size:12px; line-height:1.7;
+      background:var(--bg); border:1px solid var(--border); border-radius:6px;
+      padding:12px 14px; height:220px; overflow-y:auto; color:var(--text);
+    ">
+      <div style="color:var(--muted)">En attente de connexion SSE…</div>
+    </div>
+  </div>
+
+</div><!-- /#app -->
+
+<script>
+/* ── Config ──────────────────────────────────────────────────────────────── */
+const BASE = window.location.origin;
+let TOKEN  = localStorage.getItem('console_token') || '';
+let sseSource = null;
+let roiTimer  = null;
+
+/* ── Helpers ─────────────────────────────────────────────────────────────── */
+const eur = v => (v || 0).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
+const pct = v => v != null ? `${v.toFixed(2)} %` : '— %';
+const el  = id => document.getElementById(id);
+
+function apiFetch(path, opts = {}) {
+  return fetch(BASE + path, {
+    ...opts,
+    headers: { 'Authorization': `Bearer ${TOKEN}`, 'Content-Type': 'application/json', ...(opts.headers || {}) }
+  });
+}
+
+/* ── Auth ────────────────────────────────────────────────────────────────── */
+async function doLogin() {
+  const input = el('token-input').value.trim();
+  if (!input) return;
+  TOKEN = input;
+  const res = await apiFetch('/api/console/stats').catch(() => null);
+  if (res && res.ok) {
+    localStorage.setItem('console_token', TOKEN);
+    el('auth-overlay').style.display = 'none';
+    el('app').style.display = 'block';
+    boot();
+  } else {
+    el('auth-error').style.display = 'block';
+  }
+}
+
+function doLogout() {
+  localStorage.removeItem('console_token');
+  location.reload();
+}
+
+el('token-input').addEventListener('keydown', e => e.key === 'Enter' && doLogin());
+
+/* ── Stats généraux ──────────────────────────────────────────────────────── */
+async function loadStats() {
+  const res = await apiFetch('/api/console/stats').catch(() => null);
+  if (!res || !res.ok) return;
+  const d = await res.json();
+  el('s-messages').textContent     = d.messages_today ?? '—';
+  el('s-conversations').textContent = d.active_conversations ?? '—';
+  el('s-closings').textContent     = d.closings_today ?? '—';
+  el('s-errors').textContent       = d.errors_today ?? '—';
+  el('uptime-badge').textContent   = `↑ ${fmtUptime(d.uptime)}`;
+  const pill = el('agent-status');
+  pill.className = `status-pill ${d.agent_status === 'running' ? 'running' : 'stopped'}`;
+  pill.textContent = `● ${(d.agent_status || 'inconnu').toUpperCase()}`;
+}
+
+function fmtUptime(s) {
+  if (!s) return '0s';
+  if (s < 60) return `${s}s`;
+  if (s < 3600) return `${Math.floor(s/60)}m`;
+  return `${Math.floor(s/3600)}h${Math.floor((s%3600)/60)}m`;
+}
+
+/* ── Contrôle agent ──────────────────────────────────────────────────────── */
+async function powerAgent(action) {
+  const res = await apiFetch('/api/console/power', { method: 'POST', body: JSON.stringify({ action }) }).catch(() => null);
+  if (!res || !res.ok) return;
+  const d = await res.json();
+  const pill = el('agent-status');
+  pill.className = `status-pill ${d.status === 'running' ? 'running' : 'stopped'}`;
+  pill.textContent = `● ${(d.status || '?').toUpperCase()}`;
+}
+
+/* ── ROI ─────────────────────────────────────────────────────────────────── */
+async function loadROI() {
+  const res = await apiFetch('/api/console/roi').catch(() => null);
+  if (!res || !res.ok) return;
+  const d = await res.json();
+  renderROI(d);
+}
+
+function renderROI(d) {
+  /* KPIs */
+  el('roi-revenue').textContent   = eur(d.totalRevenue);
+  el('roi-rate').textContent      = `${d.conversionRate ?? 0} %`;
+  el('roi-converted').textContent = d.totalConverted ?? 0;
+
+  /* Barres par plan */
+  const total = d.totalRevenue || 1; // évite division par 0
+  const plans = d.revenueByPlan || {};
+  for (const key of ['starter', 'pro', 'elite']) {
+    const p = plans[key] || { count: 0, revenue: 0 };
+    const w = Math.min(100, (p.revenue / total) * 100);
+    el(`bar-${key}`).style.width = `${w}%`;
+    el(`info-${key}`).textContent = `${p.count} vente${p.count !== 1 ? 's' : ''} · ${eur(p.revenue)}`;
+  }
+
+  /* ROI estimé */
+  const roiEl = el('roi-pct');
+  if (d.estimatedROI == null) {
+    roiEl.textContent = '— %';
+    roiEl.className   = 'roi-value none';
+  } else {
+    roiEl.textContent = `${d.estimatedROI} %`;
+    roiEl.className   = 'roi-value ' + (d.estimatedROI >= 200 ? 'high' : d.estimatedROI >= 100 ? 'medium' : 'low');
+  }
+
+  /* Depuis le */
+  if (d.since) {
+    const date = new Date(d.since).toLocaleDateString('fr-FR');
+    el('roi-since').textContent = `Depuis le ${date}`;
+  } else {
+    el('roi-since').textContent = 'Depuis le —';
+  }
+}
+
+/* ── SSE Logs ────────────────────────────────────────────────────────────── */
+function connectSSE() {
+  if (sseSource) sseSource.close();
+
+  // EventSource ne permet pas les headers custom → on encode le token en query
+  sseSource = new EventSource(`${BASE}/api/console/logs?token=${encodeURIComponent(TOKEN)}`);
+  const badge = el('live-badge');
+
+  sseSource.onopen = () => {
+    badge.className = 'live-badge connected';
+    badge.innerHTML = '<span class="dot"></span> LIVE';
+    el('roi-live-badge').textContent = '🟢 live';
+  };
+
+  sseSource.onerror = () => {
+    badge.className = 'live-badge disconnected';
+    badge.innerHTML = '<span class="dot"></span> SSE OFF';
+    el('roi-live-badge').textContent = '🔄 live';
+    // Reconnexion automatique dans 5s
+    setTimeout(connectSSE, 5000);
+  };
+
+  sseSource.onmessage = (e) => {
+    try {
+      const data = JSON.parse(e.data);
+
+      // Mise à jour ROI instantanée sur event 'conversion'
+      if (data.type === 'conversion') {
+        loadROI();
+        return;
+      }
+
+      // Log dans la fenêtre
+      const msg  = data.message || e.data;
+      const time = data.time ? new Date(data.time).toLocaleTimeString('fr-FR') : '';
+      const div  = document.createElement('div');
+      div.style.borderBottom = '1px solid #21262d';
+      div.style.paddingBottom = '2px';
+      div.innerHTML = `<span style="color:var(--muted)">${time} </span>${escHtml(msg)}`;
+      const log = el('log-area');
+      // Retirer le placeholder si présent
+      if (log.firstChild?.style?.color === 'var(--muted)' && log.children.length === 1) log.innerHTML = '';
+      log.appendChild(div);
+      log.scrollTop = log.scrollHeight;
+      // Garder max 200 lignes
+      while (log.children.length > 200) log.removeChild(log.firstChild);
+    } catch { /* ignore */ }
+  };
+}
+
+function escHtml(s) {
+  return String(s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+/* ── Boot ────────────────────────────────────────────────────────────────── */
+function boot() {
+  loadStats();
+  loadROI();
+  connectSSE();
+  setInterval(loadStats, 15000);
+  roiTimer = setInterval(loadROI, 30000);
+}
+
+/* ── Auto-login si token stocké ─────────────────────────────────────────── */
+(async function init() {
+  if (!TOKEN) return;
+  const res = await apiFetch('/api/console/stats').catch(() => null);
+  if (res && res.ok) {
+    el('auth-overlay').style.display = 'none';
+    el('app').style.display = 'block';
+    boot();
+  } else {
+    TOKEN = '';
+    localStorage.removeItem('console_token');
+  }
+})();
+</script>
+</body>
+</html>
