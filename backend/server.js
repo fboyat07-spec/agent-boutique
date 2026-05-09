@@ -810,6 +810,26 @@ try {
 // ─── Prospecting routes ───────────────────────────────────────────────────────
 app.use('/api/prospecting', require('./routes/prospecting.routes'));
 
+// ─── Console ROI endpoint ─────────────────────────────────────────────────────
+{
+  const { computeROI } = require('./services/roiCalculator');
+  const _CONSOLE_TOKEN = process.env.CONSOLE_TOKEN || 'console_admin_2024';
+  function _consoleAuth(req, res, next) {
+    const token = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+    if (token !== _CONSOLE_TOKEN) return res.status(401).json({ error: 'Unauthorized' });
+    next();
+  }
+  app.get('/api/console/roi', _consoleAuth, async (req, res) => {
+    try {
+      const roi = await computeROI();
+      res.json({ ok: true, ...roi });
+    } catch (err) {
+      console.error('[ROI] Erreur calcul:', err.message);
+      res.status(500).json({ error: err.message });
+    }
+  });
+}
+
 // Helper functions for environment validation
 function getPersistenceMode() {
   return process.env.MONGODB_URI ? 'mongodb' : 'memory';

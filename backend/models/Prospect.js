@@ -17,6 +17,9 @@ const ProspectSchema = new mongoose.Schema({
     index: true
   },
   whatsappSent: { type: Boolean, default: false },
+  plan:         { type: String, enum: ['starter', 'pro', 'elite', null], default: null },
+  convertedAt:  { type: Date,   default: null },
+  revenue:      { type: Number, default: 0 },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Prospect', ProspectSchema);
