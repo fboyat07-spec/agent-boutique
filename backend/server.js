@@ -282,6 +282,41 @@ const isProduction = process.env.NODE_ENV === 'production';
 const ProcessedMessage = require('./models/ProcessedMessage');
 const Conversation = require('./models/Conversation');
 const User = require('./models/User');
+const AgentInstruction = require('./models/AgentInstruction');
+
+// ─── Console API — state & helpers ───────────────────────────────────────────
+let agentEnabled = true;
+const CONSOLE_TOKEN = process.env.CONSOLE_TOKEN || 'console_admin_2024';
+if (!global._consoleSseClients) global._consoleSseClients = new Set();
+
+// Error counter (auto-reset chaque jour)
+if (!global._errorsToday) global._errorsToday = { date: new Date().toDateString(), count: 0 };
+function getErrorsToday() {
+  const today = new Date().toDateString();
+  if (global._errorsToday.date !== today) global._errorsToday = { date: today, count: 0 };
+  return global._errorsToday.count;
+}
+function incError() {
+  const today = new Date().toDateString();
+  if (global._errorsToday.date !== today) global._errorsToday = { date: today, count: 0 };
+  global._errorsToday.count++;
+}
+
+// Monkey-patch console.log/error → SSE broadcast (idempotent)
+if (!console._patched) {
+  const _origLog = console.log.bind(console);
+  const _origErr = console.error.bind(console);
+  function _sseLog(args) {
+    const message = args.map(a => (typeof a === 'object' ? JSON.stringify(a) : String(a))).join(' ');
+    const payload = JSON.stringify({ time: new Date().toISOString(), message });
+    for (const client of global._consoleSseClients) {
+      try { client.write(`data: ${payload}\n\n`); } catch (_) {}
+    }
+  }
+  console.log   = (...args) => { _origLog(...args); _sseLog(args); };
+  console.error = (...args) => { _origErr(...args); _sseLog(args); };
+  console._patched = true;
+}
 
 // Follow-up processor
 async function processFollowUps() {
@@ -684,6 +719,12 @@ async function processSingleMessage(message, tenant_id) {
 
       console.log('[ORCHESTRATOR TRIGGERED]', { messageId, sender: senderPhone });
 
+      // Vérifier si l'agent est activé (toggle /api/console/power)
+      if (!agentEnabled) {
+        console.log('[AGENT DISABLED] Skipping message', { messageId });
+        return;
+      }
+
       try {
         // L'orchestrateur gère : contexte + intent + décision + persistance + score
         const reply = await orchestrate(senderPhone, messageText, tenant_id);
@@ -701,6 +742,7 @@ async function processSingleMessage(message, tenant_id) {
         console.log('[ORCHESTRATOR SEND OK]', { messageId });
 
       } catch (orchError) {
+        incError();
         console.error('[ORCHESTRATOR ERROR]', {
           messageId,
           sender: senderPhone,
@@ -814,28 +856,104 @@ app.use('/api/prospecting', require('./routes/prospecting.routes'));
 // ─── Console statique ─────────────────────────────────────────────────────────
 app.use('/console', express.static(path.join(__dirname, 'public')));
 
-// ─── Console ROI endpoint ─────────────────────────────────────────────────────
-{
-  const { computeROI } = require('./services/roiCalculator');
-  const _CONSOLE_TOKEN = process.env.CONSOLE_TOKEN || 'console_admin_2024';
-  function _consoleAuth(req, res, next) {
-    // Accepte Bearer header OU query ?token= (pour EventSource qui ne supporte pas les headers)
-    const headerToken = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
-    const queryToken  = req.query.token || '';
-    const token = headerToken || queryToken;
-    if (token !== _CONSOLE_TOKEN) return res.status(401).json({ error: 'Unauthorized' });
-    next();
-  }
-  app.get('/api/console/roi', _consoleAuth, async (req, res) => {
-    try {
-      const roi = await computeROI();
-      res.json({ ok: true, ...roi });
-    } catch (err) {
-      console.error('[ROI] Erreur calcul:', err.message);
-      res.status(500).json({ error: err.message });
-    }
-  });
+// ─── /api/console/* ──────────────────────────────────────────────────────────
+const { computeROI } = require('./services/roiCalculator');
+
+function consoleAuth(req, res, next) {
+  // Accepte Bearer header OU ?token= (EventSource ne supporte pas les headers)
+  const headerToken = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+  const queryToken  = req.query.token || '';
+  const token = headerToken || queryToken;
+  if (token !== CONSOLE_TOKEN) return res.status(401).json({ error: 'Unauthorized' });
+  next();
 }
+
+app.get('/api/console/stats', consoleAuth, async (req, res) => {
+  try {
+    const startOfDay = new Date(); startOfDay.setHours(0, 0, 0, 0);
+    const [messages_today, active_conversations, closings_today] = await Promise.all([
+      ProcessedMessage.countDocuments({ createdAt: { $gte: startOfDay } }),
+      Conversation.countDocuments({ stage: { $nin: ['won', 'lost'] } }),
+      Conversation.countDocuments({ stage: 'won', updatedAt: { $gte: startOfDay } }),
+    ]);
+    res.json({
+      messages_today,
+      active_conversations,
+      closings_today,
+      errors_today:   getErrorsToday(),
+      uptime:         Math.round(process.uptime()),
+      agent_status:   agentEnabled ? 'running' : 'stopped',
+    });
+  } catch (err) {
+    console.error('[CONSOLE STATS ERROR]', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/console/conversations', consoleAuth, async (req, res) => {
+  try {
+    const convos = await Conversation
+      .find({}, 'phone stage score lastInteractionAt messages')
+      .sort({ lastInteractionAt: -1 })
+      .limit(20)
+      .lean();
+    res.json(convos.map(c => ({
+      phone:              c.phone,
+      stage:              c.stage,
+      score:              c.score,
+      lastInteractionAt:  c.lastInteractionAt,
+      lastMessage:        (c.messages || []).slice(-1)[0] || null,
+    })));
+  } catch (err) {
+    console.error('[CONSOLE CONVERSATIONS ERROR]', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/console/instruction', consoleAuth, async (req, res) => {
+  try {
+    const text = String(req.body?.instruction || '').trim();
+    if (!text) return res.status(400).json({ error: 'instruction required' });
+    const instruction = await AgentInstruction.create({ text });
+    res.json({ ok: true, instruction });
+  } catch (err) {
+    console.error('[CONSOLE INSTRUCTION ERROR]', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/console/logs', consoleAuth, (req, res) => {
+  res.set({
+    'Content-Type':      'text/event-stream',
+    'Cache-Control':     'no-cache',
+    'Connection':        'keep-alive',
+    'X-Accel-Buffering': 'no',
+  });
+  res.flushHeaders();
+  res.write(`data: ${JSON.stringify({ time: new Date().toISOString(), message: '[SSE CONNECTED]' })}\n\n`);
+  global._consoleSseClients.add(res);
+  const ping = setInterval(() => { try { res.write(': ping\n\n'); } catch (_) {} }, 25000);
+  req.on('close', () => { clearInterval(ping); global._consoleSseClients.delete(res); });
+});
+
+app.post('/api/console/power', consoleAuth, (req, res) => {
+  const action = req.body?.action;
+  if      (action === 'start') agentEnabled = true;
+  else if (action === 'stop')  agentEnabled = false;
+  else return res.status(400).json({ error: 'action must be start or stop' });
+  console.log(`[CONSOLE POWER] agent ${agentEnabled ? 'STARTED' : 'STOPPED'}`);
+  res.json({ ok: true, status: agentEnabled ? 'running' : 'stopped' });
+});
+
+app.get('/api/console/roi', consoleAuth, async (req, res) => {
+  try {
+    const roi = await computeROI();
+    res.json({ ok: true, ...roi });
+  } catch (err) {
+    console.error('[ROI] Erreur calcul:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // Helper functions for environment validation
 function getPersistenceMode() {
@@ -848,6 +966,7 @@ function isFirestoreEnabled() {
 
 // Global error handler
 app.use((error, req, res, next) => {
+  incError();
   console.log('[GLOBAL ERROR]', error.message, error.stack);
   res.status(500).json({
     error: 'Internal server error',
