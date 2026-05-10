@@ -756,8 +756,37 @@
         <div class="right-panel-title">Informations Lead</div>
       </div>
       <div class="right-panel-content" id="rightPanelContent">
+        <!-- Business KPIs -->
         <div class="lead-info-section">
-          <div class="lead-info-title">Statut</div>
+          <div class="lead-info-title">Business KPIs</div>
+          <div class="lead-info-item">
+            <span class="lead-info-label">ROI</span>
+            <span class="lead-info-value" id="roiValue">--</span>
+          </div>
+          <div class="lead-info-item">
+            <span class="lead-info-label">Taux Conversion</span>
+            <span class="lead-info-value" id="conversionRate">--</span>
+          </div>
+          <div class="lead-info-item">
+            <span class="lead-info-label">Conversations</span>
+            <span class="lead-info-value" id="totalConversations">--</span>
+          </div>
+          <div class="lead-info-item">
+            <span class="lead-info-label">Messages Aujourd'hui</span>
+            <span class="lead-info-value" id="messagesToday">--</span>
+          </div>
+          <div class="lead-info-item">
+            <span class="lead-info-label">Erreurs Aujourd'hui</span>
+            <span class="lead-info-value" id="errorsToday">--</span>
+          </div>
+          <div class="lead-info-item">
+            <span class="lead-info-label">Uptime</span>
+            <span class="lead-info-value" id="uptimeValue">--</span>
+          </div>
+        </div>
+        
+        <div class="lead-info-section">
+          <div class="lead-info-title">Statut Lead</div>
           <div class="lead-info-item">
             <span class="lead-info-label">Mode actuel</span>
             <span class="status-badge" id="currentModeBadge">--</span>
@@ -809,6 +838,7 @@
   <script>
     // Configuration
     const API_BASE = '/api/admin/chat';
+    const CONSOLE_API_BASE = '/api/console';
     const AUTH_TOKEN = 'console_admin_2024'; // Token d'authentification admin
     
     // État global
@@ -861,11 +891,14 @@
     // Charger toutes les conversations
     async function loadConversations() {
       try {
+        console.log('[CONSOLE] Loading conversations from:', `${API_BASE}/conversations`);
         const data = await apiCall(`${API_BASE}/conversations`);
-        conversations = data.conversations;
+        conversations = data.conversations || [];
+        console.log('[CONSOLE] Conversations loaded:', conversations.length, 'items');
         renderConversations();
       } catch (error) {
         console.error('[CONSOLE] Error loading conversations:', error);
+        console.log('[CONSOLE] Route tested:', `${API_BASE}/conversations`);
         conversationsList.innerHTML = '<div class="error-state">Erreur de chargement des conversations</div>';
       }
     }
@@ -1163,15 +1196,61 @@
     const startBtn = document.getElementById('startBtn');
     const stopBtn = document.getElementById('stopBtn');
     
-    // Charger l'état runtime initial
+    // Charger l'état runtime initial et KPIs business
     async function loadRuntimeStatus() {
       try {
-        const data = await apiCall('/api/console/stats');
-        const status = data.agent_status || 'unknown';
+        console.log('[CONSOLE] Loading runtime status from:', `${CONSOLE_API_BASE}/stats`);
+        const statsData = await apiCall(`${CONSOLE_API_BASE}/stats`);
+        const status = statsData.agent_status || 'unknown';
+        console.log('[CONSOLE] Runtime status loaded:', status);
         updateRuntimeUI(status);
+        updateBusinessKPIs(statsData);
+        
+        // Charger les données ROI séparément
+        try {
+          console.log('[CONSOLE] Loading ROI from:', `${CONSOLE_API_BASE}/roi`);
+          const roiData = await apiCall(`${CONSOLE_API_BASE}/roi`);
+          updateROIKPIs(roiData);
+        } catch (roiError) {
+          console.error('[CONSOLE] Error loading ROI:', roiError);
+        }
+        
       } catch (error) {
         console.error('[CONSOLE] Error loading runtime status:', error);
+        console.log('[CONSOLE] Stats route tested:', `${CONSOLE_API_BASE}/stats`);
         updateRuntimeUI('unknown');
+      }
+    }
+    
+    // Mettre à jour les KPIs business
+    function updateBusinessKPIs(data) {
+      const roiValue = document.getElementById('roiValue');
+      const conversionRate = document.getElementById('conversionRate');
+      const totalConversations = document.getElementById('totalConversations');
+      const messagesToday = document.getElementById('messagesToday');
+      const errorsToday = document.getElementById('errorsToday');
+      const uptimeValue = document.getElementById('uptimeValue');
+      
+      if (roiValue) roiValue.textContent = data.roi ? `${data.roi}%` : '--';
+      if (conversionRate) conversionRate.textContent = data.conversion_rate ? `${data.conversion_rate}%` : '--';
+      if (totalConversations) totalConversations.textContent = data.total_conversations || '--';
+      if (messagesToday) messagesToday.textContent = data.messages_today || '--';
+      if (errorsToday) errorsToday.textContent = data.errors_today || '--';
+      if (uptimeValue) uptimeValue.textContent = data.uptime ? `${Math.floor(data.uptime / 3600)}h` : '--';
+      
+      console.log('[CONSOLE] Business KPIs updated:', {
+        conversations: data.total_conversations,
+        messages: data.messages_today,
+        errors: data.errors_today,
+        uptime: data.uptime
+      });
+    }
+    
+    // Mettre à jour les KPIs ROI
+    function updateROIKPIs(data) {
+      const roiValue = document.getElementById('roiValue');
+      if (roiValue && data.roi_percentage) {
+        roiValue.textContent = `${data.roi_percentage}%`;
       }
     }
     
@@ -1205,7 +1284,8 @@
     // Démarrer l'agent
     async function startAgent() {
       try {
-        const data = await apiCall('/api/console/power', {
+        console.log('[CONSOLE] Starting agent via:', `${CONSOLE_API_BASE}/power`);
+        const data = await apiCall(`${CONSOLE_API_BASE}/power`, {
           method: 'POST',
           body: JSON.stringify({ action: 'start' })
         });
@@ -1215,6 +1295,7 @@
         
       } catch (error) {
         console.error('[CONSOLE] Error starting agent:', error);
+        console.log('[CONSOLE] Power route tested:', `${CONSOLE_API_BASE}/power`);
         alert('Erreur lors du démarrage de l\'agent');
       }
     }
@@ -1222,7 +1303,8 @@
     // Arrêter l'agent
     async function stopAgent() {
       try {
-        const data = await apiCall('/api/console/power', {
+        console.log('[CONSOLE] Stopping agent via:', `${CONSOLE_API_BASE}/power`);
+        const data = await apiCall(`${CONSOLE_API_BASE}/power`, {
           method: 'POST',
           body: JSON.stringify({ action: 'stop' })
         });
@@ -1232,6 +1314,7 @@
         
       } catch (error) {
         console.error('[CONSOLE] Error stopping agent:', error);
+        console.log('[CONSOLE] Power route tested:', `${CONSOLE_API_BASE}/power`);
         alert('Erreur lors de l\'arrêt de l\'agent');
       }
     }
@@ -1246,14 +1329,28 @@
     }
     
     // Initialisation
+    console.log('[CONSOLE] INITIALIZING CONSOLE');
+    console.log('[CONSOLE] Routes configured:');
+    console.log('  - Conversations:', `${API_BASE}/conversations`);
+    console.log('  - Conversation detail:', `${API_BASE}/conversation/:id`);
+    console.log('  - Send message:', `${API_BASE}/send`);
+    console.log('  - Takeover:', `${API_BASE}/takeover`);
+    console.log('  - Release:', `${API_BASE}/release`);
+    console.log('  - Runtime stats:', `${CONSOLE_API_BASE}/stats`);
+    console.log('  - Runtime power:', `${CONSOLE_API_BASE}/power`);
+    console.log('  - ROI:', `${CONSOLE_API_BASE}/roi`);
+    
     loadConversations();
     loadRuntimeStatus();
     
     // Auto-refresh toutes les 30 secondes
     setInterval(() => {
+      console.log('[CONSOLE] AUTO-REFRESH TRIGGERED');
       loadConversations();
       loadRuntimeStatus();
     }, 30000);
+    
+    console.log('[CONSOLE] CONSOLE INITIALIZED');
   </script>
 </body>
 </html>
