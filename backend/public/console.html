@@ -613,9 +613,10 @@
       to { transform: translateY(0); }
     }
 
-    /* ── Scroll Styling ───────────────────────────────────────────── */
+    /* ── Scroll Styling - Correction scrollbars imbriquées ───────────────────────────────────── */
+    /* Scroll principal uniquement */
     ::-webkit-scrollbar {
-      width: 6px;
+      width: 8px;
     }
 
     ::-webkit-scrollbar-track {
@@ -624,11 +625,60 @@
 
     ::-webkit-scrollbar-thumb {
       background: var(--border);
-      border-radius: 3px;
+      border-radius: 4px;
     }
 
     ::-webkit-scrollbar-thumb:hover {
       background: var(--border-strong);
+    }
+
+    /* Éviter scrollbars imbriquées dans les conteneurs */
+    .conversations-list {
+      overflow-y: auto;
+      max-height: calc(100vh - 200px);
+    }
+
+    .chat-messages {
+      overflow-y: auto;
+      max-height: calc(100vh - 300px);
+      padding: 16px !important;
+    }
+
+    .right-panel-content {
+      overflow-y: auto;
+      max-height: calc(100vh - 200px);
+    }
+
+    /* Main container sans overflow */
+    .app-container {
+      overflow: hidden;
+      height: 100vh;
+    }
+
+    /* Sidebar stable */
+    .sidebar {
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sidebar-header {
+      flex-shrink: 0;
+    }
+
+    /* Chat area stable */
+    .chat-area {
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .chat-header {
+      flex-shrink: 0;
+    }
+
+    .chat-input {
+      flex-shrink: 0;
     }
 
     /* Runtime Controls Styles */
@@ -870,8 +920,19 @@
     const takeoverBtn = document.getElementById('takeoverBtn');
     const releaseBtn = document.getElementById('releaseBtn');
     
-    // Helper pour fetch avec auth
+    // Helper pour fetch avec auth et logs détaillés
     async function apiCall(url, options = {}) {
+      console.log('[API] CALL:', {
+        url,
+        method: options.method || 'GET',
+        token: AUTH_TOKEN,
+        headers: {
+          'Authorization': `Bearer ${AUTH_TOKEN}`,
+          'Content-Type': 'application/json',
+          ...options.headers
+        }
+      });
+      
       const response = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${AUTH_TOKEN}`,
@@ -881,11 +942,31 @@
         ...options
       });
       
+      console.log('[API] RESPONSE:', {
+        status: response.status,
+        ok: response.ok,
+        url: url
+      });
+      
       if (!response.ok) {
-        throw new Error(`API Error: ${response.status}`);
+        const errorText = await response.text();
+        console.error('[API] ERROR DETAILS:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorText: errorText,
+          url: url
+        });
+        throw new Error(`API Error: ${response.status} - ${errorText}`);
       }
       
-      return response.json();
+      const data = await response.json();
+      console.log('[API] SUCCESS:', {
+        url: url,
+        dataType: typeof data,
+        dataKeys: Object.keys(data)
+      });
+      
+      return data;
     }
     
     // Charger toutes les conversations
@@ -903,29 +984,42 @@
       }
     }
     
-    // Afficher les conversations
+    // Afficher les conversations (uniquement vraies données)
     function renderConversations() {
+      console.log('[CHAT] Rendering conversations:', conversations.length, 'items');
+      
       if (!conversations.length) {
         conversationsList.innerHTML = '<div class="empty-state">Aucune conversation</div>';
+        console.log('[CHAT] No conversations to display');
         return;
       }
       
-      conversationsList.innerHTML = conversations.map(conv => `
+      conversationsList.innerHTML = conversations.map(conv => {
+        console.log('[CHAT] Rendering conversation:', {
+          id: conv.id,
+          phone: conv.phone,
+          messageCount: conv.messageCount,
+          mode: conv.mode
+        });
+        
+        return `
         <div class="conversation-item ${conv.id === currentConversationId ? 'active' : ''}" data-id="${conv.id}">
-          <div class="conversation-avatar">${conv.phone.substring(0, 2).toUpperCase()}</div>
+          <div class="conversation-avatar">${conv.phone ? conv.phone.slice(-2).padStart(2, '0') : '--'}</div>
           <div class="conversation-info">
-            <div class="conversation-name">${conv.phone}</div>
-            <div class="conversation-last-message">${conv.lastMessage?.content || 'Nouveau message'}</div>
-            <div class="conversation-meta">
-              <span class="conversation-badge ${conv.mode.toLowerCase()}">${conv.mode}</span>
-              <span>${formatTime(conv.lastInteraction)}</span>
-            </div>
+            <div class="conversation-name">${conv.phone || 'Inconnu'}</div>
+            <div class="conversation-last-message">${conv.lastMessage?.content || 'Aucun message'}</div>
           </div>
-          ${conv.unread ? '<div class="unread-indicator"></div>' : ''}
+          <div class="conversation-meta">
+            <div class="conversation-time">${conv.lastInteraction ? formatTime(conv.lastInteraction) : '--'}</div>
+            <span class="conversation-badge ${conv.mode?.toLowerCase() || 'ia'}">${conv.mode || 'IA'}</span>
+          </div>
         </div>
-      `).join('');
+      `;
+      }).join('');
       
-      // Ajouter les écouteurs d'événements
+      console.log('[CHAT] Conversations rendered successfully');
+      
+      // Ré-attacher les écouteurs
       document.querySelectorAll('.conversation-item').forEach(item => {
         item.addEventListener('click', () => selectConversation(item.dataset.id));
       });
@@ -967,24 +1061,35 @@
       chatContactStatus.textContent = conversation.phone;
     }
     
-    // Afficher les messages
+    // Afficher les messages (uniquement vraies données)
     function renderMessages(messages) {
+      console.log('[CHAT] Rendering messages:', messages.length, 'items');
+      
       if (!messages.length) {
         chatMessages.innerHTML = '<div class="empty-state">Aucun message</div>';
+        console.log('[CHAT] No messages to display');
         return;
       }
       
-      chatMessages.innerHTML = messages.map(msg => `
-        <div class="message ${msg.sender}">
-          <div class="message-avatar">${msg.sender === 'admin' ? 'AD' : 'IA'}</div>
-          <div class="message-content">
-            <div class="message-text">${msg.content}</div>
-            <div class="message-time">${formatTime(msg.timestamp)}</div>
-          </div>
+      chatMessages.innerHTML = messages.map(msg => {
+        console.log('[CHAT] Rendering message:', {
+          sender: msg.sender,
+          content: msg.content?.substring(0, 50),
+          timestamp: msg.timestamp
+        });
+        
+        return `
+        <div class="message ${msg.sender?.toLowerCase() || 'unknown'}">
+          <div class="message-avatar">${msg.sender === 'admin' ? 'A' : (msg.sender === 'ia' ? 'IA' : '?')}</div>
+          <div class="message-content">${msg.content || 'Message vide'}</div>
+          <div class="message-time">${msg.timestamp ? formatTime(msg.timestamp) : '--'}</div>
         </div>
-      `).join('');
+      `;
+      }).join('');
       
-      // Scroll en bas
+      console.log('[CHAT] Messages rendered successfully');
+      
+      // Scroll vers le bas
       chatMessages.scrollTop = chatMessages.scrollHeight;
     }
     
@@ -1030,18 +1135,6 @@
         const messagesContainer = chatMessages.querySelector('.empty-state') ? 
           chatMessages : chatMessages;
         
-        if (!messagesContainer.querySelector('.empty-state')) {
-          messagesContainer.innerHTML += `
-            <div class="message admin">
-              <div class="message-avatar">AD</div>
-              <div class="message-content">
-                <div class="message-text">${newMessage.content}</div>
-                <div class="message-time">${formatTime(newMessage.timestamp)}</div>
-              </div>
-            </div>
-          `;
-          chatMessages.scrollTop = chatMessages.scrollHeight;
-        }
         
         // Vider l'input
         messageInput.value = '';
@@ -1051,16 +1144,21 @@
         await loadConversations();
         
       } catch (error) {
-        console.error('[CONSOLE] Error sending message:', error);
+        console.error('[ERROR] Failed to send message:', error);
         alert('Erreur lors de l\'envoi du message');
       }
     }
     
     // Prendre le contrôle
     async function takeOver() {
-      if (!currentConversationId) return;
+      if (!currentConversationId) {
+        console.log('[ERROR] Cannot take control: no conversation selected');
+        return;
+      }
       
       try {
+        console.log('[CHAT] Taking control of conversation:', currentConversationId);
+        
         const data = await apiCall(`${API_BASE}/takeover`, {
           method: 'POST',
           body: JSON.stringify({
@@ -1069,7 +1167,7 @@
           })
         });
         
-        // Mettre à jour l'UI
+        console.log('[CHAT] Control taken successfully:', data);
         currentModeBadge.textContent = 'HUMAN';
         currentModeBadge.className = 'status-badge human';
         takeoverBtn.style.display = 'none';
@@ -1079,16 +1177,21 @@
         await loadConversations();
         
       } catch (error) {
-        console.error('[CONSOLE] Error taking over:', error);
+        console.error('[ERROR] Failed to take control:', error);
         alert('Erreur lors de la prise de contrôle');
       }
     }
     
     // Relâcher vers IA
     async function release() {
-      if (!currentConversationId) return;
+      if (!currentConversationId) {
+        console.log('[ERROR] Cannot release control: no conversation selected');
+        return;
+      }
       
       try {
+        console.log('[CHAT] Releasing control of conversation:', currentConversationId);
+        
         const data = await apiCall(`${API_BASE}/release`, {
           method: 'POST',
           body: JSON.stringify({
@@ -1097,7 +1200,7 @@
           })
         });
         
-        // Mettre à jour l'UI
+        console.log('[CHAT] Control released successfully:', data);
         currentModeBadge.textContent = 'IA';
         currentModeBadge.className = 'status-badge ai';
         takeoverBtn.style.display = 'block';
@@ -1107,7 +1210,7 @@
         await loadConversations();
         
       } catch (error) {
-        console.error('[CONSOLE] Error releasing:', error);
+        console.error('[ERROR] Failed to release control:', error);
         alert('Erreur lors du relâchement');
       }
     }
@@ -1222,8 +1325,10 @@
       }
     }
     
-    // Mettre à jour les KPIs business
+    // Mettre à jour les KPIs business (uniquement vraies données)
     function updateBusinessKPIs(data) {
+      console.log('[KPI] Updating business KPIs with data:', Object.keys(data));
+      
       const roiValue = document.getElementById('roiValue');
       const conversionRate = document.getElementById('conversionRate');
       const totalConversations = document.getElementById('totalConversations');
@@ -1231,6 +1336,7 @@
       const errorsToday = document.getElementById('errorsToday');
       const uptimeValue = document.getElementById('uptimeValue');
       
+      // N'afficher que les vraies données backend, pas d'invention
       if (roiValue) roiValue.textContent = data.roi ? `${data.roi}%` : '--';
       if (conversionRate) conversionRate.textContent = data.conversion_rate ? `${data.conversion_rate}%` : '--';
       if (totalConversations) totalConversations.textContent = data.total_conversations || '--';
@@ -1238,7 +1344,9 @@
       if (errorsToday) errorsToday.textContent = data.errors_today || '--';
       if (uptimeValue) uptimeValue.textContent = data.uptime ? `${Math.floor(data.uptime / 3600)}h` : '--';
       
-      console.log('[CONSOLE] Business KPIs updated:', {
+      console.log('[KPI] Business KPIs updated:', {
+        roi: data.roi,
+        conversion_rate: data.conversion_rate,
         conversations: data.total_conversations,
         messages: data.messages_today,
         errors: data.errors_today,
@@ -1246,11 +1354,16 @@
       });
     }
     
-    // Mettre à jour les KPIs ROI
+    // Mettre à jour les KPIs ROI (uniquement vraies données)
     function updateROIKPIs(data) {
+      console.log('[KPI] Updating ROI KPIs with data:', Object.keys(data));
+      
       const roiValue = document.getElementById('roiValue');
-      if (roiValue && data.roi_percentage) {
+      if (roiValue && data.roi_percentage !== undefined) {
         roiValue.textContent = `${data.roi_percentage}%`;
+        console.log('[KPI] ROI updated:', data.roi_percentage);
+      } else {
+        console.log('[KPI] No ROI data available');
       }
     }
     
@@ -1284,18 +1397,18 @@
     // Démarrer l'agent
     async function startAgent() {
       try {
-        console.log('[CONSOLE] Starting agent via:', `${CONSOLE_API_BASE}/power`);
+        console.log('[RUNTIME] Starting agent via:', `${CONSOLE_API_BASE}/power`);
         const data = await apiCall(`${CONSOLE_API_BASE}/power`, {
           method: 'POST',
           body: JSON.stringify({ action: 'start' })
         });
         
-        console.log('[CONSOLE] Agent started:', data);
+        console.log('[RUNTIME] Agent started successfully:', data);
         updateRuntimeUI('running');
         
       } catch (error) {
-        console.error('[CONSOLE] Error starting agent:', error);
-        console.log('[CONSOLE] Power route tested:', `${CONSOLE_API_BASE}/power`);
+        console.error('[ERROR] Failed to start agent:', error);
+        console.log('[RUNTIME] Power route tested:', `${CONSOLE_API_BASE}/power`);
         alert('Erreur lors du démarrage de l\'agent');
       }
     }
@@ -1303,18 +1416,18 @@
     // Arrêter l'agent
     async function stopAgent() {
       try {
-        console.log('[CONSOLE] Stopping agent via:', `${CONSOLE_API_BASE}/power`);
+        console.log('[RUNTIME] Stopping agent via:', `${CONSOLE_API_BASE}/power`);
         const data = await apiCall(`${CONSOLE_API_BASE}/power`, {
           method: 'POST',
           body: JSON.stringify({ action: 'stop' })
         });
         
-        console.log('[CONSOLE] Agent stopped:', data);
+        console.log('[RUNTIME] Agent stopped successfully:', data);
         updateRuntimeUI('stopped');
         
       } catch (error) {
-        console.error('[CONSOLE] Error stopping agent:', error);
-        console.log('[CONSOLE] Power route tested:', `${CONSOLE_API_BASE}/power`);
+        console.error('[ERROR] Failed to stop agent:', error);
+        console.log('[RUNTIME] Power route tested:', `${CONSOLE_API_BASE}/power`);
         alert('Erreur lors de l\'arrêt de l\'agent');
       }
     }
