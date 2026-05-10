@@ -6,7 +6,9 @@
   "scripts": {
     "start": "node backend/server.js",
     "dev": "nodemon backend/server.js",
-    "install-all": "npm install && cd frontend && npm install"
+    "install-all": "npm install && cd frontend && npm install",
+    "build-proof": "echo BUILD_SHA=$(git rev-parse --short HEAD)",
+    "railway-build": "npm run build-proof && echo 'BUILD SHA:' $BUILD_SHA"
   },
   "dependencies": {
     "@langchain/core": "^1.1.44",
