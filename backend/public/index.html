@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agent Boutique - Assistant IA WhatsApp pour votre Business</title>
+  <meta name="description" content="Transformez vos conversations WhatsApp en clients payants avec l'IA Agent Boutique. Qualification automatique, suivi prospect, et optimisation conversion.">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+    .header { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; padding: 80px 0; text-align: center; }
+    .header h1 { font-size: 3.5em; font-weight: 700; margin-bottom: 20px; text-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .header .tagline { font-size: 1.4em; margin-bottom: 30px; opacity: 0.9; }
+    .header .cta { background: white; color: #2563eb; padding: 20px 40px; border-radius: 50px; text-decoration: none; font-weight: 600; font-size: 1.2em; display: inline-block; transition: transform 0.3s, box-shadow 0.3s; }
+    .header .cta:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+    .features { padding: 80px 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 40px; }
+    .feature { text-align: center; padding: 40px 30px; background: #f8f9fa; border-radius: 15px; border: 1px solid #e9ecef; transition: transform 0.3s, box-shadow 0.3s; }
+    .feature:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
+    .feature .icon { font-size: 3em; margin-bottom: 20px; color: #2563eb; }
+    .feature h3 { font-size: 1.5em; margin-bottom: 15px; color: #2563eb; }
+    .feature p { color: #666; line-height: 1.6; }
+    .demo { background: #f8f9fa; padding: 80px 0; text-align: center; }
+    .demo h2 { font-size: 2.5em; margin-bottom: 30px; color: #333; }
+    .demo .screenshots { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 30px; margin: 40px 0; }
+    .demo .screenshot { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+    .demo .screenshot img { width: 100%; height: 200px; object-fit: cover; border-radius: 8px; margin-bottom: 15px; }
+    .demo .screenshot h4 { color: #2563eb; margin-bottom: 10px; }
+    .demo .screenshot p { color: #666; font-size: 0.9em; }
+    .roi { background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 80px 0; }
+    .roi h2 { font-size: 2.5em; margin-bottom: 30px; text-align: center; }
+    .roi .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 30px; margin: 40px 0; }
+    .roi .stat { background: rgba(255,255,255,0.1); padding: 30px; border-radius: 10px; text-align: center; }
+    .roi .stat .number { font-size: 3em; font-weight: 700; margin-bottom: 10px; }
+    .roi .stat .label { font-size: 1.1em; opacity: 0.9; }
+    .pricing { padding: 80px 0; background: white; }
+    .pricing h2 { font-size: 2.5em; margin-bottom: 30px; text-align: center; color: #333; }
+    .pricing .plans { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 30px; margin: 40px 0; }
+    .pricing .plan { background: #f8f9fa; border: 2px solid #e9ecef; border-radius: 15px; padding: 40px 30px; text-align: center; transition: transform 0.3s, box-shadow 0.3s; }
+    .pricing .plan:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
+    .pricing .plan.featured { border-color: #2563eb; transform: scale(1.05); }
+    .pricing .plan h3 { font-size: 1.8em; margin-bottom: 10px; color: #2563eb; }
+    .pricing .plan .price { font-size: 2.5em; font-weight: 700; margin-bottom: 20px; }
+    .pricing .plan .price span { font-size: 0.4em; opacity: 0.7; }
+    .pricing .plan ul { list-style: none; margin: 30px 0; text-align: left; }
+    .pricing .plan li { margin-bottom: 12px; padding-left: 25px; position: relative; }
+    .pricing .plan li::before { content: "✓"; position: absolute; left: 0; color: #28a745; font-weight: bold; }
+    .pricing .plan .cta { background: #2563eb; color: white; padding: 15px 30px; border-radius: 25px; text-decoration: none; font-weight: 600; display: inline-block; margin-top: 20px; transition: background 0.3s; }
+    .pricing .plan .cta:hover { background: #1d4ed8; }
+    .cta-section { background: #f8f9fa; padding: 60px 0; text-align: center; }
+    .cta-section h2 { font-size: 2.2em; margin-bottom: 20px; color: #333; }
+    .cta-section .buttons { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; }
+    .cta-section .btn { background: #2563eb; color: white; padding: 20px 40px; border-radius: 50px; text-decoration: none; font-weight: 600; font-size: 1.1em; transition: transform 0.3s, box-shadow 0.3s; }
+    .cta-section .btn:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+    .cta-section .btn.secondary { background: white; color: #2563eb; border: 2px solid #2563eb; }
+    .cta-section .btn.secondary:hover { background: #f8f9fa; }
+    .footer { background: #333; color: white; text-align: center; padding: 40px 0; }
+    .footer .links { display: flex; justify-content: center; gap: 30px; margin-bottom: 20px; }
+    .footer .links a { color: white; text-decoration: none; transition: opacity 0.3s; }
+    .footer .links a:hover { opacity: 0.8; }
+    @media (max-width: 768px) {
+      .header h1 { font-size: 2.5em; }
+      .features { grid-template-columns: 1fr; padding: 40px 0; }
+      .demo .screenshots { grid-template-columns: 1fr; }
+      .pricing .plans { grid-template-columns: 1fr; }
+      .cta-section .buttons { flex-direction: column; align-items: center; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header Hero -->
+    <div class="header">
+      <h1>🤖 Agent Boutique</h1>
+      <p class="tagline">Transformez vos conversations WhatsApp en clients payants avec l'IA</p>
+      <a href="#pricing" class="cta">Démarrer gratuitement →</a>
+    </div>
+
+    <!-- Features -->
+    <div class="features">
+      <div class="feature">
+        <div class="icon">🎯</div>
+        <h3>Qualification Automatique</h3>
+        <p>L'IA analyse et qualifie vos prospects en temps réel pour identifier les opportunités les plus prometteuses.</p>
+      </div>
+      <div class="feature">
+        <div class="icon">💬</div>
+        <h3>Conversations Intelligentes</h3>
+        <p>Chaque interaction est personnalisée selon votre business pour maximiser l'engagement et la conversion.</p>
+      </div>
+      <div class="feature">
+        <div class="icon">📊</div>
+        <h3>Analytics Avancées</h3>
+        <p>Suivez vos performances en temps réel : taux de conversion, ROI, et optimisation continue.</p>
+      </div>
+      <div class="feature">
+        <div class="icon">⚡</div>
+        <h3>Setup Rapide</h3>
+        <p>Installation en 5 minutes. Connectez simplement votre numéro WhatsApp et commencez à convertir immédiatement.</p>
+      </div>
+    </div>
+
+    <!-- Demo Section -->
+    <div class="demo">
+      <h2>📱 Voir l'Agent en Action</h2>
+      <div class="screenshots">
+        <div class="screenshot">
+          <div style="background: #f0f0f0; height: 200px; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-bottom: 15px;">
+            <div style="text-align: center;">
+              <div style="font-size: 2em; margin-bottom: 10px;">💬</div>
+              <div style="color: #666;">"Bonjour, je suis intéressé par vos services"</div>
+            </div>
+          </div>
+          <h4>Conversation WhatsApp</h4>
+          <p>Vos prospects discutent naturellement avec l'IA qui qualifie et engage</p>
+        </div>
+        <div class="screenshot">
+          <div style="background: #1a1a2a; height: 200px; border-radius: 8px; padding: 20px; margin-bottom: 15px;">
+            <div style="color: #4CAF50; text-align: center;">
+              <div style="font-size: 1.5em; margin-bottom: 10px;">✅</div>
+              <div style="font-weight: bold;">Lead Qualifié - Score: 85/100</div>
+            </div>
+          </div>
+          <h4>Tableau de Bord Admin</h4>
+          <p>Suivez en temps réel les conversations, les scores et les performances</p>
+        </div>
+        <div class="screenshot">
+          <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); height: 200px; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-bottom: 15px;">
+            <div style="color: white; text-align: center;">
+              <div style="font-size: 2em; margin-bottom: 10px;">💰</div>
+              <div style="font-weight: bold;">+247% ROI</div>
+            </div>
+          </div>
+          <h4>Analytics & ROI</h4>
+          <p>Mesurez précisément votre retour sur investissement et optimisez vos conversions</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROI Section -->
+    <div class="roi">
+      <h2>📈 Résultats Provenus</h2>
+      <div class="stats">
+        <div class="stat">
+          <div class="number">247%</div>
+          <div class="label">ROI Moyen</div>
+        </div>
+        <div class="stat">
+          <div class="number">68%</div>
+          <div class="label">Taux Conversion</div>
+        </div>
+        <div class="stat">
+          <div class="number">3.2x</div>
+          <div class="label">Plus de Leads</div>
+        </div>
+        <div class="stat">
+          <div class="number">24/7</div>
+          <div class="label">Disponibilité</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pricing Section -->
+    <div class="pricing" id="pricing">
+      <h2>💰 Choisissez Votre Plan</h2>
+      <div class="plans">
+        <div class="plan">
+          <h3>Starter</h3>
+          <div class="price">49€<span>/mois</span></div>
+          <ul>
+            <li>Jusqu'à 100 messages/jour</li>
+            <li>Jusqu'à 50 leads/mois</li>
+            <li>Support par email</li>
+            <li>Analytics de base</li>
+            <li>1 numéro WhatsApp</li>
+          </ul>
+          <a href="/contact.html?subject=demo" class="cta">Essai Gratuit →</a>
+        </div>
+        <div class="plan featured">
+          <h3>Pro</h3>
+          <div class="price">149€<span>/mois</span></div>
+          <ul>
+            <li>Jusqu'à 500 messages/jour</li>
+            <li>Jusqu'à 200 leads/mois</li>
+            <li>Support prioritaire</li>
+            <li>Analytics avancées</li>
+            <li>3 numéros WhatsApp</li>
+            <li>API d'intégration</li>
+          </ul>
+          <a href="/contact.html?subject=demo" class="cta">Démarrer →</a>
+        </div>
+        <div class="plan">
+          <h3>Elite</h3>
+          <div class="price">399€<span>/mois</span></div>
+          <ul>
+            <li>Messages illimités</li>
+            <li>Leads illimités</li>
+            <li>Support dédié</li>
+            <li>Analytics entreprise</li>
+            <li>Numéros illimités</li>
+            <li>API complète</li>
+            <li>Onboarding personnalisé</li>
+          </ul>
+          <a href="/contact.html?subject=demo" class="cta">Contactez-nous →</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- CTA Section -->
+    <div class="cta-section">
+      <h2>🚀 Prêt à Transformer Votre Business ?</h2>
+      <div class="buttons">
+        <a href="/contact.html?subject=demo" class="btn">Demander une Démo</a>
+        <a href="/console/console.html" class="btn secondary">Voir la Console Admin</a>
+        <a href="/pricing.html" class="btn secondary">Voir les Tarifs</a>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <div class="links">
+        <a href="/privacy.html">Confidentialité</a>
+        <a href="/terms.html">Conditions</a>
+        <a href="/contact.html">Contact</a>
+        <a href="/console/console.html">Console Admin</a>
+      </div>
+      <p>&copy; 2026 Agent Boutique. Tous droits réservés.</p>
+      <p>🤖 L'IA qui transforme vos conversations en clients payants</p>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tarifs - Agent Boutique</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.6; color: #333; background: #f8f9fa; }
+    .container { max-width: 1000px; margin: 0 auto; padding: 20px; }
+    .header { text-align: center; padding: 60px 0; margin-bottom: 40px; }
+    .header h1 { font-size: 3em; color: #2563eb; margin-bottom: 20px; }
+    .header p { font-size: 1.3em; color: #666; max-width: 600px; margin: 0 auto; }
+    .pricing-table { width: 100%; border-collapse: separate; border-spacing: 0 20px; margin: 40px 0; }
+    .pricing-card { background: white; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); overflow: hidden; transition: transform 0.3s, box-shadow 0.3s; }
+    .pricing-card:hover { transform: translateY(-10px); box-shadow: 0 20px 40px rgba(0,0,0,0.15); }
+    .pricing-card.featured { border: 3px solid #2563eb; transform: scale(1.05); }
+    .pricing-card.featured:hover { transform: scale(1.05) translateY(-5px); }
+    .plan-header { padding: 30px; text-align: center; border-bottom: 1px solid #eee; }
+    .plan-name { font-size: 1.8em; font-weight: 700; margin-bottom: 10px; }
+    .plan-price { font-size: 3em; font-weight: 800; color: #2563eb; margin-bottom: 10px; }
+    .plan-price span { font-size: 0.4em; color: #666; font-weight: normal; }
+    .plan-description { color: #666; font-size: 1em; }
+    .plan-features { padding: 30px; }
+    .plan-features ul { list-style: none; }
+    .plan-features li { padding: 12px 0; border-bottom: 1px solid #f0f0f0; position: relative; padding-left: 30px; }
+    .plan-features li:last-child { border-bottom: none; }
+    .plan-features li::before { content: "✓"; position: absolute; left: 0; color: #28a745; font-weight: bold; font-size: 1.2em; }
+    .plan-features li.not-included::before { content: "✗"; color: #dc3545; }
+    .plan-features li.not-included { opacity: 0.6; }
+    .plan-footer { padding: 30px; background: #f8f9fa; text-align: center; }
+    .plan-cta { display: block; background: #2563eb; color: white; padding: 18px 40px; border-radius: 50px; text-decoration: none; font-weight: 600; font-size: 1.1em; transition: background 0.3s; }
+    .plan-cta:hover { background: #1d4ed8; transform: translateY(-2px); }
+    .plan-cta.secondary { background: white; color: #2563eb; border: 2px solid #2563eb; }
+    .plan-cta.secondary:hover { background: #f8f9fa; }
+    .popular-badge { background: #ff6b6b; color: white; padding: 8px 20px; border-radius: 20px; font-size: 0.8em; font-weight: 700; margin-bottom: 20px; display: inline-block; }
+    .comparison { background: white; padding: 40px; border-radius: 15px; margin: 40px 0; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+    .comparison h3 { font-size: 1.5em; margin-bottom: 20px; color: #333; }
+    .comparison table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    .comparison th, .comparison td { padding: 15px; text-align: center; border: 1px solid #eee; }
+    .comparison th { background: #f8f9fa; font-weight: 600; color: #333; }
+    .comparison td:first-child { text-align: left; font-weight: 600; }
+    .faq { background: white; padding: 40px; border-radius: 15px; margin: 40px 0; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+    .faq h3 { font-size: 1.5em; margin-bottom: 20px; color: #333; }
+    .faq-item { margin-bottom: 30px; }
+    .faq-question { font-weight: 600; margin-bottom: 10px; color: #2563eb; cursor: pointer; }
+    .faq-answer { color: #666; line-height: 1.6; }
+    .faq-answer[style*="display: none"] { display: none; }
+    .footer { text-align: center; padding: 40px 0; color: #666; }
+    .footer a { color: #2563eb; text-decoration: none; }
+    .footer a:hover { text-decoration: underline; }
+    @media (max-width: 768px) {
+      .pricing-table { border-spacing: 0; }
+      .pricing-card.featured { transform: scale(1); }
+      .comparison { padding: 20px; }
+      .comparison th, .comparison td { padding: 10px; font-size: 0.9em; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>💰 Tarifs Agent Boutique</h1>
+      <p>Choisissez le plan parfait pour transformer vos conversations WhatsApp en clients payants</p>
+    </div>
+
+    <div class="pricing-table">
+      <div class="pricing-card">
+        <div class="plan-header">
+          <div class="plan-name">Starter</div>
+          <div class="plan-price">49€<span>/mois</span></div>
+          <div class="plan-description">Parfait pour les petites entreprises qui débutent</div>
+        </div>
+        <div class="plan-features">
+          <ul>
+            <li>Jusqu'à 100 messages/jour</li>
+            <li>Jusqu'à 50 leads/mois</li>
+            <li>1 numéro WhatsApp</li>
+            <li>Analytics de base</li>
+            <li>Support par email</li>
+            <li>Qualification automatique</li>
+            <li>Tableau de bord admin</li>
+            <li class="not-included">API d'intégration</li>
+            <li class="not-included">Support prioritaire</li>
+          </ul>
+        </div>
+        <div class="plan-footer">
+          <a href="/contact.html?subject=demo&plan=starter" class="plan-cta secondary">Essai Gratuit</a>
+        </div>
+      </div>
+
+      <div class="pricing-card featured">
+        <div class="plan-header">
+          <div class="popular-badge">⭐ LE PLUS POPULAIRE</div>
+          <div class="plan-name">Pro</div>
+          <div class="plan-price">149€<span>/mois</span></div>
+          <div class="plan-description">Idéal pour les entreprises en croissance</div>
+        </div>
+        <div class="plan-features">
+          <ul>
+            <li>Jusqu'à 500 messages/jour</li>
+            <li>Jusqu'à 200 leads/mois</li>
+            <li>3 numéros WhatsApp</li>
+            <li>Analytics avancées</li>
+            <li>Support prioritaire</li>
+            <li>Qualification IA avancée</li>
+            <li>Tableau de bord enterprise</li>
+            <li>API d'intégration</li>
+            <li>Suivi prospect temps réel</li>
+          </ul>
+        </div>
+        <div class="plan-footer">
+          <a href="/contact.html?subject=demo&plan=pro" class="plan-cta">Démarrer →</a>
+        </div>
+      </div>
+
+      <div class="pricing-card">
+        <div class="plan-header">
+          <div class="plan-name">Elite</div>
+          <div class="plan-price">399€<span>/mois</span></div>
+          <div class="plan-description">Pour les entreprises qui visent l'excellence</div>
+        </div>
+        <div class="plan-features">
+          <ul>
+            <li>Messages illimités</li>
+            <li>Leads illimités</li>
+            <li>Numéros WhatsApp illimités</li>
+            <li>Analytics enterprise</li>
+            <li>Support dédié 24/7</li>
+            <li>IA personnalisée</li>
+            <li>Tableau de bord sur mesure</li>
+            <li>API complète + webhooks</li>
+            <li>Onboarding personnalisé</li>
+            <li>SLA garanti</li>
+          </ul>
+        </div>
+        <div class="plan-footer">
+          <a href="/contact.html?subject=demo&plan=elite" class="plan-cta">Contactez-nous →</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="comparison">
+      <h3>📊 Comparaison Détaillée</h3>
+      <table class="comparison">
+        <thead>
+          <tr>
+            <th>Fonctionnalité</th>
+            <th>Starter</th>
+            <th>Pro</th>
+            <th>Elite</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Messages/Jour</td>
+            <td>100</td>
+            <td>500</td>
+            <td>Illimité</td>
+          </tr>
+          <tr>
+            <td>Leads/Mois</td>
+            <td>50</td>
+            <td>200</td>
+            <td>Illimité</td>
+          </tr>
+          <tr>
+            <td>Numéros WhatsApp</td>
+            <td>1</td>
+            <td>3</td>
+            <td>Illimité</td>
+          </tr>
+          <tr>
+            <td>Analytics</td>
+            <td>Basique</td>
+            <td>Avancées</td>
+            <td>Enterprise</td>
+          </tr>
+          <tr>
+            <td>Support</td>
+            <td>Email</td>
+            <td>Priority</td>
+            <td>Dédié 24/7</td>
+          </tr>
+          <tr>
+            <td>API</td>
+            <td>❌</td>
+            <td>✅</td>
+            <td>✅</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="faq">
+      <h3>❓ Questions Fréquentes</h3>
+      
+      <div class="faq-item">
+        <div class="faq-question" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">
+          Puis-je changer de plan à tout moment ?
+        </div>
+        <div class="faq-answer" style="display: none;">
+          Oui, vous pouvez passer à un plan supérieur à tout moment. Le changement sera effectif immédiatement et vous serez facturé au prorata du nouveau plan.
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">
+          Y a-t-il un engagement minimum ?
+        </div>
+        <div class="faq-answer" style="display: none;">
+          Non, tous nos plans sont sans engagement minimum. Vous pouvez résilier à tout moment avec un préavis de 7 jours.
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">
+          Comment fonctionne l'essai gratuit ?
+        </div>
+        <div class="faq-answer" style="display: none;">
+          L'essai gratuit de 14 jours vous donne accès à toutes les fonctionnalités du plan Pro. Aucune carte bancaire requise.
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">
+          Quelles sont les méthodes de paiement acceptées ?
+        </div>
+        <div class="faq-answer" style="display: none;">
+          Nous acceptons toutes les cartes bancaires européennes, PayPal et virement bancaire. Les paiements sont sécurisés via Stripe.
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <p><strong>Prêt à démarrer ?</strong></p>
+      <p><a href="/contact.html?subject=demo">Contactez-nous pour une démo personnalisée</a> ou <a href="/index.html">retour à l'accueil</a></p>
+      <p>&copy; 2026 Agent Boutique. Tous droits réservés.</p>
+    </div>
+  </div>
+</body>
+</html>

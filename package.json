@@ -1,7 +1,7 @@
 {
-  "name": "kidai-learning-app",
+  "name": "agent-boutique",
   "version": "1.0.0",
-  "description": "AI-powered educational app for children",
+  "description": "AI-powered WhatsApp assistant for business automation and lead conversion",
   "main": "backend/server.js",
   "scripts": {
     "start": "node backend/server.js",

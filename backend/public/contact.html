@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contact - Agent Boutique</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.6; color: #333; background: #f8f9fa; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { text-align: center; padding: 40px 0; margin-bottom: 40px; }
+    .header h1 { font-size: 2.5em; color: #2563eb; margin-bottom: 10px; }
+    .header p { font-size: 1.2em; color: #666; }
+    .contact-form { background: white; padding: 40px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 30px; }
+    .form-group { margin-bottom: 20px; }
+    .form-group label { display: block; font-weight: 600; margin-bottom: 8px; color: #333; }
+    .form-group input, .form-group textarea, .form-group select { 
+      width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; 
+      font-size: 16px; transition: border-color 0.3s; 
+    }
+    .form-group input:focus, .form-group textarea:focus, .form-group select:focus { 
+      outline: none; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); 
+    }
+    .form-group textarea { min-height: 120px; resize: vertical; }
+    .btn { 
+      background: #2563eb; color: white; padding: 15px 30px; border: none; border-radius: 6px; 
+      font-size: 16px; font-weight: 600; cursor: pointer; width: 100%; 
+      transition: background 0.3s; 
+    }
+    .btn:hover { background: #1d4ed8; }
+    .contact-info { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    .contact-info h3 { color: #2563eb; margin-bottom: 20px; }
+    .contact-info p { margin-bottom: 15px; font-size: 1.1em; }
+    .contact-info .icon { margin-right: 10px; }
+    .success-message { background: #d4edda; color: #155724; padding: 15px; border-radius: 6px; margin-bottom: 20px; display: none; }
+    .error-message { background: #f8d7da; color: #721c24; padding: 15px; border-radius: 6px; margin-bottom: 20px; display: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🤖 Agent Boutique</h1>
+      <p>Contactez-nous</p>
+    </div>
+
+    <div class="contact-form">
+      <h2>Envoyez-nous un message</h2>
+      <div id="success-message" class="success-message">Message envoyé avec succès ! Nous vous répondrons dans les 24h.</div>
+      <div id="error-message" class="error-message">Erreur lors de l'envoi. Veuillez réessayer.</div>
+      
+      <form id="contact-form">
+        <div class="form-group">
+          <label for="name">Nom complet *</label>
+          <input type="text" id="name" name="name" required>
+        </div>
+
+        <div class="form-group">
+          <label for="email">Email *</label>
+          <input type="email" id="email" name="email" required>
+        </div>
+
+        <div class="form-group">
+          <label for="company">Entreprise</label>
+          <input type="text" id="company" name="company">
+        </div>
+
+        <div class="form-group">
+          <label for="phone">Téléphone</label>
+          <input type="tel" id="phone" name="phone">
+        </div>
+
+        <div class="form-group">
+          <label for="subject">Sujet *</label>
+          <select id="subject" name="subject" required>
+            <option value="">Choisissez un sujet</option>
+            <option value="demo">Demande de démo</option>
+            <option value="pricing">Questions tarifs</option>
+            <option value="support">Support technique</option>
+            <option value="partnership">Partenariat</option>
+            <option value="other">Autre</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="message">Message *</label>
+          <textarea id="message" name="message" required placeholder="Décrivez votre besoin..."></textarea>
+        </div>
+
+        <button type="submit" class="btn">Envoyer le message</button>
+      </form>
+    </div>
+
+    <div class="contact-info">
+      <h3>📞 Autres moyens de contact</h3>
+      <p><span class="icon">📧</span> <strong>Email :</strong> contact@agentboutique.com</p>
+      <p><span class="icon">📱</span> <strong>Téléphone :</strong> +33 1 23 45 67 89</p>
+      <p><span class="icon">📍</span> <strong>Adresse :</strong> 123 Tech Street, 75001 Paris, France</p>
+      <p><span class="icon">🕐</span> <strong>Horaires :</strong> Lun-Ven 9h-18h CET</p>
+      
+      <h3>🚀 Démarrage rapide</h3>
+      <p><strong>Intéressé par une démo ?</strong> Contactez-nous pour une démonstration personnalisée de 30 minutes.</p>
+      <p><strong>Questions techniques ?</strong> Notre équipe support est disponible pour vous aider.</p>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('contact-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      // Récupérer les données du formulaire
+      const formData = new FormData(this);
+      const data = Object.fromEntries(formData);
+      
+      // Validation simple
+      if (!data.name || !data.email || !data.message) {
+        document.getElementById('error-message').style.display = 'block';
+        document.getElementById('success-message').style.display = 'none';
+        return;
+      }
+      
+      // Simuler l'envoi (remplacer par vrai appel API)
+      console.log('Contact form submitted:', data);
+      
+      // Afficher le message de succès
+      document.getElementById('success-message').style.display = 'block';
+      document.getElementById('error-message').style.display = 'none';
+      
+      // Réinitialiser le formulaire
+      this.reset();
+      
+      // Optionnel: envoyer à un vrai endpoint
+      // fetch('/api/contact', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify(data)
+      // });
+    });
+  </script>
+</body>
+</html>
