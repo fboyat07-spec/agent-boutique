@@ -5,6 +5,8 @@ const cors    = require('cors');
 const path    = require('path');
 const mongoose = require('mongoose');
 
+console.log("FORCE RAILWAY REBUILD ca4d924");
+
 // ─── WORKFLOW LOCK PAR MESSAGE.ID ─────────────────────────────────────────────────────
 
 // Lock en mémoire si Redis non disponible
