@@ -48,1263 +48,804 @@
       overflow: hidden;
     }
 
-    h1 { font-size: 18px; font-weight: 600; letter-spacing: .3px; }
-    h2 { font-size: 12px; font-weight: 600; text-transform: uppercase;
-         letter-spacing: 0.8px; color: var(--text-muted); margin-bottom: 12px; }
+    /* ── Layout Fullscreen 3 Colonnes ───────────────────────────────────── */
+    .app-container {
+      display: grid;
+      grid-template-columns: 340px 1fr 320px;
+      height: 100vh;
+      overflow: hidden;
+    }
 
-    .header {
-      display: flex; align-items: center; gap: 16px;
-      padding: 16px 24px;
+    /* ── Sidebar Conversations ───────────────────────────────────── */
+    .sidebar {
       background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    .sidebar-header {
+      padding: 20px;
       border-bottom: 1px solid var(--border);
-      box-shadow: var(--shadow-sm);
-    }
-    .header-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
-
-    /* ── Badge LIVE ──────────────────────────────────────────────────────── */
-    .live-badge {
-      display: inline-flex; align-items: center; gap: 6px;
-      background: #1a2a1a; border: 1px solid #2d4a2d;
-      color: var(--green); border-radius: 20px;
-      padding: 4px 10px; font-size: 11px; font-weight: 700;
-      letter-spacing: .8px;
-    }
-    .live-badge .dot {
-      width: 7px; height: 7px; border-radius: 50%;
-      background: var(--green);
-    }
-    .live-badge.connected .dot { animation: pulse 1.4s ease-in-out infinite; }
-    .live-badge.disconnected { background: #2a1a1a; border-color: #4a2d2d; color: var(--red); }
-    .live-badge.disconnected .dot { background: var(--red); animation: none; }
-    @keyframes pulse {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50%       { opacity: .4; transform: scale(.85); }
     }
 
-    /* ── Card ────────────────────────────────────────────────────────────── */
-    .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      padding: 16px 20px;
-      margin-bottom: 16px;
-      box-shadow: var(--shadow-sm);
-    }
-    .card-header {
-      display: flex; align-items: center; gap: 12px;
-      margin-bottom: 16px;
-    }
-    .card-title { font-size: 14px; font-weight: 600; color: var(--text-primary); }
-    .card-badge {
-      margin-left: auto; font-size: 11px; font-weight: 600;
-      letter-spacing: 0.5px; color: white; background: var(--blue);
-      border-radius: 12px; padding: 2px 8px;
-    }
-
-    /* ── Message Bubbles ─────────────────────────────────────────────────── */
-    .message-bubble {
-      display: flex; margin-bottom: 16px; max-width: 70%;
-      animation: fadeInUp 0.3s ease-out;
-    }
-    .message-bubble.user {
-      align-self: flex-start;
-    }
-    .message-bubble.admin {
-      align-self: flex-end;
-    }
-    .message-bubble.ai {
-      align-self: flex-start;
-    }
-    
-    .message-avatar {
-      width: 36px; height: 36px; border-radius: 50%; 
-      display: flex; align-items: center; justify-content: center;
-      font-weight: 600; font-size: 14px; color: white;
-      margin-right: 12px; flex-shrink: 0;
-    }
-    .message-bubble.user .message-avatar {
-      background: var(--green);
-    }
-    .message-bubble.admin .message-avatar {
-      background: var(--orange);
-    }
-    .message-bubble.ai .message-avatar {
-      background: var(--blue);
-    }
-    
-    .message-content {
-      flex: 1; display: flex; flex-direction: column;
-    }
-    
-    .message-bubble {
-      margin-bottom: 12px;
-    }
-    .message-bubble.user .message-content {
-      align-items: flex-start;
-    }
-    .message-bubble.admin .message-content {
-      align-items: flex-end;
-    }
-    .message-bubble.ai .message-content {
-      align-items: flex-start;
-    }
-    
-    .message-bubble .message-text {
-      background: var(--bg-secondary);
+    .sidebar-title {
+      font-size: 16px;
+      font-weight: 600;
       color: var(--text-primary);
-      padding: 12px 16px;
-      border-radius: var(--radius-md);
-      font-size: 14px; line-height: 1.5;
-      box-shadow: var(--shadow-sm);
+      margin-bottom: 16px;
+    }
+
+    .search-bar {
       position: relative;
     }
-    
-    .message-bubble.admin .message-text {
-      background: var(--blue);
-      color: white;
-      border-bottom-right-radius: 4px;
-    }
-    
-    .message-bubble.user .message-text {
-      background: var(--bg-secondary);
+
+    .search-input {
+      width: 100%;
+      padding: 10px 12px 10px 36px;
       border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background: var(--bg-primary);
+      font-size: 14px;
+      transition: var(--transition);
     }
-    
-    .message-bubble.ai .message-text {
-      background: var(--bg-tertiary);
-      border: 1px solid var(--border);
-      border-left: 3px solid var(--blue);
+
+    .search-input:focus {
+      outline: none;
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
     }
-    
-    .message-meta {
-      display: flex; align-items: center; gap: 8px;
-      margin-top: 4px; font-size: 11px; color: var(--text-muted);
-    }
-    .message-bubble.admin .message-meta {
-      justify-content: flex-end;
-    }
-    
-    .message-sender {
-      font-weight: 600; color: var(--text-secondary);
-    }
-    .message-time {
+
+    .search-icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
       color: var(--text-muted);
+      font-size: 14px;
     }
-    
-    /* ── Animations ───────────────────────────────────────────────────── */
-    @keyframes fadeInUp {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
+
+    .conversations-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
     }
-    
-    @keyframes typing {
-      0%, 60%, 100% { opacity: 0.3; }
-      30% { opacity: 1; }
-    }
-    
-    .typing-dot {
-      display: inline-block; width: 4px; height: 4px;
-      background: var(--text-muted); border-radius: 50%;
-      margin: 0 1px; animation: typing 1.4s infinite;
-    }
-    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
-    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
-    
-    /* ── Conversation Items ───────────────────────────────────────────── */
+
     .conversation-item {
-      display: flex; align-items: center; gap: 12px;
-      padding: 12px 16px; border-radius: var(--radius-md);
-      cursor: pointer; transition: var(--transition);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: var(--transition);
       border: 1px solid transparent;
       margin-bottom: 4px;
     }
+
     .conversation-item:hover {
       background: var(--surface-hover);
       border-color: var(--border);
     }
+
     .conversation-item.active {
-      background: var(--surface);
+      background: var(--bg-secondary);
       border-color: var(--blue);
       box-shadow: var(--shadow-sm);
     }
-    
+
     .conversation-avatar {
-      width: 40px; height: 40px; border-radius: 50%;
-      background: var(--blue); display: flex; align-items: center;
-      justify-content: center; color: white; font-weight: 600;
-      font-size: 14px; flex-shrink: 0;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--blue);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 600;
+      font-size: 14px;
+      flex-shrink: 0;
     }
-    
+
     .conversation-info {
-      flex: 1; min-width: 0;
+      flex: 1;
+      min-width: 0;
     }
-    
+
     .conversation-name {
-      font-weight: 600; color: var(--text-primary);
-      margin-bottom: 2px; font-size: 14px;
+      font-weight: 500;
+      color: var(--text-primary);
+      margin-bottom: 2px;
+      font-size: 14px;
     }
-    
+
     .conversation-last-message {
-      color: var(--text-secondary); font-size: 13px;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      color: var(--text-secondary);
+      font-size: 13px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
-    
+
     .conversation-meta {
-      display: flex; align-items: center; gap: 8px;
-      margin-top: 4px; font-size: 11px; color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 4px;
+      font-size: 11px;
+      color: var(--text-muted);
     }
-    
+
     .conversation-badge {
-      background: var(--blue); color: white;
-      padding: 2px 6px; border-radius: 8px;
-      font-size: 10px; font-weight: 600;
+      background: var(--blue);
+      color: white;
+      padding: 2px 6px;
+      border-radius: 8px;
+      font-size: 10px;
+      font-weight: 600;
     }
+
     .conversation-badge.human {
       background: var(--orange);
     }
+
     .conversation-badge.ai {
       background: var(--blue);
     }
-    
-    .conversation-status {
-      width: 8px; height: 8px; border-radius: 50%;
+
+    .unread-indicator {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--blue);
+      margin-left: auto;
+    }
+
+    /* ── Zone Chat Principal ───────────────────────────────────── */
+    .chat-area {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      background: var(--bg-primary);
+    }
+
+    .chat-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    .chat-contact-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .chat-contact-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--blue);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 600;
+      font-size: 12px;
+    }
+
+    .chat-contact-details {
+      flex: 1;
+    }
+
+    .chat-contact-name {
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 2px;
+    }
+
+    .chat-contact-status {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .message {
+      display: flex;
+      gap: 8px;
+      max-width: 70%;
+    }
+
+    .message.user {
+      align-self: flex-end;
+      flex-direction: row-reverse;
+    }
+
+    .message-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
       background: var(--text-muted);
-    }
-    .conversation-status.online {
-      background: var(--green);
-    }
-    .conversation-status.away {
-      background: var(--orange);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 10px;
+      font-weight: 600;
+      flex-shrink: 0;
     }
 
-    /* ── Stats généraux ──────────────────────────────────────────────────── */
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-      gap: 14px;
+    .message.user .message-avatar {
+      background: var(--blue);
     }
-    .stat-box {
-      background: var(--bg);
+
+    .message-content {
+      background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 14px 16px;
-    }
-    .stat-value {
-      font-family: var(--mono);
-      font-size: 26px; font-weight: 700;
-      line-height: 1; margin-bottom: 6px;
-    }
-    .stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .7px; }
-
-    /* ── Section ROI ───────────────────────────────────────────────────────/* Responsive Design */
-    @media (max-width: 1200px) {
-      #app { grid-template-columns: 280px 1fr 240px; }
-      .conversation-avatar { width: 36px; height: 36px; font-size: 12px; }
-      .message-avatar { width: 32px; height: 32px; font-size: 12px; margin-right: 10px; }
-      .message-text { font-size: 13px; padding: 10px 14px; }
+      border-radius: var(--radius-lg);
+      padding: 12px 16px;
+      position: relative;
     }
 
-    @media (max-width: 768px) {
-      #app { 
-        grid-template-columns: 1fr; 
-        grid-template-rows: auto 1fr auto;
-      }
-      
-      /* Sidebar mobile */
-      #app > div:first-child {
-        position: fixed; top: 0; left: 0; right: 0;
-        background: var(--surface); border-bottom: 1px solid var(--border);
-        z-index: 1000; height: auto;
-        max-height: 40vh;
-      }
-      
-      /* Chat mobile */
-      #app > div:nth-child(2) {
-        height: 100vh;
-        display: flex;
-        flex-direction: column;
-      }
-      
-      /* Stats mobile */
-      #app > div:nth-child(3) {
-        display: none;
-      }
-      
-      .conversation-header { padding: 12px 16px; }
-      .conversation-avatar { width: 32px; height: 32px; font-size: 12px; }
-      .message-avatar { width: 28px; height: 28px; font-size: 11px; margin-right: 8px; }
-      .message-text { font-size: 14px; padding: 8px 12px; }
-      .message-bubble { max-width: 85%; }
-      
-      #chat-input-panel { 
-        padding: 12px 16px; 
-        border-top: 1px solid var(--border);
-        background: var(--surface);
-      }
-      
-      #admin-chat-input { 
-        font-size: 16px; 
-        padding: 12px 16px; 
-        min-height: 44px;
-      }
-      
-      #send-btn { 
-        min-width: 80px; 
-        font-size: 14px;
-        padding: 12px 20px;
-      }
+    .message.user .message-content {
+      background: var(--blue);
+      color: white;
+      border-color: var(--blue);
     }
 
-    @media (max-width: 480px) {
-      .conversation-header { padding: 8px 12px; }
-      .conversation-name { font-size: 13px; }
-      .conversation-phone { font-size: 12px; }
-      .message-text { font-size: 15px; padding: 6px 10px; }
-      #admin-chat-input { font-size: 16px; padding: 10px 14px; }
-      
-      /* Hide some elements on very small screens */
-      .conversation-meta { display: none; }
-      #conversation-status { display: none; }
+    .message-text {
+      font-size: 14px;
+      line-height: 1.5;
+      margin-bottom: 4px;
     }
 
-    /* Smooth scrolling */
-    * {
-      scroll-behavior: smooth;
-      -webkit-overflow-scrolling: touch;
+    .message-time {
+      font-size: 11px;
+      color: var(--text-muted);
     }
 
-    /* Focus styles for accessibility */
-    button:focus, input:focus, textarea:focus, select:focus {
-      outline: 2px solid var(--blue);
-      outline-offset: 2px;
+    .message.user .message-time {
+      color: rgba(255, 255, 255, 0.7);
     }
 
-    /* Loading states */
-    .loading {
-      opacity: 0.6;
-      pointer-events: none;
+    .typing-indicator {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 8px 12px;
     }
 
-    /* Hover states */
-    .conversation-item:hover {
-      transform: translateX(2px);
+    .typing-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--text-muted);
+      animation: typing 1.4s ease-in-out infinite;
     }
 
-    #send-btn:hover:not(:disabled) {
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes typing {
+      0%, 60%, 100% { opacity: 0.3; }
+      30% { opacity: 1; }
+    }
+
+    .chat-input {
+      padding: 20px;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    .input-container {
+      display: flex;
+      gap: 12px;
+      align-items: flex-end;
+    }
+
+    .message-input {
+      flex: 1;
+      padding: 12px 16px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      background: var(--bg-primary);
+      font-size: 14px;
+      resize: none;
+      min-height: 44px;
+      max-height: 120px;
+      transition: var(--transition);
+    }
+
+    .message-input:focus {
+      outline: none;
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+    }
+
+    .send-button {
+      padding: 12px 20px;
+      background: var(--blue);
+      color: white;
+      border: none;
+      border-radius: var(--radius-lg);
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .send-button:hover {
+      background: var(--blue-dark);
       transform: translateY(-1px);
-      box-shadow: var(--shadow-md);
     }
 
-    /* Active states */
-    .conversation-item.active {
-      transform: translateX(2px);
-      box-shadow: var(--shadow-md);
-    }  border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 14px 16px;
+    /* ── Right Panel ───────────────────────────────────────────── */
+    .right-panel {
+      background: var(--surface);
+      border-left: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    .right-panel-header {
+      padding: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .right-panel-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .right-panel-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+    }
+
+    .lead-info-section {
+      margin-bottom: 24px;
+    }
+
+    .lead-info-title {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    .lead-info-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .lead-info-label {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .lead-info-value {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .status-badge.ai {
+      background: var(--bg-secondary);
+      color: var(--blue);
+      border: 1px solid var(--blue);
+    }
+
+    .status-badge.human {
+      background: var(--bg-secondary);
+      color: var(--orange);
+      border: 1px solid var(--orange);
+    }
+
+    .lead-score {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px;
+      background: var(--bg-secondary);
+      border-radius: var(--radius-md);
+    }
+
+    .score-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .score-label {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .action-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 20px;
+    }
+
+    .action-button {
+      padding: 10px 16px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background: var(--surface);
+      color: var(--text-primary);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: var(--transition);
       text-align: center;
     }
-    .roi-kpi .kpi-value {
-      font-family: var(--mono);
-      font-size: 28px; font-weight: 700; line-height: 1;
-      margin-bottom: 6px;
-    }
-    .roi-kpi .kpi-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .7px; }
 
-    /* ── Barres plan ─────────────────────────────────────────────────────── */
-    .plan-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
-    .plan-row { display: flex; align-items: center; gap: 10px; }
-    .plan-name {
-      width: 60px; font-size: 12px; font-weight: 600;
-      text-transform: uppercase; letter-spacing: .6px;
-    }
-    .plan-name.starter { color: var(--blue); }
-    .plan-name.pro     { color: var(--purple); }
-    .plan-name.elite   { color: var(--gold); }
-
-    .plan-bar-track {
-      flex: 1; height: 8px; background: #21262d; border-radius: 4px; overflow: hidden;
-    }
-    .plan-bar-fill {
-      height: 100%; border-radius: 4px;
-      transition: width .6s ease;
-    }
-    .plan-bar-fill.starter { background: var(--blue); }
-    .plan-bar-fill.pro     { background: var(--purple); }
-    .plan-bar-fill.elite   { background: var(--gold); }
-
-    .plan-info {
-      width: 130px; font-family: var(--mono); font-size: 11px;
-      color: var(--muted); text-align: right;
+    .action-button:hover {
+      border-color: var(--blue);
+      color: var(--blue);
     }
 
-    /* ── ROI footer ──────────────────────────────────────────────────────── */
-    .roi-footer {
-      display: flex; justify-content: space-between; align-items: center;
-      border-top: 1px solid var(--border); padding-top: 14px; margin-top: 4px;
+    .action-button.primary {
+      background: var(--blue);
+      color: white;
+      border-color: var(--blue);
     }
-    .roi-label { font-size: 12px; color: var(--muted); }
-    .roi-value {
-      font-family: var(--mono); font-size: 18px; font-weight: 700;
-    }
-    .roi-value.high   { color: var(--green); }
-    .roi-value.medium { color: var(--orange); }
-    .roi-value.low    { color: var(--red); }
-    .roi-value.none   { color: var(--muted); }
 
-    .since-text { font-size: 12px; color: var(--muted); }
+    .action-button.primary:hover {
+      background: var(--blue-dark);
+    }
 
-    /* ── Agent control ───────────────────────────────────────────────────── */
-    .control-row { display: flex; align-items: center; gap: 12px; }
-    .btn {
-      padding: 7px 16px; border-radius: 6px; border: 1px solid var(--border);
-      cursor: pointer; font-size: 13px; font-weight: 600; transition: .15s;
-      background: var(--surface); color: var(--text);
+    /* ── Responsive Design ───────────────────────────────────────────── */
+    @media (max-width: 1200px) {
+      .app-container {
+        grid-template-columns: 300px 1fr 280px;
+      }
     }
-    .btn:hover { border-color: var(--blue); color: var(--blue); }
-    .btn.danger:hover { border-color: var(--red); color: var(--red); }
-    .status-pill {
-      display: inline-flex; align-items: center; gap: 6px;
-      padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;
-    }
-    .status-pill.running { background: #1a2d1a; border: 1px solid #2d4a2d; color: var(--green); }
-    .status-pill.stopped { background: #2d1a1a; border: 1px solid #4a2d2d; color: var(--red); }
 
-    /* ── Auth overlay ────────────────────────────────────────────────────── */
-    #auth-overlay {
-      position: fixed; inset: 0; background: var(--bg);
-      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;
-      z-index: 99;
+    @media (max-width: 968px) {
+      .app-container {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto 1fr auto;
+      }
+
+      .sidebar {
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        height: auto;
+        max-height: 200px;
+      }
+
+      .right-panel {
+        border-left: none;
+        border-top: 1px solid var(--border);
+        height: auto;
+        max-height: 200px;
+      }
     }
-    #auth-overlay input {
-      background: var(--surface); border: 1px solid var(--border); color: var(--text);
-      padding: 10px 16px; border-radius: 8px; font-size: 14px; width: 280px;
-      outline: none;
+
+    @media (max-width: 640px) {
+      .app-container {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: fixed;
+        top: 0;
+        left: -340px;
+        z-index: 100;
+        height: 100vh;
+        width: 340px;
+        transition: left 0.3s ease;
+      }
+
+      .sidebar.open {
+        left: 0;
+      }
+
+      .chat-area {
+        height: 100vh;
+      }
+
+      .right-panel {
+        display: none;
+      }
+
+      .chat-header {
+        padding: 16px;
+      }
+
+      .chat-messages {
+        padding: 16px;
+      }
+
+      .chat-input {
+        padding: 16px;
+      }
     }
-    #auth-overlay input:focus { border-color: var(--blue); }
-    #auth-overlay .btn { width: 280px; text-align: center; }
-    #auth-error { color: var(--red); font-size: 13px; }
+
+    /* ── Animations & Effects ───────────────────────────────────── */
+    .fade-in {
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .slide-up {
+      animation: slideUp 0.3s ease;
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+
+    /* ── Scroll Styling ───────────────────────────────────────────── */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--bg-secondary);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 3px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--border-strong);
+    }
   </style>
 </head>
 <body>
-
-<!-- ── Auth overlay ───────────────────────────────────────────────────────── -->
-<div id="auth-overlay">
-  <div style="font-size:22px;font-weight:700;margin-bottom:8px;">🤖 Agent Boutique Console</div>
-  <div style="color:var(--muted);margin-bottom:8px;">Entrez votre token d'accès</div>
-  <input id="token-input" type="password" placeholder="console_admin_2024" autocomplete="off" />
-  <div id="auth-error" style="display:none">Token incorrect ou serveur inaccessible</div>
-  <button class="btn" onclick="doLogin()">Connexion →</button>
-</div>
-
-<!-- ── Console principale ─────────────────────────────────────────────────── -->
-<div id="app" style="display:none">
-
-  <div class="header">
-    <div>
-      <h1>🤖 Agent Boutique</h1>
-      <div style="color:var(--muted);font-size:12px;margin-top:3px">Console de contrôle</div>
-    </div>
-    <div class="header-right">
-      <span id="live-badge" class="live-badge disconnected">
-        <span class="dot"></span> SSE
-      </span>
-      <button class="btn danger" onclick="doLogout()">Déconnexion</button>
-    </div>
-  </div>
-
-  <!-- ── Stats généraux ─────────────────────────────────────────────────── -->
-  <div class="card">
-    <div class="card-header">
-      <span>📊</span>
-      <span class="card-title">Statistiques générales</span>
-      <span class="card-badge" id="uptime-badge">↑ 0s</span>
-    </div>
-    <div class="stats-grid">
-      <div class="stat-box">
-        <div class="stat-value" id="s-messages">—</div>
-        <div class="stat-label">Messages aujourd'hui</div>
+  <div class="app-container">
+    <!-- ── Sidebar Conversations ───────────────────────────────────── -->
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-title">Conversations</div>
+        <div class="search-bar">
+          <span class="search-icon">🔍</span>
+          <input type="text" class="search-input" placeholder="Rechercher...">
+        </div>
       </div>
-      <div class="stat-box">
-        <div class="stat-value" id="s-conversations">—</div>
-        <div class="stat-label">Conversations actives</div>
+      <div class="conversations-list">
+        <!-- Conversations will be populated here -->
+        <div class="conversation-item active">
+          <div class="conversation-avatar">JD</div>
+          <div class="conversation-info">
+            <div class="conversation-name">Jean Dupont</div>
+            <div class="conversation-last-message">Bonjour, je souhaiterais avoir plus d'informations...</div>
+            <div class="conversation-meta">
+              <span class="conversation-badge ai">IA</span>
+              <span>14:23</span>
+            </div>
+          </div>
+          <div class="unread-indicator"></div>
+        </div>
+        
+        <div class="conversation-item">
+          <div class="conversation-avatar" style="background: var(--orange);">MC</div>
+          <div class="conversation-info">
+            <div class="conversation-name">Marie Curie</div>
+            <div class="conversation-last-message">Quels sont les tarifs pour votre solution ?</div>
+            <div class="conversation-meta">
+              <span class="conversation-badge human">HUMAN</span>
+              <span>13:45</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="conversation-item">
+          <div class="conversation-avatar">PL</div>
+          <div class="conversation-info">
+            <div class="conversation-name">Pierre Lemoine</div>
+            <div class="conversation-last-message">Merci pour votre réponse rapide !</div>
+            <div class="conversation-meta">
+              <span class="conversation-badge ai">IA</span>
+              <span>Hier</span>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="stat-box">
-        <div class="stat-value" id="s-closings">—</div>
-        <div class="stat-label">Closings aujourd'hui</div>
-      </div>
-      <div class="stat-box">
-        <div class="stat-value" id="s-errors">—</div>
-        <div class="stat-label">Erreurs aujourd'hui</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── Contrôle agent ──────────────────────────────────────────────────── -->
-  <div class="card">
-    <div class="card-header">
-      <span>⚡</span>
-      <span class="card-title">Contrôle agent</span>
-    </div>
-    <div class="control-row">
-      <span id="agent-status" class="status-pill stopped">● INCONNU</span>
-      <button class="btn" onclick="powerAgent('start')">▶ Démarrer</button>
-      <button class="btn danger" onclick="powerAgent('stop')">⏹ Arrêter</button>
-    </div>
-  </div>
-
-  <!-- ────────────────────────────────────────────────────────────────────── -->
-  <!-- ── BLOC ROI ────────────────────────────────────────────────────────── -->
-  <!-- ────────────────────────────────────────────────────────────────────── -->
-  <div class="card" id="roi-card">
-    <div class="card-header">
-      <span>💰</span>
-      <span class="card-title">Revenus générés</span>
-      <span class="card-badge" id="roi-live-badge">🔄 live</span>
     </div>
 
-    <!-- KPIs principaux -->
-    <div class="roi-top">
-      <div class="roi-kpi">
-    
-    <!-- Header conversations -->
-    <div style="padding: 16px; border-bottom: 1px solid var(--border); background: var(--surface);">
-      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
-        <h2 style="font-size: 14px; font-weight: 600; color: var(--text-primary);">Conversations</h2>
-        <span id="conv-count-badge" style="background: var(--blue); color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;">0</span>
+    <!-- ── Zone Chat Principal ───────────────────────────────────── -->
+    <div class="chat-area">
+      <div class="chat-header">
+        <div class="chat-contact-info">
+          <div class="chat-contact-avatar">JD</div>
+          <div class="chat-contact-details">
+            <div class="chat-contact-name">Jean Dupont</div>
+            <div class="chat-contact-status">+33 6 12 34 56 78</div>
+          </div>
+        </div>
       </div>
       
-      <!-- Recherche et filtres -->
-      <div style="display: flex; gap: 8px; margin-bottom: 12px;">
-        <input type="text" id="conversation-search" placeholder="Rechercher..." style="
-          flex: 1; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border);
-          border-radius: var(--radius-sm); padding: 8px 12px; font-size: 13px; font-family: inherit;
-        " oninput="filterConversations()">
-        <select id="conversation-filter" style="
-          background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border);
-          border-radius: var(--radius-sm); padding: 8px 12px; font-size: 13px; font-family: inherit;
-        " onchange="filterConversations()">
-          <option value="all">Toutes</option>
-          <option value="active">Actives</option>
-          <option value="human">HUMAN</option>
-          <option value="ai">IA</option>
-        </select>
-      </div>
-    </div>
-    
-    <!-- Liste conversations -->
-    <div id="conversations-list" style="flex: 1; overflow-y: auto; padding: 8px;">
-      <div style="color: var(--text-muted); text-align: center; padding: 20px; font-size: 13px;">
-        Chargement...
-      </div>
-    </div>
-  </div>
-
-  <!-- ── Colonne centre : Zone de chat ───────────────────────────────────── -->
-  <div style="background: var(--bg-primary); display: flex; flex-direction: column;">
-    
-    <!-- Header conversation -->
-    <div id="conversation-header" style="padding: 16px; border-bottom: 1px solid var(--border); background: var(--surface); display: none;">
-      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-        <div style="display: flex; align-items: center; gap: 12px;">
-          <div id="conversation-avatar" style="width: 40px; height: 40px; border-radius: 50%; background: var(--blue); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 14px;">
-            ?
-          </div>
-          <div>
-            <div id="conversation-name" style="font-weight: 600; color: var(--text-primary); margin-bottom: 2px;">Sélectionnez une conversation</div>
-            <div id="conversation-phone" style="color: var(--text-muted); font-size: 13px;">📱 —</div>
+      <div class="chat-messages">
+        <div class="message user">
+          <div class="message-avatar">JD</div>
+          <div class="message-content">
+            <div class="message-text">Bonjour, je souhaiterais avoir plus d'informations sur votre solution d'assistant WhatsApp</div>
+            <div class="message-time">14:23</div>
           </div>
         </div>
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <span id="mode-badge" style="
-            background: var(--blue); color: white; font-size: 10px; font-weight: 600; 
-            padding: 2px 8px; border-radius: 12px; display: none;
-          ">IA</span>
-          <button id="takeover-btn" onclick="takeoverConversation()" style="
-            background: var(--orange); color: white; border: none; border-radius: var(--radius-sm); 
-            padding: 6px 12px; font-size: 11px; font-weight: 600; cursor: pointer;
-            display: none;
-          " title="Prendre le contrôle (HUMAN takeover)">HUMAN</button>
-          <button id="release-btn" onclick="releaseConversation()" style="
-            background: var(--blue); color: white; border: none; border-radius: var(--radius-sm); 
-            padding: 6px 12px; font-size: 11px; font-weight: 600; cursor: pointer;
-            display: none;
-          " title="Relâcher vers l'IA">RELEASE</button>
+        
+        <div class="message">
+          <div class="message-avatar">IA</div>
+          <div class="message-content">
+            <div class="message-text">Bonjour Jean ! Je suis ravi de vous présenter Agent Boutique. Notre solution d'IA vous permet d'automatiser vos réponses WhatsApp 24h/24 et d'augmenter vos conversions de 30 à 50%. Quels types de produits ou services vendez-vous ?</div>
+            <div class="message-time">14:24</div>
+          </div>
+        </div>
+        
+        <div class="message user">
+          <div class="message-avatar">JD</div>
+          <div class="message-content">
+            <div class="message-text">Je vends des vêtements pour enfants en ligne</div>
+            <div class="message-time">14:25</div>
+          </div>
+        </div>
+        
+        <div class="message">
+          <div class="message-avatar">IA</div>
+          <div class="message-content">
+            <div class="message-text">Parfait ! Pour votre boutique de vêtements, je vous recommande notre plan Pro à 149€/mois. Il vous offrira des conversations illimitées, des analytics avancées et un support prioritaire. Souhaitez-vous que je vous envoie le lien d'essai gratuit ?</div>
+            <div class="message-time">14:26</div>
+          </div>
+        </div>
+        
+        <div class="typing-indicator">
+          <div class="typing-dot"></div>
+          <div class="typing-dot"></div>
+          <div class="typing-dot"></div>
         </div>
       </div>
-      <div id="conversation-status" style="color: var(--text-muted); font-size: 12px;">
-        <span id="status-text">En attente...</span> • <span id="message-count">0 messages</span>
-      </div>
-    </div>
-    
-    <!-- Messages -->
-    <div id="conversation-messages" style="flex: 1; overflow-y: auto; padding: 16px; display: none;">
-      <div style="color: var(--text-muted); text-align: center; padding: 40px; font-size: 14px;">
-        <div style="font-size: 48px; margin-bottom: 16px;">💬</div>
-        <div>Sélectionnez une conversation pour commencer</div>
-      </div>
-    </div>
-    
-    <!-- Input chat -->
-    <div id="chat-input-panel" style="
-      border-top: 1px solid var(--border); padding: 16px; background: var(--surface); 
-      display: none; align-items: flex-end; gap: 12px;
-    ">
-      <div style="flex: 1; position: relative;">
-        <textarea id="admin-chat-input" placeholder="Tapez votre message..." style="
-          width: 100%; background: var(--bg-primary); color: var(--text-primary); 
-          border: 1px solid var(--border); border-radius: var(--radius-md); 
-          padding: 12px 16px; font-size: 14px; resize: none; font-family: inherit;
-          min-height: 44px; max-height: 120px; line-height: 1.4;
-        " onkeypress="handleChatKeypress(event)" onkeydown="handleChatKeydown(event)"></textarea>
-        <div id="typing-indicator" style="
-          position: absolute; bottom: 12px; right: 16px; color: var(--text-muted); 
-          font-size: 12px; display: none;
-        ">
-          <span>•</span><span>•</span><span>•</span>
+      
+      <div class="chat-input">
+        <div class="input-container">
+          <textarea class="message-input" placeholder="Tapez votre message..." rows="1"></textarea>
+          <button class="send-button">
+            <span>Envoyer</span>
+            <span>→</span>
+          </button>
         </div>
       </div>
-      <button onclick="sendAdminMessage()" id="send-btn" style="
-        background: var(--blue); color: white; border: none; border-radius: var(--radius-md);
-        padding: 12px 24px; font-size: 14px; font-weight: 600; cursor: pointer;
-        min-width: 100px; height: 44px; transition: var(--transition);
-      ">Envoyer</button>
+    </div>
+
+    <!-- ── Right Panel ───────────────────────────────────────────── -->
+    <div class="right-panel">
+      <div class="right-panel-header">
+        <div class="right-panel-title">Informations Lead</div>
+      </div>
+      <div class="right-panel-content">
+        <div class="lead-info-section">
+          <div class="lead-info-title">Statut</div>
+          <div class="lead-info-item">
+            <span class="lead-info-label">Mode actuel</span>
+            <span class="status-badge ai">IA</span>
+          </div>
+        </div>
+        
+        <div class="lead-info-section">
+          <div class="lead-info-title">Score Lead</div>
+          <div class="lead-score">
+            <div class="score-value">85</div>
+            <div class="score-label">/100</div>
+          </div>
+        </div>
+        
+        <div class="lead-info-section">
+          <div class="lead-info-title">Informations</div>
+          <div class="lead-info-item">
+            <span class="lead-info-label">Nom</span>
+            <span class="lead-info-value">Jean Dupont</span>
+          </div>
+          <div class="lead-info-item">
+            <span class="lead-info-label">Téléphone</span>
+            <span class="lead-info-value">+33 6 12 34 56 78</span>
+          </div>
+          <div class="lead-info-item">
+            <span class="lead-info-label">Business</span>
+            <span class="lead-info-value">Vêtements enfants</span>
+          </div>
+          <div class="lead-info-item">
+            <span class="lead-info-label">Messages</span>
+            <span class="lead-info-value">4 aujourd'hui</span>
+          </div>
+        </div>
+        
+        <div class="lead-info-section">
+          <div class="lead-info-title">Actions Rapides</div>
+          <div class="action-buttons">
+            <button class="action-button primary">Prendre en main</button>
+            <button class="action-button">Voir l'historique</button>
+            <button class="action-button">Envoyer lien paiement</button>
+            <button class="action-button">Archiver</button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- ── Colonne droite : Stats + Logs ───────────────────────────────────── -->
-  <div style="background: var(--bg-secondary); overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 16px;">
-    
-    <!-- Stats compactes -->
-    <div class="card" style="background: var(--surface);">
-      <div class="card-header">
-        <span>📊</span>
-        <span class="card-title">Stats</span>
-      </div>
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-        <div style="text-align: center; padding: 12px; background: var(--bg-primary); border-radius: var(--radius-md);">
-          <div style="font-size: 20px; font-weight: 700; color: var(--text-primary);" id="total-conversations">0</div>
-          <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Conversations</div>
-        </div>
-        <div style="text-align: center; padding: 12px; background: var(--bg-primary); border-radius: var(--radius-md);">
-          <div style="font-size: 20px; font-weight: 700; color: var(--text-primary);" id="active-humans">0</div>
-          <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">HUMAINS</div>
-        </div>
-      </div>
-    </div>
+  <script>
+    // Auto-resize textarea
+    const messageInput = document.querySelector('.message-input');
+    messageInput.addEventListener('input', function() {
+      this.style.height = 'auto';
+      this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+    });
 
-    <!-- Logs SSE -->
-    <div class="card">
-      <div class="card-header">
-        <span>📋</span>
-        <span class="card-title">Logs temps réel</span>
-        <span class="live-badge connected" id="sse-status">
-          <span class="dot"></span> LIVE
-        </span>
-      </div>
-      <div id="log-area" style="
-        font-family: var(--mono); font-size: 12px; line-height: 1.6;
-        background: var(--bg-primary); border: 1px solid var(--border); border-radius: var(--radius-md);
-        padding: 12px; height: 200px; overflow-y: auto; color: var(--text-primary);
-      ">
-        <div style="color: var(--text-muted);">En attente de connexion...</div>
-      </div>
-    </div>
-  </div>
-</div><!-- /#app -->
-
-<script>
-/* ── Config ──────────────────────────────────────────────────────────────── */
-const BASE = window.location.origin;
-let TOKEN  = localStorage.getItem('console_token') || '';
-let sseSource = null;
-let roiTimer  = null;
-
-/* ── Helpers ─────────────────────────────────────────────────────────────── */
-const eur = v => (v || 0).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
-const pct = v => v != null ? `${v.toFixed(2)} %` : '— %';
-const el  = id => document.getElementById(id);
-
-function apiFetch(path, opts = {}) {
-  return fetch(BASE + path, {
-    ...opts,
-    headers: { 'Authorization': `Bearer ${TOKEN}`, 'Content-Type': 'application/json', ...(opts.headers || {}) }
-  });
-}
-
-/* ── Auth ────────────────────────────────────────────────────────────────── */
-async function doLogin() {
-  const input = el('token-input').value.trim();
-  if (!input) return;
-  TOKEN = input;
-  const res = await apiFetch('/api/console/stats').catch(() => null);
-  if (res && res.ok) {
-    localStorage.setItem('console_token', TOKEN);
-    el('auth-overlay').style.display = 'none';
-    el('app').style.display = 'block';
-    boot();
-  } else {
-    el('auth-error').style.display = 'block';
-  }
-}
-
-function doLogout() {
-  localStorage.removeItem('console_token');
-  location.reload();
-}
-
-el('token-input').addEventListener('keydown', e => e.key === 'Enter' && doLogin());
-
-/* ── Stats généraux ──────────────────────────────────────────────────────── */
-async function loadStats() {
-  const res = await apiFetch('/api/console/stats').catch(() => null);
-  if (!res || !res.ok) return;
-  const d = await res.json();
-  el('s-messages').textContent     = d.messages_today ?? '—';
-  el('s-conversations').textContent = d.active_conversations ?? '—';
-  el('s-closings').textContent     = d.closings_today ?? '—';
-  el('s-errors').textContent       = d.errors_today ?? '—';
-  el('uptime-badge').textContent   = `↑ ${fmtUptime(d.uptime)}`;
-  const pill = el('agent-status');
-  pill.className = `status-pill ${d.agent_status === 'running' ? 'running' : 'stopped'}`;
-  pill.textContent = `● ${(d.agent_status || 'inconnu').toUpperCase()}`;
-}
-
-function fmtUptime(s) {
-  if (!s) return '0s';
-  if (s < 60) return `${s}s`;
-  if (s < 3600) return `${Math.floor(s/60)}m`;
-  return `${Math.floor(s/3600)}h${Math.floor((s%3600)/60)}m`;
-}
-
-/* ── Contrôle agent ──────────────────────────────────────────────────────── */
-async function powerAgent(action) {
-  const res = await apiFetch('/api/console/power', { method: 'POST', body: JSON.stringify({ action }) }).catch(() => null);
-  if (!res || !res.ok) return;
-  const d = await res.json();
-  const pill = el('agent-status');
-  pill.className = `status-pill ${d.status === 'running' ? 'running' : 'stopped'}`;
-  pill.textContent = `● ${(d.status || '?').toUpperCase()}`;
-}
-
-/* ── ROI ─────────────────────────────────────────────────────────────────── */
-async function loadROI() {
-  const res = await apiFetch('/api/console/roi').catch(() => null);
-  if (!res || !res.ok) return;
-  const d = await res.json();
-  renderROI(d);
-}
-
-function renderROI(d) {
-  /* KPIs */
-  el('roi-revenue').textContent   = eur(d.totalRevenue);
-  el('roi-rate').textContent      = `${d.conversionRate ?? 0} %`;
-  el('roi-converted').textContent = d.totalConverted ?? 0;
-
-  /* Barres par plan */
-  const total = d.totalRevenue || 1; // évite division par 0
-  const plans = d.revenueByPlan || {};
-  for (const key of ['starter', 'pro', 'elite']) {
-    const p = plans[key] || { count: 0, revenue: 0 };
-    const w = Math.min(100, (p.revenue / total) * 100);
-    el(`bar-${key}`).style.width = `${w}%`;
-    el(`info-${key}`).textContent = `${p.count} vente${p.count !== 1 ? 's' : ''} · ${eur(p.revenue)}`;
-  }
-
-  /* ROI estimé */
-  const roiEl = el('roi-pct');
-  if (d.estimatedROI == null) {
-    roiEl.textContent = '— %';
-    roiEl.className   = 'roi-value none';
-  } else {
-    roiEl.textContent = `${d.estimatedROI} %`;
-    roiEl.className   = 'roi-value ' + (d.estimatedROI >= 200 ? 'high' : d.estimatedROI >= 100 ? 'medium' : 'low');
-  }
-
-  /* Depuis le */
-  if (d.since) {
-    const date = new Date(d.since).toLocaleDateString('fr-FR');
-    el('roi-since').textContent = `Depuis le ${date}`;
-  } else {
-    el('roi-since').textContent = 'Depuis le —';
-  }
-}
-
-/* ── SSE Logs ────────────────────────────────────────────────────────────── */
-function connectSSE() {
-  if (sseSource) sseSource.close();
-
-  // EventSource ne permet pas les headers custom → on encode le token en query
-  sseSource = new EventSource(`${BASE}/api/console/logs?token=${encodeURIComponent(TOKEN)}`);
-  const badge = el('live-badge');
-
-  sseSource.onopen = () => {
-    badge.className = 'live-badge connected';
-    badge.innerHTML = '<span class="dot"></span> LIVE';
-    el('roi-live-badge').textContent = '🟢 live';
-  };
-
-  sseSource.onerror = () => {
-    badge.className = 'live-badge disconnected';
-    badge.innerHTML = '<span class="dot"></span> SSE OFF';
-    el('roi-live-badge').textContent = '🔄 live';
-    // Reconnexion automatique dans 5s
-    setTimeout(connectSSE, 5000);
-  };
-
-  sseSource.onmessage = (e) => {
-    try {
-      const data = JSON.parse(e.data);
-
-      // Mise à jour ROI instantanée sur event 'conversion'
-      if (data.type === 'conversion') {
-        loadROI();
-        return;
+    // Send message on Enter
+    messageInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
       }
-
-      // Log dans la fenêtre
-      const msg  = data.message || e.data;
-      const time = data.time ? new Date(data.time).toLocaleTimeString('fr-FR') : '';
-      const div  = document.createElement('div');
-      div.style.borderBottom = '1px solid #21262d';
-      div.style.paddingBottom = '2px';
-      div.innerHTML = `<span style="color:var(--muted)">${time} </span>${escHtml(msg)}`;
-      const log = el('log-area');
-      // Retirer le placeholder si présent
-      if (log.firstChild?.style?.color === 'var(--muted)' && log.children.length === 1) log.innerHTML = '';
-      log.appendChild(div);
-      log.scrollTop = log.scrollHeight;
-      // Garder max 200 lignes
-      while (log.children.length > 200) log.removeChild(log.firstChild);
-    } catch { /* ignore */ }
-  };
-}
-
-function escHtml(s) {
-  return String(s)
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
-
-/* ── Conversations Admin Panel ─────────────────────────────────────────────── */
-let selectedConversationId = null;
-let conversationTimer = null;
-
-async function loadConversations() {
-  const res = await apiFetch('/api/console/conversations').catch(() => null);
-  if (!res || !res.ok) return;
-  
-  const data = await res.json();
-  renderConversationsList(data.conversations);
-  el('conv-count-badge').textContent = `${data.total} conv`;
-}
-
-function renderConversationsList(conversations) {
-  const list = el('conversations-list');
-  const searchTerm = el('conversation-search').value.toLowerCase();
-  const filterValue = el('conversation-filter').value;
-  
-  // Filtrer les conversations
-  let filteredConversations = conversations || [];
-  if (filteredConversations.length > 0) {
-    filteredConversations = filteredConversations.filter(conv => {
-      const matchesSearch = !searchTerm || 
-        conv.phone.toLowerCase().includes(searchTerm) ||
-        (conv.name && conv.name.toLowerCase().includes(searchTerm));
-      
-      const matchesFilter = filterValue === 'all' ||
-        (filterValue === 'active' && conv.isActive) ||
-        (filterValue === 'human' && conv.mode === 'HUMAN') ||
-        (filterValue === 'ai' && conv.mode === 'IA');
-      
-      return matchesSearch && matchesFilter;
     });
-  }
-  
-  if (filteredConversations.length === 0) {
-    list.innerHTML = `
-      <div style="color: var(--text-muted); text-align: center; padding: 20px; font-size: 13px;">
-        ${searchTerm || filterValue !== 'all' ? 'Aucune conversation trouvée' : 'Aucune conversation'}
-      </div>
-    `;
-    return;
-  }
-  
-  list.innerHTML = filteredConversations.map(conv => `
-    <div class="conversation-item ${selectedConversationId === conv.id ? 'active' : ''}" 
-         onclick="selectConversation('${conv.id}')">
-      <div class="conversation-avatar">
-        ${conv.name ? conv.name.charAt(0).toUpperCase() : '?'}
-      </div>
-      <div class="conversation-info">
-        <div class="conversation-name">${conv.name || 'Client'}</div>
-        <div class="conversation-last-message">${conv.lastMessage?.content || 'Nouveau message'}</div>
-        <div class="conversation-meta">
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <span class="conversation-badge ${conv.mode === 'HUMAN' ? 'human' : 'ai'}">
-              ${conv.mode === 'HUMAN' ? 'HUMAN' : 'IA'}
-            </span>
-            <span class="conversation-status ${conv.isActive ? 'online' : 'away'}"></span>
-          </div>
-          <span>${formatTime(conv.lastInteractionAt)}</span>
-        </div>
-      </div>
-    </div>
-  `).join('');
-}
 
-function filterConversations() {
-  loadConversations();
-}
+    function sendMessage() {
+      const message = messageInput.value.trim();
+      if (message) {
+        console.log('Sending message:', message);
+        messageInput.value = '';
+        messageInput.style.height = 'auto';
+      }
+    }
 
-// Typing indicator functions
-function showTypingIndicator() {
-  const indicator = el('typing-indicator');
-  if (indicator) {
-    indicator.style.display = 'block';
-  }
-}
-
-function hideTypingIndicator() {
-  const indicator = el('typing-indicator');
-  if (indicator) {
-    indicator.style.display = 'none';
-  }
-}
-
-// Enhanced send message with typing indicator
-async function sendAdminMessage() {
-  const input = el('admin-chat-input');
-  const message = input.value.trim();
-  
-  if (!message || !selectedConversationId) return;
-  
-  const sendBtn = el('send-btn');
-  sendBtn.disabled = true;
-  sendBtn.textContent = 'Envoi...';
-  
-  // Show typing indicator (fake)
-  showTypingIndicator();
-  
-  try {
-    const res = await apiFetch('/api/admin/chat/send', {
-      method: 'POST',
-      body: JSON.stringify({
-        conversationId: selectedConversationId,
-        message: message,
-        tenant_id: 'default'
-      })
+    // Conversation item clicks
+    document.querySelectorAll('.conversation-item').forEach(item => {
+      item.addEventListener('click', function() {
+        document.querySelectorAll('.conversation-item').forEach(i => i.classList.remove('active'));
+        this.classList.add('active');
+      });
     });
-    
-    if (res && res.ok) {
-      input.value = '';
-      hideTypingIndicator();
-      // Rafraîchir la conversation avec animation
-      selectConversation(selectedConversationId);
-    } else {
-      hideTypingIndicator();
-      alert('Erreur lors de l\'envoi du message');
-    }
-  } catch (error) {
-    hideTypingIndicator();
-    console.error('Error sending admin message:', error);
-    alert('Erreur lors de l\'envoi du message');
-  } finally {
-    sendBtn.disabled = false;
-    sendBtn.textContent = 'Envoyer';
-  }
-}
 
-function getStageColor(stage) {
-  const colors = {
-    'new': 'var(--blue)',
-    'qualified': 'var(--green)', 
-    'interested': 'var(--purple)',
-    'closing': 'var(--orange)',
-    'won': 'var(--green)',
-    'lost': 'var(--red)'
-  };
-  return colors[stage] || 'var(--muted)';
-}
-
-function formatTime(timestamp) {
-  if (!timestamp) return '';
-  const date = new Date(timestamp);
-  const now = new Date();
-  const diffMs = now - date;
-  const diffMins = Math.floor(diffMs / 60000);
-  
-  if (diffMins < 1) return 'à l\'instant';
-  if (diffMins < 60) return `il y a ${diffMins}m`;
-  
-  const diffHours = Math.floor(diffMins / 60);
-  if (diffHours < 24) return `il y a ${diffHours}h`;
-  
-  return date.toLocaleDateString('fr-FR');
-}
-
-async function selectConversation(convId) {
-  selectedConversationId = convId;
-  loadConversations(); // Refresh pour mettre à jour la sélection
-  
-  const res = await apiFetch(`/api/console/conversation/${convId}`).catch(() => null);
-  if (!res || !res.ok) return;
-  
-  const conv = await res.json();
-  renderConversationDetail(conv);
-}
-
-function renderConversationDetail(conv) {
-  // Mettre à jour le header
-  el('conversation-header').style.display = 'block';
-  el('conversation-header').innerHTML = `
-    <div style="display:flex; align-items: center; gap: 12px;">
-      <div id="conversation-avatar" style="width: 40px; height: 40px; border-radius: 50%; background: var(--blue); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 14px;">
-        ${conv.name ? conv.name.charAt(0).toUpperCase() : '?'}
-      </div>
-      <div>
-        <div id="conversation-name" style="font-weight: 600; color: var(--text-primary); margin-bottom: 2px;">${conv.name || 'Client'}</div>
-        <div id="conversation-phone" style="color: var(--text-muted); font-size: 13px;">📱 ${conv.phone}</div>
-      </div>
-    </div>
-    <div style="display:flex; align-items: center; gap: 8px;">
-      <span id="mode-badge" style="
-        background: ${conv.mode === 'HUMAN' ? 'var(--orange)' : 'var(--blue)'};
-        color: white; font-size: 10px; font-weight: 600; 
-        padding: 2px 8px; border-radius: 12px; display: ${conv.mode ? 'inline-block' : 'none'};
-      ">${conv.mode === 'HUMAN' ? 'HUMAN' : 'IA'}</span>
-      <button id="takeover-btn" onclick="takeoverConversation()" style="
-        background: var(--orange); color: white; border: none; border-radius: var(--radius-sm); 
-        padding: 6px 12px; font-size: 11px; font-weight: 600; cursor: pointer;
-        display: ${conv.mode === 'HUMAN' ? 'none' : 'inline-block'};
-      " title="Prendre le contrôle (HUMAN takeover)">HUMAN</button>
-      <button id="release-btn" onclick="releaseConversation()" style="
-        background: var(--blue); color: white; border: none; border-radius: var(--radius-sm); 
-        padding: 6px 12px; font-size: 11px; font-weight: 600; cursor: pointer;
-        display: ${conv.mode === 'HUMAN' ? 'inline-block' : 'none'};
-      " title="Relâcher vers l'IA">RELEASE</button>
-    </div>
-  `;
-  
-  el('conversation-status').innerHTML = `
-    <span id="status-text">${conv.stage ? conv.stage.toUpperCase() : 'ACTIVE'}</span> • 
-    <span id="message-count">${conv.messageCount || 0} messages</span>
-  `;
-  
-  // Afficher/masquer le chat input
-  const chatInputPanel = el('chat-input-panel');
-  chatInputPanel.style.display = conv.mode === 'HUMAN' ? 'flex' : 'none';
-  
-  const messagesDiv = el('conversation-messages');
-  messagesDiv.style.display = 'block';
-  
-  if (!conv.messages || conv.messages.length === 0) {
-    messagesDiv.innerHTML = `
-      <div style="color: var(--text-muted); text-align: center; padding: 40px; font-size: 14px;">
-        <div style="font-size: 48px; margin-bottom: 16px;">💬</div>
-        <div>Aucun message dans cette conversation</div>
-      </div>
-    `;
-    return;
-  }
-  
-  messagesDiv.innerHTML = conv.messages.map(msg => {
-    const isUser = msg.sender === 'user';
-    const isAdmin = msg.sender === 'admin';
-    const isAI = msg.sender === 'ai';
-    
-    return `
-      <div class="message-bubble ${isUser ? 'user' : isAdmin ? 'admin' : 'ai'}">
-        ${isUser ? `
-          <div class="message-avatar">👤</div>
-        ` : ''}
-        <div class="message-content">
-          <div class="message-text">${msg.content}</div>
-          <div class="message-meta">
-            <span class="message-sender">
-              ${isUser ? 'Client' : isAdmin ? 'Opérateur' : 'IA'}
-            </span>
-            <span class="message-time">
-              ${formatMessageTime(msg.timestamp)}
-            </span>
-          </div>
-        </div>
-        ${!isUser ? `
-          <div class="message-avatar" style="background: ${isAdmin ? 'var(--orange)' : 'var(--blue)'}">
-            ${isAdmin ? '👨‍💼' : '🤖'}
-          </div>
-        ` : ''}
-      </div>
-    `;
-  }).join('');
-  
-  // Scroll intelligent vers le bas
-  scrollToBottom();
-}
-
-function formatMessageTime(timestamp) {
-  const date = new Date(timestamp);
-  const now = new Date();
-  const diffMs = now - date;
-  const diffMins = Math.floor(diffMs / 60000);
-  
-  if (diffMins < 1) return 'à l\'instant';
-  if (diffMins < 60) return `il y a ${diffMins}m`;
-  
-  const diffHours = Math.floor(diffMins / 60);
-  if (diffHours < 24) return `il y a ${diffHours}h`;
-  
-  return date.toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'});
-}
-
-function scrollToBottom() {
-  const messagesDiv = el('conversation-messages');
-  if (messagesDiv) {
-    messagesDiv.scrollTop = messagesDiv.scrollHeight;
-  }
-}
-
-// Fonctions pour le chat admin
-async function sendAdminMessage() {
-  const input = el('admin-chat-input');
-  const message = input.value.trim();
-  
-  if (!message || !selectedConversationId) return;
-  
-  const sendBtn = el('send-btn');
-  sendBtn.disabled = true;
-  sendBtn.textContent = 'Envoi...';
-  
-  try {
-    const res = await apiFetch('/api/admin/chat/send', {
-      method: 'POST',
-      body: JSON.stringify({
-        conversationId: selectedConversationId,
-        message: message,
-        tenant_id: 'default' // À adapter selon votre logique multi-tenant
-      })
+    // Search functionality
+    const searchInput = document.querySelector('.search-input');
+    searchInput.addEventListener('input', function() {
+      const searchTerm = this.value.toLowerCase();
+      document.querySelectorAll('.conversation-item').forEach(item => {
+        const name = item.querySelector('.conversation-name').textContent.toLowerCase();
+        const lastMessage = item.querySelector('.conversation-last-message').textContent.toLowerCase();
+        const matches = name.includes(searchTerm) || lastMessage.includes(searchTerm);
+        item.style.display = matches ? 'flex' : 'none';
+      });
     });
-    
-    if (res && res.ok) {
-      input.value = '';
-      // Rafraîchir la conversation
-      selectConversation(selectedConversationId);
-    } else {
-      alert('Erreur lors de l\'envoi du message');
-    }
-  } catch (error) {
-    console.error('Error sending admin message:', error);
-    alert('Erreur lors de l\'envoi du message');
-  } finally {
-    sendBtn.disabled = false;
-    sendBtn.textContent = 'Envoyer';
-  }
-}
-
-async function takeoverConversation() {
-  if (!selectedConversationId) return;
-  
-  try {
-    const res = await apiFetch('/api/admin/chat/takeover', {
-      method: 'POST',
-      body: JSON.stringify({
-        conversationId: selectedConversationId,
-        tenant_id: 'default'
-      })
-    });
-    
-    if (res && res.ok) {
-      // Rafraîchir la conversation pour mettre à jour le mode
-      selectConversation(selectedConversationId);
-    } else {
-      alert('Erreur lors de la prise de contrôle');
-    }
-  } catch (error) {
-    console.error('Error taking over conversation:', error);
-    alert('Erreur lors de la prise de contrôle');
-  }
-}
-
-async function releaseConversation() {
-  if (!selectedConversationId) return;
-  
-  try {
-    const res = await apiFetch('/api/admin/chat/release', {
-      method: 'POST',
-      body: JSON.stringify({
-        conversationId: selectedConversationId,
-        tenant_id: 'default'
-      })
-    });
-    
-    if (res && res.ok) {
-      // Rafraîchir la conversation pour mettre à jour le mode
-      selectConversation(selectedConversationId);
-    } else {
-      alert('Erreur lors du relâchement');
-    }
-  } catch (error) {
-    console.error('Error releasing conversation:', error);
-    alert('Erreur lors du relâchement');
-  }
-}
-
-function handleChatKeypress(event) {
-  if (event.key === 'Enter' && !event.shiftKey) {
-    event.preventDefault();
-    sendAdminMessage();
-  }
-}
-
-function handleChatKeydown(event) {
-  // Gérer le redimensionnement avec Shift+Enter
-  if (event.key === 'Enter' && event.shiftKey) {
-    // Laisser le comportement par défaut (nouvelle ligne)
-    return;
-  }
-}
-
-function startConversationRefresh() {
-  // Refresh léger toutes les 30 secondes
-  conversationTimer = setInterval(() => {
-    loadConversations();
-    if (selectedConversationId) {
-      selectConversation(selectedConversationId);
-    }
-  }, 30000);
-}
-
-function stopConversationRefresh() {
-  if (conversationTimer) {
-    clearInterval(conversationTimer);
-    conversationTimer = null;
-  }
-}
-
-/* ── Boot ────────────────────────────────────────────────────────────────── */
-function boot() {
-  loadStats();
-  loadROI();
-  loadConversations();
-  connectSSE();
-  startConversationRefresh();
-  
-  setInterval(loadStats, 15000);
-  roiTimer = setInterval(loadROI, 30000);
-}
-
-/* ── Auto-login si token stocké ─────────────────────────────────────────── */
-(async function init() {
-  if (!TOKEN) return;
-  const res = await apiFetch('/api/console/stats').catch(() => null);
-  if (res && res.ok) {
-    el('auth-overlay').style.display = 'none';
-    el('app').style.display = 'block';
-    boot();
-  } else {
-    TOKEN = '';
-    localStorage.removeItem('console_token');
-  }
-})();
-</script>
+  </script>
 </body>
 </html>
