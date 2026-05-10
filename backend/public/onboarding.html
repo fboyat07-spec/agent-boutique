@@ -2,8 +2,10 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Onboarding - Agent Boutique</title>
+  <meta name="description" content="Configurez votre assistant WhatsApp IA en quelques minutes. Guide d'intégration simple.">
+  <script src="/tracking.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { 
@@ -496,6 +498,12 @@
 
     // Initialisation
     showStep(1);
+    
+    // Tracking onboarding
+    window.AgentBoutiqueTracking.track('onboarding_start', {
+      step: 1,
+      totalSteps: 4
+    });
   </script>
 </body>
 </html>

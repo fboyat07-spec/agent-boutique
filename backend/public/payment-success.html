@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Paiement réussi - Agent Boutique</title>
+  <meta name="description" content="Votre abonnement Agent Boutique est activé. Accédez à votre tableau de bord.">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; 
+      line-height: 1.6; 
+      color: #1a1a1a; 
+      background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .container { max-width: 600px; margin: 0 auto; padding: 40px 24px; }
+    
+    .success-card { 
+      background: white; 
+      border-radius: 16px; 
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1); 
+      padding: 48px; 
+      text-align: center;
+      border: 1px solid #bbf7d0;
+    }
+    .success-icon { 
+      width: 80px; 
+      height: 80px; 
+      background: #16a34a; 
+      border-radius: 50%; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      margin: 0 auto 24px;
+      font-size: 40px;
+    }
+    .success-icon::before { content: '✓'; color: white; font-weight: bold; }
+    
+    .success-title { 
+      font-size: 2rem; 
+      font-weight: 700; 
+      margin-bottom: 16px; 
+      color: #16a34a;
+    }
+    .success-message { 
+      font-size: 1.125rem; 
+      color: #374151; 
+      margin-bottom: 32px;
+      line-height: 1.6;
+    }
+    
+    .plan-info { 
+      background: #f8fafc; 
+      border-radius: 8px; 
+      padding: 20px; 
+      margin-bottom: 32px;
+      border: 1px solid #e2e8f0;
+    }
+    .plan-name { font-size: 1.25rem; font-weight: 600; color: #0ea5e9; margin-bottom: 4px; }
+    .plan-price { font-size: 1.5rem; font-weight: 700; color: #1e293b; }
+    
+    .actions { display: flex; gap: 16px; flex-direction: column; }
+    .btn { 
+      padding: 16px 24px; 
+      border-radius: 8px; 
+      font-size: 1rem; 
+      font-weight: 600; 
+      text-decoration: none; 
+      text-align: center;
+      transition: all 0.2s;
+      cursor: pointer;
+      border: none;
+    }
+    .btn-primary { 
+      background: #0ea5e9; 
+      color: white; 
+    }
+    .btn-primary:hover { 
+      background: #0284c7; 
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+    }
+    .btn-secondary { 
+      background: #f1f5f9; 
+      color: #475569; 
+      border: 1px solid #e2e8f0;
+    }
+    .btn-secondary:hover { 
+      background: #e2e8f0; 
+    }
+    
+    .next-steps { 
+      background: #fefce8; 
+      border: 1px solid #fde047; 
+      border-radius: 8px; 
+      padding: 20px; 
+      margin-top: 32px;
+    }
+    .next-steps h3 { color: #a16207; margin-bottom: 12px; }
+    .next-steps ul { list-style: none; text-align: left; }
+    .next-steps li { 
+      padding: 8px 0; 
+      color: #713f12;
+      display: flex;
+      align-items: center;
+    }
+    .next-steps li::before { 
+      content: '→'; 
+      margin-right: 12px; 
+      color: #a16207; 
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="success-card">
+      <div class="success-icon"></div>
+      <h1 class="success-title">Paiement réussi !</h1>
+      <p class="success-message">
+        Votre abonnement Agent Boutique est maintenant activé. 
+        Bienvenue dans l'aventure de l'automatisation intelligente !
+      </p>
+      
+      <div class="plan-info">
+        <div class="plan-name" id="plan-name">Chargement...</div>
+        <div class="plan-price" id="plan-price">Chargement...</div>
+      </div>
+      
+      <div class="actions">
+        <a href="/console.html" class="btn btn-primary">Accéder à mon tableau de bord</a>
+        <a href="/onboarding.html" class="btn btn-secondary">Commencer l'intégration</a>
+      </div>
+      
+      <div class="next-steps">
+        <h3>Prochaines étapes</h3>
+        <ul>
+          <li>Configurez votre numéro WhatsApp</li>
+          <li>Personnalisez votre assistant IA</li>
+          <li>Testez avec des messages démo</li>
+          <li>Lancez votre première campagne</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Récupérer le plan depuis l'URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const plan = urlParams.get('plan') || 'starter';
+    
+    // Configuration des plans
+    const plans = {
+      starter: { name: 'Starter', price: '79€/mois' },
+      pro: { name: 'Pro', price: '149€/mois' },
+      elite: { name: 'Elite', price: '399€/mois' }
+    };
+    
+    // Afficher les informations du plan
+    const planInfo = plans[plan];
+    if (planInfo) {
+      document.getElementById('plan-name').textContent = `Abonnement ${planInfo.name}`;
+      document.getElementById('plan-price').textContent = planInfo.price;
+    }
+    
+    // Tracking analytics (si configuré)
+    if (typeof gtag !== 'undefined') {
+      gtag('event', 'purchase', {
+        'transaction_id': Date.now().toString(),
+        'value': plan === 'starter' ? 79 : plan === 'pro' ? 149 : 399,
+        'currency': 'EUR',
+        'items': [{
+          'item_name': planInfo.name,
+          'category': 'subscription',
+          'quantity': 1,
+          'price': plan === 'starter' ? 79 : plan === 'pro' ? 149 : 399
+        }]
+      });
+    }
+  </script>
+</body>
+</html>

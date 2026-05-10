@@ -2,9 +2,25 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#1e293b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <title>Agent Boutique - Assistant WhatsApp IA pour Commerces et PME</title>
   <meta name="description" content="Automatisez vos réponses clients sur WhatsApp et augmentez vos conversions avec l'IA Agent Boutique. Solution professionnelle pour commerces et PME.">
+  <meta name="keywords" content="assistant WhatsApp, IA commerciale, automatisation, chatbot, commerces, PME">
+  <meta name="author" content="Agent Boutique">
+  <meta property="og:title" content="Agent Boutique - Assistant WhatsApp IA">
+  <meta property="og:description" content="Automatisez vos réponses WhatsApp avec l'IA">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://agent-boutique.com">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Agent Boutique - Assistant WhatsApp IA">
+  <meta name="twitter:description" content="Automatisez vos réponses WhatsApp avec l'IA">
+  <link rel="canonical" href="https://agent-boutique.com">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="dns-prefetch" href="//js.stripe.com">
+  <link rel="dns-prefetch" href="//api.stripe.com">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { 
@@ -19,10 +35,22 @@
     .header { 
       background: linear-gradient(135deg, #1e293b 0%, #334155 100%); 
       color: white; 
-      padding: 100px 0; 
+      padding: 80px 0; 
       text-align: center; 
       position: relative;
       overflow: hidden;
+    }
+    
+    @media (max-width: 768px) {
+      .header { padding: 60px 0; }
+      .header h1 { font-size: 2.5rem; }
+      .header .tagline { font-size: 1.125rem; }
+    }
+    
+    @media (max-width: 480px) {
+      .header { padding: 40px 0; }
+      .header h1 { font-size: 2rem; }
+      .header .tagline { font-size: 1rem; }
     }
     .header::before {
       content: '';
