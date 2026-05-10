@@ -6,70 +6,265 @@
   <title>Tarifs - Agent Boutique</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.6; color: #333; background: #f8f9fa; }
-    .container { max-width: 1000px; margin: 0 auto; padding: 20px; }
-    .header { text-align: center; padding: 60px 0; margin-bottom: 40px; }
-    .header h1 { font-size: 3em; color: #2563eb; margin-bottom: 20px; }
-    .header p { font-size: 1.3em; color: #666; max-width: 600px; margin: 0 auto; }
-    .pricing-table { width: 100%; border-collapse: separate; border-spacing: 0 20px; margin: 40px 0; }
-    .pricing-card { background: white; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); overflow: hidden; transition: transform 0.3s, box-shadow 0.3s; }
-    .pricing-card:hover { transform: translateY(-10px); box-shadow: 0 20px 40px rgba(0,0,0,0.15); }
-    .pricing-card.featured { border: 3px solid #2563eb; transform: scale(1.05); }
-    .pricing-card.featured:hover { transform: scale(1.05) translateY(-5px); }
-    .plan-header { padding: 30px; text-align: center; border-bottom: 1px solid #eee; }
-    .plan-name { font-size: 1.8em; font-weight: 700; margin-bottom: 10px; }
-    .plan-price { font-size: 3em; font-weight: 800; color: #2563eb; margin-bottom: 10px; }
-    .plan-price span { font-size: 0.4em; color: #666; font-weight: normal; }
-    .plan-description { color: #666; font-size: 1em; }
-    .plan-features { padding: 30px; }
-    .plan-features ul { list-style: none; }
-    .plan-features li { padding: 12px 0; border-bottom: 1px solid #f0f0f0; position: relative; padding-left: 30px; }
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; 
+      line-height: 1.6; 
+      color: #1a1a1a; 
+      background: #ffffff;
+    }
+    .container { max-width: 1000px; margin: 0 auto; padding: 0 24px; }
+    
+    /* Header */
+    .header { text-align: center; padding: 80px 0; margin-bottom: 60px; }
+    .header h1 { 
+      font-size: 2.5rem; 
+      font-weight: 700; 
+      margin-bottom: 16px; 
+      color: #1e293b;
+    }
+    .header p { 
+      font-size: 1.125rem; 
+      color: #64748b; 
+      max-width: 600px; 
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+    
+    /* Pricing Grid */
+    .pricing-grid { 
+      display: grid; 
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
+      gap: 32px; 
+      margin: 40px 0; 
+    }
+    .pricing-card { 
+      background: white; 
+      border: 1px solid #e2e8f0; 
+      border-radius: 12px; 
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); 
+      overflow: hidden; 
+      transition: all 0.2s ease;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+    .pricing-card:hover { 
+      transform: translateY(-4px); 
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+    }
+    .pricing-card.featured { 
+      border-color: #0ea5e9; 
+      box-shadow: 0 8px 24px rgba(14, 165, 233, 0.15);
+    }
+    
+    /* Plan Header */
+    .plan-header { 
+      padding: 32px 24px; 
+      text-align: center; 
+      border-bottom: 1px solid #f1f5f9;
+    }
+    .popular-badge { 
+      background: #0ea5e9; 
+      color: white; 
+      padding: 6px 16px; 
+      border-radius: 16px; 
+      font-size: 0.75rem; 
+      font-weight: 600; 
+      margin-bottom: 16px; 
+      display: inline-block;
+    }
+    .plan-name { 
+      font-size: 1.5rem; 
+      font-weight: 600; 
+      margin-bottom: 8px; 
+      color: #1e293b;
+    }
+    .plan-price { 
+      font-size: 2.5rem; 
+      font-weight: 700; 
+      margin-bottom: 16px; 
+      color: #1e293b;
+    }
+    .plan-price span { 
+      font-size: 1rem; 
+      color: #64748b; 
+      font-weight: 400;
+    }
+    .plan-description { 
+      color: #64748b; 
+      font-size: 0.95rem; 
+      line-height: 1.5;
+    }
+    
+    /* Plan Features */
+    .plan-features { 
+      padding: 32px 24px; 
+      flex-grow: 1;
+    }
+    .plan-features ul { 
+      list-style: none; 
+    }
+    .plan-features li { 
+      padding: 12px 0; 
+      border-bottom: 1px solid #f1f5f9; 
+      position: relative; 
+      padding-left: 28px; 
+      color: #475569;
+      line-height: 1.5;
+      font-size: 0.95rem;
+    }
     .plan-features li:last-child { border-bottom: none; }
-    .plan-features li::before { content: "✓"; position: absolute; left: 0; color: #28a745; font-weight: bold; font-size: 1.2em; }
-    .plan-features li.not-included::before { content: "✗"; color: #dc3545; }
+    .plan-features li::before { 
+      content: "✓"; 
+      position: absolute; 
+      left: 0; 
+      color: #10b981; 
+      font-weight: 600;
+    }
+    .plan-features li.not-included::before { content: "—"; color: #94a3b8; }
     .plan-features li.not-included { opacity: 0.6; }
-    .plan-footer { padding: 30px; background: #f8f9fa; text-align: center; }
-    .plan-cta { display: block; background: #2563eb; color: white; padding: 18px 40px; border-radius: 50px; text-decoration: none; font-weight: 600; font-size: 1.1em; transition: background 0.3s; }
-    .plan-cta:hover { background: #1d4ed8; transform: translateY(-2px); }
-    .plan-cta.secondary { background: white; color: #2563eb; border: 2px solid #2563eb; }
-    .plan-cta.secondary:hover { background: #f8f9fa; }
-    .popular-badge { background: #ff6b6b; color: white; padding: 8px 20px; border-radius: 20px; font-size: 0.8em; font-weight: 700; margin-bottom: 20px; display: inline-block; }
-    .comparison { background: white; padding: 40px; border-radius: 15px; margin: 40px 0; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-    .comparison h3 { font-size: 1.5em; margin-bottom: 20px; color: #333; }
-    .comparison table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-    .comparison th, .comparison td { padding: 15px; text-align: center; border: 1px solid #eee; }
-    .comparison th { background: #f8f9fa; font-weight: 600; color: #333; }
-    .comparison td:first-child { text-align: left; font-weight: 600; }
-    .faq { background: white; padding: 40px; border-radius: 15px; margin: 40px 0; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-    .faq h3 { font-size: 1.5em; margin-bottom: 20px; color: #333; }
-    .faq-item { margin-bottom: 30px; }
-    .faq-question { font-weight: 600; margin-bottom: 10px; color: #2563eb; cursor: pointer; }
-    .faq-answer { color: #666; line-height: 1.6; }
-    .faq-answer[style*="display: none"] { display: none; }
-    .footer { text-align: center; padding: 40px 0; color: #666; }
-    .footer a { color: #2563eb; text-decoration: none; }
+    
+    /* Plan Footer */
+    .plan-footer { 
+      padding: 24px; 
+      background: #f8fafc; 
+      text-align: center; 
+      border-top: 1px solid #f1f5f9;
+    }
+    .plan-cta { 
+      display: block; 
+      background: #1e293b; 
+      color: white; 
+      padding: 14px 28px; 
+      border-radius: 8px; 
+      text-decoration: none; 
+      font-weight: 600; 
+      font-size: 1rem; 
+      transition: all 0.2s ease;
+      border: 2px solid transparent;
+    }
+    .plan-cta:hover { 
+      background: #0f172a; 
+      transform: translateY(-1px);
+    }
+    .pricing-card.featured .plan-cta { 
+      background: #0ea5e9; 
+    }
+    .pricing-card.featured .plan-cta:hover { 
+      background: #0284c7; 
+    }
+    
+    /* Comparison Table */
+    .comparison { 
+      background: white; 
+      padding: 48px 32px; 
+      border-radius: 12px; 
+      margin: 60px 0; 
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); 
+      border: 1px solid #e2e8f0;
+    }
+    .comparison h3 { 
+      font-size: 1.5rem; 
+      margin-bottom: 32px; 
+      color: #1e293b; 
+      font-weight: 600;
+    }
+    .comparison table { 
+      width: 100%; 
+      border-collapse: collapse; 
+      margin-top: 0; 
+    }
+    .comparison th, .comparison td { 
+      padding: 16px; 
+      text-align: center; 
+      border: 1px solid #e2e8f0;
+      font-size: 0.95rem;
+    }
+    .comparison th { 
+      background: #f8fafc; 
+      font-weight: 600; 
+      color: #1e293b;
+    }
+    .comparison td:first-child { 
+      text-align: left; 
+      font-weight: 600; 
+      color: #1e293b;
+    }
+    
+    /* FAQ */
+    .faq { 
+      background: white; 
+      padding: 48px 32px; 
+      border-radius: 12px; 
+      margin: 60px 0; 
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); 
+      border: 1px solid #e2e8f0;
+    }
+    .faq h3 { 
+      font-size: 1.5rem; 
+      margin-bottom: 32px; 
+      color: #1e293b; 
+      font-weight: 600;
+    }
+    .faq-item { 
+      margin-bottom: 32px; 
+      border-bottom: 1px solid #f1f5f9; 
+      padding-bottom: 32px;
+    }
+    .faq-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+    .faq-question { 
+      font-weight: 600; 
+      margin-bottom: 12px; 
+      color: #1e293b; 
+      cursor: pointer; 
+      transition: color 0.2s ease;
+    }
+    .faq-question:hover { color: #0ea5e9; }
+    .faq-answer { 
+      color: #64748b; 
+      line-height: 1.6; 
+      font-size: 0.95rem;
+    }
+    
+    /* Footer */
+    .footer { 
+      text-align: center; 
+      padding: 48px 0; 
+      color: #64748b; 
+      border-top: 1px solid #f1f5f9;
+      margin-top: 60px;
+    }
+    .footer p { margin-bottom: 8px; }
+    .footer a { 
+      color: #0ea5e9; 
+      text-decoration: none; 
+      font-weight: 500;
+    }
     .footer a:hover { text-decoration: underline; }
+    
+    /* Responsive */
     @media (max-width: 768px) {
-      .pricing-table { border-spacing: 0; }
-      .pricing-card.featured { transform: scale(1); }
-      .comparison { padding: 20px; }
-      .comparison th, .comparison td { padding: 10px; font-size: 0.9em; }
+      .header { padding: 60px 0; }
+      .pricing-grid { grid-template-columns: 1fr; gap: 24px; }
+      .comparison { padding: 32px 24px; }
+      .comparison th, .comparison td { padding: 12px 8px; font-size: 0.875rem; }
+      .faq { padding: 32px 24px; }
     }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="header">
-      <h1>💰 Tarifs Agent Boutique</h1>
+      <h1>Tarifs</h1>
       <p>Choisissez le plan parfait pour transformer vos conversations WhatsApp en clients payants</p>
     </div>
 
-    <div class="pricing-table">
+    <div class="pricing-grid">
       <div class="pricing-card">
         <div class="plan-header">
           <div class="plan-name">Starter</div>
-          <div class="plan-price">49€<span>/mois</span></div>
-          <div class="plan-description">Parfait pour les petites entreprises qui débutent</div>
+          <div class="plan-price">79€<span>/mois</span></div>
+          <div class="plan-description">Idéal pour les petites entreprises qui débutent</div>
         </div>
         <div class="plan-features">
           <ul>
@@ -85,16 +280,16 @@
           </ul>
         </div>
         <div class="plan-footer">
-          <a href="/contact.html?subject=demo&plan=starter" class="plan-cta secondary">Essai Gratuit</a>
+          <a href="/contact.html?subject=demo&plan=starter" class="plan-cta">Essai Gratuit</a>
         </div>
       </div>
 
       <div class="pricing-card featured">
         <div class="plan-header">
-          <div class="popular-badge">⭐ LE PLUS POPULAIRE</div>
+          <div class="popular-badge">Le plus populaire</div>
           <div class="plan-name">Pro</div>
           <div class="plan-price">149€<span>/mois</span></div>
-          <div class="plan-description">Idéal pour les entreprises en croissance</div>
+          <div class="plan-description">Parfait pour les entreprises en croissance</div>
         </div>
         <div class="plan-features">
           <ul>
@@ -110,7 +305,7 @@
           </ul>
         </div>
         <div class="plan-footer">
-          <a href="/contact.html?subject=demo&plan=pro" class="plan-cta">Démarrer →</a>
+          <a href="/contact.html?subject=demo&plan=pro" class="plan-cta">Démarrer</a>
         </div>
       </div>
 
@@ -135,13 +330,13 @@
           </ul>
         </div>
         <div class="plan-footer">
-          <a href="/contact.html?subject=demo&plan=elite" class="plan-cta">Contactez-nous →</a>
+          <a href="/contact.html?subject=demo&plan=elite" class="plan-cta">Contactez-nous</a>
         </div>
       </div>
     </div>
 
     <div class="comparison">
-      <h3>📊 Comparaison Détaillée</h3>
+      <h3>Comparaison Détaillée</h3>
       <table class="comparison">
         <thead>
           <tr>
@@ -184,16 +379,16 @@
           </tr>
           <tr>
             <td>API</td>
-            <td>❌</td>
-            <td>✅</td>
-            <td>✅</td>
+            <td>Non</td>
+            <td>Oui</td>
+            <td>Oui</td>
           </tr>
         </tbody>
       </table>
     </div>
 
     <div class="faq">
-      <h3>❓ Questions Fréquentes</h3>
+      <h3>Questions Fréquentes</h3>
       
       <div class="faq-item">
         <div class="faq-question" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">

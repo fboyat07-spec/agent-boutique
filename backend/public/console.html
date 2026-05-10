@@ -9,38 +9,56 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg:       #0d1117;
-      --surface:  #161b22;
-      --border:   #30363d;
-      --text:     #c9d1d9;
-      --muted:    #8b949e;
-      --green:    #3fb950;
-      --orange:   #f0883e;
-      --red:      #f85149;
-      --blue:     #58a6ff;
-      --purple:   #bc8cff;
-      --gold:     #d4a017;
-      --mono:     'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+      /* Palette SaaS Premium */
+      --bg-primary:     #ffffff;
+      --bg-secondary:   #f8fafc;
+      --bg-tertiary:  #f1f5f9;
+      --surface:        #ffffff;
+      --surface-hover:  #f8fafc;
+      --border:        #e2e8f0;
+      --border-strong:  #cbd5e1;
+      --text-primary:   #1e293b;
+      --text-secondary: #64748b;
+      --text-muted:    #94a3b8;
+      --blue:          #0ea5e9;
+      --blue-dark:     #0284c7;
+      --green:         #10b981;
+      --orange:        #f59e0b;
+      --red:           #ef4444;
+      --purple:        #8b5cf6;
+      --shadow-sm:      0 1px 2px rgba(0, 0, 0, 0.05);
+      --shadow-md:      0 4px 6px rgba(0, 0, 0, 0.07);
+      --shadow-lg:      0 10px 15px rgba(0, 0, 0, 0.1);
+      --radius-sm:     6px;
+      --radius-md:     8px;
+      --radius-lg:     12px;
+      --transition:     all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      --mono:         'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     }
 
     body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: var(--mono);
       font-size: 14px;
-      padding: 24px;
+      padding: 0;
       min-height: 100vh;
+      display: flex;
+      overflow: hidden;
     }
 
-    h1 { font-size: 20px; font-weight: 600; letter-spacing: .5px; }
-    h2 { font-size: 13px; font-weight: 600; text-transform: uppercase;
-         letter-spacing: 1px; color: var(--muted); margin-bottom: 16px; }
+    h1 { font-size: 18px; font-weight: 600; letter-spacing: .3px; }
+    h2 { font-size: 12px; font-weight: 600; text-transform: uppercase;
+         letter-spacing: 0.8px; color: var(--text-muted); margin-bottom: 12px; }
 
     .header {
-      display: flex; align-items: center; gap: 12px;
-      margin-bottom: 28px; border-bottom: 1px solid var(--border); padding-bottom: 16px;
+      display: flex; align-items: center; gap: 16px;
+      padding: 16px 24px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      box-shadow: var(--shadow-sm);
     }
-    .header-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+    .header-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
 
     /* ── Badge LIVE ──────────────────────────────────────────────────────── */
     .live-badge {
@@ -66,19 +84,196 @@
     .card {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 20px 24px;
-      margin-bottom: 20px;
+      border-radius: var(--radius-lg);
+      padding: 16px 20px;
+      margin-bottom: 16px;
+      box-shadow: var(--shadow-sm);
     }
     .card-header {
-      display: flex; align-items: center; gap: 10px;
-      margin-bottom: 20px;
+      display: flex; align-items: center; gap: 12px;
+      margin-bottom: 16px;
     }
-    .card-title { font-size: 15px; font-weight: 600; }
+    .card-title { font-size: 14px; font-weight: 600; color: var(--text-primary); }
     .card-badge {
-      margin-left: auto; font-size: 10px; font-weight: 700;
-      letter-spacing: .6px; color: var(--muted); border: 1px solid var(--border);
-      border-radius: 4px; padding: 2px 7px;
+      margin-left: auto; font-size: 11px; font-weight: 600;
+      letter-spacing: 0.5px; color: white; background: var(--blue);
+      border-radius: 12px; padding: 2px 8px;
+    }
+
+    /* ── Message Bubbles ─────────────────────────────────────────────────── */
+    .message-bubble {
+      display: flex; margin-bottom: 16px; max-width: 70%;
+      animation: fadeInUp 0.3s ease-out;
+    }
+    .message-bubble.user {
+      align-self: flex-start;
+    }
+    .message-bubble.admin {
+      align-self: flex-end;
+    }
+    .message-bubble.ai {
+      align-self: flex-start;
+    }
+    
+    .message-avatar {
+      width: 36px; height: 36px; border-radius: 50%; 
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 600; font-size: 14px; color: white;
+      margin-right: 12px; flex-shrink: 0;
+    }
+    .message-bubble.user .message-avatar {
+      background: var(--green);
+    }
+    .message-bubble.admin .message-avatar {
+      background: var(--orange);
+    }
+    .message-bubble.ai .message-avatar {
+      background: var(--blue);
+    }
+    
+    .message-content {
+      flex: 1; display: flex; flex-direction: column;
+    }
+    
+    .message-bubble {
+      margin-bottom: 12px;
+    }
+    .message-bubble.user .message-content {
+      align-items: flex-start;
+    }
+    .message-bubble.admin .message-content {
+      align-items: flex-end;
+    }
+    .message-bubble.ai .message-content {
+      align-items: flex-start;
+    }
+    
+    .message-bubble .message-text {
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      padding: 12px 16px;
+      border-radius: var(--radius-md);
+      font-size: 14px; line-height: 1.5;
+      box-shadow: var(--shadow-sm);
+      position: relative;
+    }
+    
+    .message-bubble.admin .message-text {
+      background: var(--blue);
+      color: white;
+      border-bottom-right-radius: 4px;
+    }
+    
+    .message-bubble.user .message-text {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+    }
+    
+    .message-bubble.ai .message-text {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--blue);
+    }
+    
+    .message-meta {
+      display: flex; align-items: center; gap: 8px;
+      margin-top: 4px; font-size: 11px; color: var(--text-muted);
+    }
+    .message-bubble.admin .message-meta {
+      justify-content: flex-end;
+    }
+    
+    .message-sender {
+      font-weight: 600; color: var(--text-secondary);
+    }
+    .message-time {
+      color: var(--text-muted);
+    }
+    
+    /* ── Animations ───────────────────────────────────────────────────── */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    @keyframes typing {
+      0%, 60%, 100% { opacity: 0.3; }
+      30% { opacity: 1; }
+    }
+    
+    .typing-dot {
+      display: inline-block; width: 4px; height: 4px;
+      background: var(--text-muted); border-radius: 50%;
+      margin: 0 1px; animation: typing 1.4s infinite;
+    }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+    
+    /* ── Conversation Items ───────────────────────────────────────────── */
+    .conversation-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 16px; border-radius: var(--radius-md);
+      cursor: pointer; transition: var(--transition);
+      border: 1px solid transparent;
+      margin-bottom: 4px;
+    }
+    .conversation-item:hover {
+      background: var(--surface-hover);
+      border-color: var(--border);
+    }
+    .conversation-item.active {
+      background: var(--surface);
+      border-color: var(--blue);
+      box-shadow: var(--shadow-sm);
+    }
+    
+    .conversation-avatar {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: var(--blue); display: flex; align-items: center;
+      justify-content: center; color: white; font-weight: 600;
+      font-size: 14px; flex-shrink: 0;
+    }
+    
+    .conversation-info {
+      flex: 1; min-width: 0;
+    }
+    
+    .conversation-name {
+      font-weight: 600; color: var(--text-primary);
+      margin-bottom: 2px; font-size: 14px;
+    }
+    
+    .conversation-last-message {
+      color: var(--text-secondary); font-size: 13px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    
+    .conversation-meta {
+      display: flex; align-items: center; gap: 8px;
+      margin-top: 4px; font-size: 11px; color: var(--text-muted);
+    }
+    
+    .conversation-badge {
+      background: var(--blue); color: white;
+      padding: 2px 6px; border-radius: 8px;
+      font-size: 10px; font-weight: 600;
+    }
+    .conversation-badge.human {
+      background: var(--orange);
+    }
+    .conversation-badge.ai {
+      background: var(--blue);
+    }
+    
+    .conversation-status {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--text-muted);
+    }
+    .conversation-status.online {
+      background: var(--green);
+    }
+    .conversation-status.away {
+      background: var(--orange);
     }
 
     /* ── Stats généraux ──────────────────────────────────────────────────── */
@@ -100,16 +295,110 @@
     }
     .stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .7px; }
 
-    /* ── Section ROI ─────────────────────────────────────────────────────── */
-    .roi-top {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 14px;
-      margin-bottom: 20px;
+    /* ── Section ROI ───────────────────────────────────────────────────────/* Responsive Design */
+    @media (max-width: 1200px) {
+      #app { grid-template-columns: 280px 1fr 240px; }
+      .conversation-avatar { width: 36px; height: 36px; font-size: 12px; }
+      .message-avatar { width: 32px; height: 32px; font-size: 12px; margin-right: 10px; }
+      .message-text { font-size: 13px; padding: 10px 14px; }
     }
-    .roi-kpi {
-      background: var(--bg);
-      border: 1px solid var(--border);
+
+    @media (max-width: 768px) {
+      #app { 
+        grid-template-columns: 1fr; 
+        grid-template-rows: auto 1fr auto;
+      }
+      
+      /* Sidebar mobile */
+      #app > div:first-child {
+        position: fixed; top: 0; left: 0; right: 0;
+        background: var(--surface); border-bottom: 1px solid var(--border);
+        z-index: 1000; height: auto;
+        max-height: 40vh;
+      }
+      
+      /* Chat mobile */
+      #app > div:nth-child(2) {
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+      
+      /* Stats mobile */
+      #app > div:nth-child(3) {
+        display: none;
+      }
+      
+      .conversation-header { padding: 12px 16px; }
+      .conversation-avatar { width: 32px; height: 32px; font-size: 12px; }
+      .message-avatar { width: 28px; height: 28px; font-size: 11px; margin-right: 8px; }
+      .message-text { font-size: 14px; padding: 8px 12px; }
+      .message-bubble { max-width: 85%; }
+      
+      #chat-input-panel { 
+        padding: 12px 16px; 
+        border-top: 1px solid var(--border);
+        background: var(--surface);
+      }
+      
+      #admin-chat-input { 
+        font-size: 16px; 
+        padding: 12px 16px; 
+        min-height: 44px;
+      }
+      
+      #send-btn { 
+        min-width: 80px; 
+        font-size: 14px;
+        padding: 12px 20px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .conversation-header { padding: 8px 12px; }
+      .conversation-name { font-size: 13px; }
+      .conversation-phone { font-size: 12px; }
+      .message-text { font-size: 15px; padding: 6px 10px; }
+      #admin-chat-input { font-size: 16px; padding: 10px 14px; }
+      
+      /* Hide some elements on very small screens */
+      .conversation-meta { display: none; }
+      #conversation-status { display: none; }
+    }
+
+    /* Smooth scrolling */
+    * {
+      scroll-behavior: smooth;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* Focus styles for accessibility */
+    button:focus, input:focus, textarea:focus, select:focus {
+      outline: 2px solid var(--blue);
+      outline-offset: 2px;
+    }
+
+    /* Loading states */
+    .loading {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
+    /* Hover states */
+    .conversation-item:hover {
+      transform: translateX(2px);
+    }
+
+    #send-btn:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+    }
+
+    /* Active states */
+    .conversation-item.active {
+      transform: translateX(2px);
+      box-shadow: var(--shadow-md);
+    }  border: 1px solid var(--border);
       border-radius: 8px;
       padding: 14px 16px;
       text-align: center;
@@ -276,108 +565,151 @@
     <!-- KPIs principaux -->
     <div class="roi-top">
       <div class="roi-kpi">
-        <div class="kpi-value" id="roi-revenue" style="color:var(--green)">0 €</div>
-        <div class="kpi-label">CA total</div>
+    
+    <!-- Header conversations -->
+    <div style="padding: 16px; border-bottom: 1px solid var(--border); background: var(--surface);">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+        <h2 style="font-size: 14px; font-weight: 600; color: var(--text-primary);">Conversations</h2>
+        <span id="conv-count-badge" style="background: var(--blue); color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;">0</span>
       </div>
-      <div class="roi-kpi">
-        <div class="kpi-value" id="roi-rate" style="color:var(--blue)">0 %</div>
-        <div class="kpi-label">Taux conv.</div>
+      
+      <!-- Recherche et filtres -->
+      <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+        <input type="text" id="conversation-search" placeholder="Rechercher..." style="
+          flex: 1; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border);
+          border-radius: var(--radius-sm); padding: 8px 12px; font-size: 13px; font-family: inherit;
+        " oninput="filterConversations()">
+        <select id="conversation-filter" style="
+          background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border);
+          border-radius: var(--radius-sm); padding: 8px 12px; font-size: 13px; font-family: inherit;
+        " onchange="filterConversations()">
+          <option value="all">Toutes</option>
+          <option value="active">Actives</option>
+          <option value="human">HUMAN</option>
+          <option value="ai">IA</option>
+        </select>
       </div>
-      <div class="roi-kpi">
-        <div class="kpi-value" id="roi-converted" style="color:var(--purple)">0</div>
-        <div class="kpi-label">Ventes</div>
-      </div>
-    </div>
-
-    <!-- Barres par plan -->
-    <div class="plan-list">
-      <div class="plan-row">
-        <span class="plan-name starter">Starter</span>
-        <div class="plan-bar-track"><div class="plan-bar-fill starter" id="bar-starter" style="width:0%"></div></div>
-        <span class="plan-info" id="info-starter">0 ventes · 0 €</span>
-      </div>
-      <div class="plan-row">
-        <span class="plan-name pro">Pro</span>
-        <div class="plan-bar-track"><div class="plan-bar-fill pro" id="bar-pro" style="width:0%"></div></div>
-        <span class="plan-info" id="info-pro">0 ventes · 0 €</span>
-      </div>
-      <div class="plan-row">
-        <span class="plan-name elite">Elite</span>
-        <div class="plan-bar-track"><div class="plan-bar-fill elite" id="bar-elite" style="width:0%"></div></div>
-        <span class="plan-info" id="info-elite">0 ventes · 0 €</span>
-      </div>
-    </div>
-
-    <!-- Footer ROI + date -->
-    <div class="roi-footer">
-      <div>
-        <div class="roi-label">ROI estimé client</div>
-        <div class="since-text" id="roi-since">Depuis le —</div>
-      </div>
-      <div class="roi-value none" id="roi-pct">—</div>
-    </div>
-  </div>
-  <!-- ── FIN BLOC ROI ────────────────────────────────────────────────────── -->
-
-  <!-- ── Conversations Admin Panel ───────────────────────────────────────────── -->
-  <div class="card" id="conversations-card">
-    <div class="card-header">
-      <span>💬</span>
-      <span class="card-title">Conversations Admin Panel</span>
-      <span class="card-badge" id="conv-count-badge">0 conv</span>
     </div>
     
-    <div style="display:grid; grid-template-columns:300px 1fr; gap:16px; height:400px;">
-      
-      <!-- Panel gauche : liste conversations -->
-      <div style="
-        background:var(--bg); border:1px solid var(--border); border-radius:8px;
-        padding:12px; overflow-y:auto;
-      ">
-        <div style="font-size:12px; font-weight:600; margin-bottom:12px; color:var(--muted);">
-          CONVERSATIONS RÉCENTES
-        </div>
-        <div id="conversations-list" style="display:flex; flex-direction:column; gap:8px;">
-          <div style="color:var(--muted); font-size:12px; text-align:center; padding:20px;">
-            Chargement...
-          </div>
-        </div>
+    <!-- Liste conversations -->
+    <div id="conversations-list" style="flex: 1; overflow-y: auto; padding: 8px;">
+      <div style="color: var(--text-muted); text-align: center; padding: 20px; font-size: 13px;">
+        Chargement...
       </div>
-      
-      <!-- Panel droit : messages conversation -->
-      <div style="
-        background:var(--bg); border:1px solid var(--border); border-radius:8px;
-        padding:12px; overflow-y:auto; display:flex; flex-direction:column;
-      ">
-        <div id="conversation-header" style="font-size:12px; font-weight:600; margin-bottom:12px; color:var(--muted);">
-          Sélectionnez une conversation
-        </div>
-        <div id="conversation-messages" style="flex:1; font-size:12px; line-height:1.6;">
-          <div style="color:var(--muted); text-align:center; padding:40px;">
-            <div>💬</div>
-            <div style="margin-top:8px;">Aucune conversation sélectionnée</div>
-          </div>
-        </div>
-      </div>
-      
     </div>
   </div>
 
-  <!-- ── Logs SSE ────────────────────────────────────────────────────────── -->
-  <div class="card">
-    <div class="card-header">
-      <span>📋</span>
-      <span class="card-title">Logs temps réel</span>
+  <!-- ── Colonne centre : Zone de chat ───────────────────────────────────── -->
+  <div style="background: var(--bg-primary); display: flex; flex-direction: column;">
+    
+    <!-- Header conversation -->
+    <div id="conversation-header" style="padding: 16px; border-bottom: 1px solid var(--border); background: var(--surface); display: none;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div id="conversation-avatar" style="width: 40px; height: 40px; border-radius: 50%; background: var(--blue); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 14px;">
+            ?
+          </div>
+          <div>
+            <div id="conversation-name" style="font-weight: 600; color: var(--text-primary); margin-bottom: 2px;">Sélectionnez une conversation</div>
+            <div id="conversation-phone" style="color: var(--text-muted); font-size: 13px;">📱 —</div>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span id="mode-badge" style="
+            background: var(--blue); color: white; font-size: 10px; font-weight: 600; 
+            padding: 2px 8px; border-radius: 12px; display: none;
+          ">IA</span>
+          <button id="takeover-btn" onclick="takeoverConversation()" style="
+            background: var(--orange); color: white; border: none; border-radius: var(--radius-sm); 
+            padding: 6px 12px; font-size: 11px; font-weight: 600; cursor: pointer;
+            display: none;
+          " title="Prendre le contrôle (HUMAN takeover)">HUMAN</button>
+          <button id="release-btn" onclick="releaseConversation()" style="
+            background: var(--blue); color: white; border: none; border-radius: var(--radius-sm); 
+            padding: 6px 12px; font-size: 11px; font-weight: 600; cursor: pointer;
+            display: none;
+          " title="Relâcher vers l'IA">RELEASE</button>
+        </div>
+      </div>
+      <div id="conversation-status" style="color: var(--text-muted); font-size: 12px;">
+        <span id="status-text">En attente...</span> • <span id="message-count">0 messages</span>
+      </div>
     </div>
-    <div id="log-area" style="
-      font-family:var(--mono); font-size:12px; line-height:1.7;
-      background:var(--bg); border:1px solid var(--border); border-radius:6px;
-      padding:12px 14px; height:220px; overflow-y:auto; color:var(--text);
+    
+    <!-- Messages -->
+    <div id="conversation-messages" style="flex: 1; overflow-y: auto; padding: 16px; display: none;">
+      <div style="color: var(--text-muted); text-align: center; padding: 40px; font-size: 14px;">
+        <div style="font-size: 48px; margin-bottom: 16px;">💬</div>
+        <div>Sélectionnez une conversation pour commencer</div>
+      </div>
+    </div>
+    
+    <!-- Input chat -->
+    <div id="chat-input-panel" style="
+      border-top: 1px solid var(--border); padding: 16px; background: var(--surface); 
+      display: none; align-items: flex-end; gap: 12px;
     ">
-      <div style="color:var(--muted)">En attente de connexion SSE…</div>
+      <div style="flex: 1; position: relative;">
+        <textarea id="admin-chat-input" placeholder="Tapez votre message..." style="
+          width: 100%; background: var(--bg-primary); color: var(--text-primary); 
+          border: 1px solid var(--border); border-radius: var(--radius-md); 
+          padding: 12px 16px; font-size: 14px; resize: none; font-family: inherit;
+          min-height: 44px; max-height: 120px; line-height: 1.4;
+        " onkeypress="handleChatKeypress(event)" onkeydown="handleChatKeydown(event)"></textarea>
+        <div id="typing-indicator" style="
+          position: absolute; bottom: 12px; right: 16px; color: var(--text-muted); 
+          font-size: 12px; display: none;
+        ">
+          <span>•</span><span>•</span><span>•</span>
+        </div>
+      </div>
+      <button onclick="sendAdminMessage()" id="send-btn" style="
+        background: var(--blue); color: white; border: none; border-radius: var(--radius-md);
+        padding: 12px 24px; font-size: 14px; font-weight: 600; cursor: pointer;
+        min-width: 100px; height: 44px; transition: var(--transition);
+      ">Envoyer</button>
     </div>
   </div>
 
+  <!-- ── Colonne droite : Stats + Logs ───────────────────────────────────── -->
+  <div style="background: var(--bg-secondary); overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 16px;">
+    
+    <!-- Stats compactes -->
+    <div class="card" style="background: var(--surface);">
+      <div class="card-header">
+        <span>📊</span>
+        <span class="card-title">Stats</span>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div style="text-align: center; padding: 12px; background: var(--bg-primary); border-radius: var(--radius-md);">
+          <div style="font-size: 20px; font-weight: 700; color: var(--text-primary);" id="total-conversations">0</div>
+          <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Conversations</div>
+        </div>
+        <div style="text-align: center; padding: 12px; background: var(--bg-primary); border-radius: var(--radius-md);">
+          <div style="font-size: 20px; font-weight: 700; color: var(--text-primary);" id="active-humans">0</div>
+          <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">HUMAINS</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Logs SSE -->
+    <div class="card">
+      <div class="card-header">
+        <span>📋</span>
+        <span class="card-title">Logs temps réel</span>
+        <span class="live-badge connected" id="sse-status">
+          <span class="dot"></span> LIVE
+        </span>
+      </div>
+      <div id="log-area" style="
+        font-family: var(--mono); font-size: 12px; line-height: 1.6;
+        background: var(--bg-primary); border: 1px solid var(--border); border-radius: var(--radius-md);
+        padding: 12px; height: 200px; overflow-y: auto; color: var(--text-primary);
+      ">
+        <div style="color: var(--text-muted);">En attente de connexion...</div>
+      </div>
+    </div>
+  </div>
 </div><!-- /#app -->
 
 <script>
@@ -567,32 +899,118 @@ async function loadConversations() {
 
 function renderConversationsList(conversations) {
   const list = el('conversations-list');
+  const searchTerm = el('conversation-search').value.toLowerCase();
+  const filterValue = el('conversation-filter').value;
   
-  if (!conversations || conversations.length === 0) {
-    list.innerHTML = '<div style="color:var(--muted); font-size:12px; text-align:center; padding:20px;">Aucune conversation</div>';
+  // Filtrer les conversations
+  let filteredConversations = conversations || [];
+  if (filteredConversations.length > 0) {
+    filteredConversations = filteredConversations.filter(conv => {
+      const matchesSearch = !searchTerm || 
+        conv.phone.toLowerCase().includes(searchTerm) ||
+        (conv.name && conv.name.toLowerCase().includes(searchTerm));
+      
+      const matchesFilter = filterValue === 'all' ||
+        (filterValue === 'active' && conv.isActive) ||
+        (filterValue === 'human' && conv.mode === 'HUMAN') ||
+        (filterValue === 'ai' && conv.mode === 'IA');
+      
+      return matchesSearch && matchesFilter;
+    });
+  }
+  
+  if (filteredConversations.length === 0) {
+    list.innerHTML = `
+      <div style="color: var(--text-muted); text-align: center; padding: 20px; font-size: 13px;">
+        ${searchTerm || filterValue !== 'all' ? 'Aucune conversation trouvée' : 'Aucune conversation'}
+      </div>
+    `;
     return;
   }
   
-  list.innerHTML = conversations.map(conv => `
-    <div onclick="selectConversation('${conv.id}')" style="
-      padding:10px; border:1px solid var(--border); border-radius:6px; cursor:pointer;
-      background: ${selectedConversationId === conv.id ? 'var(--surface)' : 'var(--bg)'};
-      transition:background 0.15s;
-    " onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background='${selectedConversationId === conv.id ? 'var(--surface)' : 'var(--bg)'}'">
-      <div style="font-weight:600; font-size:12px; margin-bottom:4px;">${conv.name}</div>
-      <div style="color:var(--muted); font-size:11px; margin-bottom:2px;">📱 ${conv.phone}</div>
-      <div style="color:var(--muted); font-size:11px; margin-bottom:2px;">
-        <span style="color: ${getStageColor(conv.stage)};">● ${conv.stage.toUpperCase()}</span>
-        ${conv.businessType ? ` • ${conv.businessType}` : ''}
+  list.innerHTML = filteredConversations.map(conv => `
+    <div class="conversation-item ${selectedConversationId === conv.id ? 'active' : ''}" 
+         onclick="selectConversation('${conv.id}')">
+      <div class="conversation-avatar">
+        ${conv.name ? conv.name.charAt(0).toUpperCase() : '?'}
       </div>
-      <div style="color:var(--muted); font-size:10px; margin-top:4px;">
-        ${formatTime(conv.lastInteractionAt)} • ${conv.messageCount} msgs
-      </div>
-      <div style="color:var(--text); font-size:11px; margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-        ${conv.lastMessage}
+      <div class="conversation-info">
+        <div class="conversation-name">${conv.name || 'Client'}</div>
+        <div class="conversation-last-message">${conv.lastMessage?.content || 'Nouveau message'}</div>
+        <div class="conversation-meta">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="conversation-badge ${conv.mode === 'HUMAN' ? 'human' : 'ai'}">
+              ${conv.mode === 'HUMAN' ? 'HUMAN' : 'IA'}
+            </span>
+            <span class="conversation-status ${conv.isActive ? 'online' : 'away'}"></span>
+          </div>
+          <span>${formatTime(conv.lastInteractionAt)}</span>
+        </div>
       </div>
     </div>
   `).join('');
+}
+
+function filterConversations() {
+  loadConversations();
+}
+
+// Typing indicator functions
+function showTypingIndicator() {
+  const indicator = el('typing-indicator');
+  if (indicator) {
+    indicator.style.display = 'block';
+  }
+}
+
+function hideTypingIndicator() {
+  const indicator = el('typing-indicator');
+  if (indicator) {
+    indicator.style.display = 'none';
+  }
+}
+
+// Enhanced send message with typing indicator
+async function sendAdminMessage() {
+  const input = el('admin-chat-input');
+  const message = input.value.trim();
+  
+  if (!message || !selectedConversationId) return;
+  
+  const sendBtn = el('send-btn');
+  sendBtn.disabled = true;
+  sendBtn.textContent = 'Envoi...';
+  
+  // Show typing indicator (fake)
+  showTypingIndicator();
+  
+  try {
+    const res = await apiFetch('/api/admin/chat/send', {
+      method: 'POST',
+      body: JSON.stringify({
+        conversationId: selectedConversationId,
+        message: message,
+        tenant_id: 'default'
+      })
+    });
+    
+    if (res && res.ok) {
+      input.value = '';
+      hideTypingIndicator();
+      // Rafraîchir la conversation avec animation
+      selectConversation(selectedConversationId);
+    } else {
+      hideTypingIndicator();
+      alert('Erreur lors de l\'envoi du message');
+    }
+  } catch (error) {
+    hideTypingIndicator();
+    console.error('Error sending admin message:', error);
+    alert('Erreur lors de l\'envoi du message');
+  } finally {
+    sendBtn.disabled = false;
+    sendBtn.textContent = 'Envoyer';
+  }
 }
 
 function getStageColor(stage) {
@@ -635,49 +1053,213 @@ async function selectConversation(convId) {
 }
 
 function renderConversationDetail(conv) {
+  // Mettre à jour le header
+  el('conversation-header').style.display = 'block';
   el('conversation-header').innerHTML = `
-    <div style="display:flex; justify-content:space-between; align-items:center;">
-      <div>
-        <strong>${conv.name}</strong> • 📱 ${conv.phone}
-        ${conv.businessType ? ` • ${conv.businessType}` : ''}
+    <div style="display:flex; align-items: center; gap: 12px;">
+      <div id="conversation-avatar" style="width: 40px; height: 40px; border-radius: 50%; background: var(--blue); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 14px;">
+        ${conv.name ? conv.name.charAt(0).toUpperCase() : '?'}
       </div>
-      <div style="color: ${getStageColor(conv.stage)}; font-size:11px; font-weight:600;">
-        ● ${conv.stage.toUpperCase()}
+      <div>
+        <div id="conversation-name" style="font-weight: 600; color: var(--text-primary); margin-bottom: 2px;">${conv.name || 'Client'}</div>
+        <div id="conversation-phone" style="color: var(--text-muted); font-size: 13px;">📱 ${conv.phone}</div>
       </div>
     </div>
-    <div style="color:var(--muted); font-size:11px; margin-top:4px;">
-    Score: ${conv.score} • Messages: ${conv.stats.messageCount} • Dernière: ${formatTime(conv.lastInteractionAt)}
+    <div style="display:flex; align-items: center; gap: 8px;">
+      <span id="mode-badge" style="
+        background: ${conv.mode === 'HUMAN' ? 'var(--orange)' : 'var(--blue)'};
+        color: white; font-size: 10px; font-weight: 600; 
+        padding: 2px 8px; border-radius: 12px; display: ${conv.mode ? 'inline-block' : 'none'};
+      ">${conv.mode === 'HUMAN' ? 'HUMAN' : 'IA'}</span>
+      <button id="takeover-btn" onclick="takeoverConversation()" style="
+        background: var(--orange); color: white; border: none; border-radius: var(--radius-sm); 
+        padding: 6px 12px; font-size: 11px; font-weight: 600; cursor: pointer;
+        display: ${conv.mode === 'HUMAN' ? 'none' : 'inline-block'};
+      " title="Prendre le contrôle (HUMAN takeover)">HUMAN</button>
+      <button id="release-btn" onclick="releaseConversation()" style="
+        background: var(--blue); color: white; border: none; border-radius: var(--radius-sm); 
+        padding: 6px 12px; font-size: 11px; font-weight: 600; cursor: pointer;
+        display: ${conv.mode === 'HUMAN' ? 'inline-block' : 'none'};
+      " title="Relâcher vers l'IA">RELEASE</button>
     </div>
   `;
   
+  el('conversation-status').innerHTML = `
+    <span id="status-text">${conv.stage ? conv.stage.toUpperCase() : 'ACTIVE'}</span> • 
+    <span id="message-count">${conv.messageCount || 0} messages</span>
+  `;
+  
+  // Afficher/masquer le chat input
+  const chatInputPanel = el('chat-input-panel');
+  chatInputPanel.style.display = conv.mode === 'HUMAN' ? 'flex' : 'none';
+  
   const messagesDiv = el('conversation-messages');
+  messagesDiv.style.display = 'block';
+  
   if (!conv.messages || conv.messages.length === 0) {
-    messagesDiv.innerHTML = '<div style="color:var(--muted); text-align:center; padding:40px;">Aucun message</div>';
+    messagesDiv.innerHTML = `
+      <div style="color: var(--text-muted); text-align: center; padding: 40px; font-size: 14px;">
+        <div style="font-size: 48px; margin-bottom: 16px;">💬</div>
+        <div>Aucun message dans cette conversation</div>
+      </div>
+    `;
     return;
   }
   
-  messagesDiv.innerHTML = conv.messages.map(msg => `
-    <div style="
-      margin-bottom:12px; padding:8px; border-radius:6px;
-      background: ${msg.sender === 'user' ? '#1a2a1a' : '#1a1a2a'};
-      border-left: 3px solid ${msg.sender === 'user' ? 'var(--green)' : 'var(--blue)'};
-    ">
-      <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
-        <span style="font-weight:600; font-size:11px; color: ${msg.sender === 'user' ? 'var(--green)' : 'var(--blue)'};">
-          ${msg.sender === 'user' ? '👤 Client' : '🤖 IA'}
-        </span>
-        <span style="color:var(--muted); font-size:10px;">
-          ${new Date(msg.timestamp).toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'})}
-        </span>
+  messagesDiv.innerHTML = conv.messages.map(msg => {
+    const isUser = msg.sender === 'user';
+    const isAdmin = msg.sender === 'admin';
+    const isAI = msg.sender === 'ai';
+    
+    return `
+      <div class="message-bubble ${isUser ? 'user' : isAdmin ? 'admin' : 'ai'}">
+        ${isUser ? `
+          <div class="message-avatar">👤</div>
+        ` : ''}
+        <div class="message-content">
+          <div class="message-text">${msg.content}</div>
+          <div class="message-meta">
+            <span class="message-sender">
+              ${isUser ? 'Client' : isAdmin ? 'Opérateur' : 'IA'}
+            </span>
+            <span class="message-time">
+              ${formatMessageTime(msg.timestamp)}
+            </span>
+          </div>
+        </div>
+        ${!isUser ? `
+          <div class="message-avatar" style="background: ${isAdmin ? 'var(--orange)' : 'var(--blue)'}">
+            ${isAdmin ? '👨‍💼' : '🤖'}
+          </div>
+        ` : ''}
       </div>
-      <div style="color:var(--text); font-size:12px; line-height:1.4;">
-        ${msg.content}
-      </div>
-    </div>
-  `).join('');
+    `;
+  }).join('');
   
-  // Scroll vers le bas
-  messagesDiv.scrollTop = messagesDiv.scrollHeight;
+  // Scroll intelligent vers le bas
+  scrollToBottom();
+}
+
+function formatMessageTime(timestamp) {
+  const date = new Date(timestamp);
+  const now = new Date();
+  const diffMs = now - date;
+  const diffMins = Math.floor(diffMs / 60000);
+  
+  if (diffMins < 1) return 'à l\'instant';
+  if (diffMins < 60) return `il y a ${diffMins}m`;
+  
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) return `il y a ${diffHours}h`;
+  
+  return date.toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'});
+}
+
+function scrollToBottom() {
+  const messagesDiv = el('conversation-messages');
+  if (messagesDiv) {
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+  }
+}
+
+// Fonctions pour le chat admin
+async function sendAdminMessage() {
+  const input = el('admin-chat-input');
+  const message = input.value.trim();
+  
+  if (!message || !selectedConversationId) return;
+  
+  const sendBtn = el('send-btn');
+  sendBtn.disabled = true;
+  sendBtn.textContent = 'Envoi...';
+  
+  try {
+    const res = await apiFetch('/api/admin/chat/send', {
+      method: 'POST',
+      body: JSON.stringify({
+        conversationId: selectedConversationId,
+        message: message,
+        tenant_id: 'default' // À adapter selon votre logique multi-tenant
+      })
+    });
+    
+    if (res && res.ok) {
+      input.value = '';
+      // Rafraîchir la conversation
+      selectConversation(selectedConversationId);
+    } else {
+      alert('Erreur lors de l\'envoi du message');
+    }
+  } catch (error) {
+    console.error('Error sending admin message:', error);
+    alert('Erreur lors de l\'envoi du message');
+  } finally {
+    sendBtn.disabled = false;
+    sendBtn.textContent = 'Envoyer';
+  }
+}
+
+async function takeoverConversation() {
+  if (!selectedConversationId) return;
+  
+  try {
+    const res = await apiFetch('/api/admin/chat/takeover', {
+      method: 'POST',
+      body: JSON.stringify({
+        conversationId: selectedConversationId,
+        tenant_id: 'default'
+      })
+    });
+    
+    if (res && res.ok) {
+      // Rafraîchir la conversation pour mettre à jour le mode
+      selectConversation(selectedConversationId);
+    } else {
+      alert('Erreur lors de la prise de contrôle');
+    }
+  } catch (error) {
+    console.error('Error taking over conversation:', error);
+    alert('Erreur lors de la prise de contrôle');
+  }
+}
+
+async function releaseConversation() {
+  if (!selectedConversationId) return;
+  
+  try {
+    const res = await apiFetch('/api/admin/chat/release', {
+      method: 'POST',
+      body: JSON.stringify({
+        conversationId: selectedConversationId,
+        tenant_id: 'default'
+      })
+    });
+    
+    if (res && res.ok) {
+      // Rafraîchir la conversation pour mettre à jour le mode
+      selectConversation(selectedConversationId);
+    } else {
+      alert('Erreur lors du relâchement');
+    }
+  } catch (error) {
+    console.error('Error releasing conversation:', error);
+    alert('Erreur lors du relâchement');
+  }
+}
+
+function handleChatKeypress(event) {
+  if (event.key === 'Enter' && !event.shiftKey) {
+    event.preventDefault();
+    sendAdminMessage();
+  }
+}
+
+function handleChatKeydown(event) {
+  // Gérer le redimensionnement avec Shift+Enter
+  if (event.key === 'Enter' && event.shiftKey) {
+    // Laisser le comportement par défaut (nouvelle ligne)
+    return;
+  }
 }
 
 function startConversationRefresh() {

@@ -1,7 +1,7 @@
 'use strict';
 
 const plans = {
-  starter: { label: 'Starter', price: '49€',  link: process.env.SALES_PAYMENT_LINK_STARTER },
+  starter: { label: 'Starter', price: '79€',  link: process.env.SALES_PAYMENT_LINK_STARTER },
   pro:     { label: 'Pro',     price: '149€', link: process.env.SALES_PAYMENT_LINK_PRO },
   elite:   { label: 'Elite',   price: '399€', link: process.env.SALES_PAYMENT_LINK_ELITE },
 };

@@ -6,244 +6,426 @@
   <title>Onboarding - Agent Boutique</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.6; color: #333; background: #f8f9fa; }
-    .container { max-width: 800px; margin: 0 auto; padding: 20px; }
-    .header { text-align: center; padding: 40px 0; margin-bottom: 40px; }
-    .header h1 { font-size: 2.5em; color: #2563eb; margin-bottom: 10px; }
-    .header p { font-size: 1.2em; color: #666; }
-    .onboarding-form { background: white; padding: 40px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
-    .progress-bar { display: flex; justify-content: space-between; margin-bottom: 30px; position: relative; }
-    .progress-bar::before { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 2px; background: #e9ecef; z-index: 0; }
-    .progress-step { flex: 1; text-align: center; position: relative; z-index: 1; }
-    .progress-step.active { color: #2563eb; font-weight: 600; }
-    .progress-step.completed::after { content: '✓'; position: absolute; top: -25px; left: 50%; transform: translateX(-50%); background: #28a745; color: white; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; }
-    .step-section { margin-bottom: 40px; }
-    .step-section h3 { color: #2563eb; margin-bottom: 20px; font-size: 1.4em; }
-    .form-group { margin-bottom: 25px; }
-    .form-group label { display: block; font-weight: 600; margin-bottom: 8px; color: #333; }
-    .form-group input, .form-group select { 
-      width: 100%; padding: 15px; border: 2px solid #e9ecef; border-radius: 8px; 
-      font-size: 16px; transition: border-color 0.3s; 
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; 
+      line-height: 1.6; 
+      color: #1a1a1a; 
+      background: #ffffff;
     }
-    .form-group input:focus, .form-group select:focus { 
-      outline: none; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); 
+    .container { max-width: 1000px; margin: 0 auto; padding: 0 24px; }
+    
+    /* Header */
+    .header { text-align: center; padding: 80px 0; margin-bottom: 60px; }
+    .header h1 { 
+      font-size: 2.5rem; 
+      font-weight: 700; 
+      margin-bottom: 16px; 
+      color: #1e293b;
     }
-    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .header p { 
+      font-size: 1.125rem; 
+      color: #64748b; 
+      max-width: 600px; 
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+    
+    /* Progress Bar */
+    .progress-bar { 
+      background: #e2e8f0; 
+      height: 8px; 
+      border-radius: 4px; 
+      margin-bottom: 48px; 
+      overflow: hidden; 
+    }
+    .progress-fill { 
+      background: linear-gradient(90deg, #0ea5e9, #0284c7); 
+      height: 100%; 
+      width: 25%; 
+      transition: width 0.5s ease; 
+    }
+    
+    /* Onboarding Container */
+    .onboarding-container { 
+      display: grid; 
+      grid-template-columns: 1fr 1fr; 
+      gap: 32px; 
+      margin-bottom: 48px; 
+    }
+    .step-panel { 
+      background: white; 
+      padding: 40px 32px; 
+      border-radius: 12px; 
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); 
+      border: 1px solid #e2e8f0;
+    }
+    .step-panel h2 { 
+      color: #1e293b; 
+      font-size: 1.5rem; 
+      margin-bottom: 24px; 
+      font-weight: 600;
+    }
+    .step-panel h3 { 
+      color: #1e293b; 
+      font-size: 1.25rem; 
+      margin-bottom: 16px; 
+      margin-top: 32px; 
+      font-weight: 600;
+    }
+    .step-panel p { 
+      color: #475569; 
+      margin-bottom: 16px; 
+      line-height: 1.7; 
+    }
+    .step-panel ul { 
+      margin: 16px 0; 
+      padding-left: 24px; 
+    }
+    .step-panel li { 
+      margin-bottom: 8px; 
+      color: #475569;
+      line-height: 1.6;
+    }
+    
+    /* Checklist */
+    .checklist { 
+      background: #f8fafc; 
+      padding: 24px; 
+      border-radius: 8px; 
+      margin: 24px 0; 
+    }
+    .checklist-item { 
+      display: flex; 
+      align-items: center; 
+      margin-bottom: 12px; 
+    }
+    .checklist-item:last-child { margin-bottom: 0; }
+    .checklist-item input { 
+      margin-right: 12px; 
+      width: 18px; 
+      height: 18px; 
+      accent-color: #0ea5e9;
+    }
+    .checklist-item label { 
+      flex: 1; 
+      cursor: pointer; 
+      color: #475569;
+      font-size: 0.95rem;
+    }
+    
+    /* Timeline */
+    .timeline { 
+      position: relative; 
+      padding-left: 32px; 
+    }
+    .timeline::before { 
+      content: ''; 
+      position: absolute; 
+      left: 12px; 
+      top: 0; 
+      bottom: 0; 
+      width: 2px; 
+      background: #0ea5e9; 
+    }
+    .timeline-item { 
+      position: relative; 
+      margin-bottom: 24px; 
+    }
+    .timeline-item:last-child { margin-bottom: 0; }
+    .timeline-item::before { 
+      content: ''; 
+      position: absolute; 
+      left: -20px; 
+      top: 6px; 
+      width: 10px; 
+      height: 10px; 
+      background: #0ea5e9; 
+      border-radius: 50%; 
+    }
+    .timeline-date { 
+      color: #0ea5e9; 
+      font-weight: 600; 
+      margin-bottom: 8px; 
+      font-size: 0.95rem;
+    }
+    .timeline-content { 
+      background: #f8fafc; 
+      padding: 16px 20px; 
+      border-radius: 8px; 
+      border: 1px solid #e2e8f0;
+    }
+    .timeline-content strong { 
+      color: #1e293b; 
+      font-weight: 600;
+    }
+    
+    /* Buttons */
     .btn { 
-      background: #2563eb; color: white; padding: 15px 30px; border: none; border-radius: 8px; 
-      font-size: 16px; font-weight: 600; cursor: pointer; width: 100%; 
-      transition: background 0.3s; 
+      background: #1e293b; 
+      color: white; 
+      padding: 16px 32px; 
+      border: none; 
+      border-radius: 8px; 
+      font-size: 1rem; 
+      font-weight: 600; 
+      cursor: pointer; 
+      transition: all 0.2s ease; 
+      display: inline-block; 
+      text-decoration: none; 
+      margin: 8px;
+      border: 2px solid transparent;
     }
-    .btn:hover { background: #1d4ed8; }
-    .btn:disabled { background: #6c757d; cursor: not-allowed; }
-    .btn-secondary { background: white; color: #2563eb; border: 2px solid #2563eb; }
-    .btn-secondary:hover { background: #f8f9fa; }
-    .success-message { background: #d4edda; color: #155724; padding: 20px; border-radius: 8px; margin-bottom: 20px; display: none; }
-    .error-message { background: #f8d7da; color: #721c24; padding: 20px; border-radius: 8px; margin-bottom: 20px; display: none; }
-    .info-box { background: #e7f3ff; border: 1px solid #b3d7ff; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
-    .info-box h4 { color: #004085; margin-bottom: 10px; }
-    .info-box p { margin: 0; color: #004085; }
-    .steps-nav { display: flex; justify-content: space-between; margin-top: 30px; }
-    .steps-nav button { flex: 1; margin: 0 10px; }
+    .btn:hover { 
+      background: #0f172a; 
+      transform: translateY(-1px);
+    }
+    .btn.secondary { 
+      background: white; 
+      color: #1e293b; 
+      border: 2px solid #e2e8f0; 
+    }
+    .btn.secondary:hover { 
+      background: #f8fafc; 
+      border-color: #cbd5e1;
+    }
+    .btn.primary { 
+      background: #0ea5e9; 
+    }
+    .btn.primary:hover { 
+      background: #0284c7; 
+    }
+    .action-buttons { 
+      text-align: center; 
+      margin: 48px 0; 
+    }
+    
+    /* Success Message */
+    .success-message { 
+      background: #f0fdf4; 
+      color: #166534; 
+      padding: 16px 20px; 
+      border-radius: 8px; 
+      margin: 24px 0; 
+      display: none; 
+      border: 1px solid #bbf7d0;
+    }
+    
+    /* Footer */
+    .footer { 
+      text-align: center; 
+      padding: 48px 0; 
+      color: #64748b; 
+      border-top: 1px solid #f1f5f9;
+      margin-top: 60px;
+    }
+    .footer p { margin-bottom: 8px; }
+    .footer a { 
+      color: #0ea5e9; 
+      text-decoration: none; 
+      font-weight: 500;
+    }
+    .footer a:hover { text-decoration: underline; }
+    
+    /* Responsive */
     @media (max-width: 768px) {
-      .form-row { grid-template-columns: 1fr; }
-      .steps-nav { flex-direction: column; }
-      .steps-nav button { margin: 5px 0; }
+      .header { padding: 60px 0; }
+      .onboarding-container { grid-template-columns: 1fr; gap: 24px; }
+      .step-panel { padding: 32px 24px; }
+      .action-buttons { text-align: center; }
+      .btn { display: block; width: 100%; margin: 8px 0; }
     }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="header">
-      <h1>🚀 Bienvenue chez Agent Boutique</h1>
-      <p>Configurons votre assistant IA WhatsApp en quelques étapes simples</p>
-    </div>
-
-    <div id="success-message" class="success-message">
-      ✅ Votre configuration a été enregistrée avec succès ! Redirection vers votre console...
-    </div>
-    <div id="error-message" class="error-message">
-      ❌ Erreur lors de la configuration. Veuillez vérifier les informations et réessayer.
+      <h1>Onboarding</h1>
+      <p>Configuration guidée de votre assistant IA WhatsApp en quelques étapes simples</p>
     </div>
 
     <div class="progress-bar">
-      <div class="progress-step active" id="step1">1. Informations</div>
-      <div class="progress-step" id="step2">2. Configuration</div>
-      <div class="progress-step" id="step3">3. WhatsApp</div>
-      <div class="progress-step" id="step4">4. Validation</div>
+      <div class="progress-fill" id="progress"></div>
     </div>
 
-    <form id="onboarding-form">
-      <!-- Step 1: Informations de base -->
-      <div class="step-section" id="section1">
-        <h3>📋 Étape 1: Informations de base</h3>
-        
-        <div class="info-box">
-          <h4>🎯 Objectif</h4>
-          <p>Créons votre espace Agent Boutique pour automatiser vos conversations WhatsApp</p>
-        </div>
+    <div id="success-message" class="success-message">
+      Étape complétée avec succès ! Passons à la suite.
+    </div>
 
-        <div class="form-group">
-          <label for="tenant_id">Identifiant unique *</label>
-          <input type="text" id="tenant_id" name="tenant_id" required placeholder="ex: ma-boutique-2024">
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label for="contact_name">Votre nom *</label>
-            <input type="text" id="contact_name" name="contact_name" required placeholder="Jean Dupont">
+    <div class="onboarding-container">
+      <div class="step-panel">
+        <h2>Étape Actuelle</h2>
+        <div id="current-step">
+          <h3>1. Configuration Initiale</h3>
+          <p>Commençons par configurer les informations essentielles pour votre assistant IA.</p>
+          
+          <div class="checklist">
+            <div class="checklist-item">
+              <input type="checkbox" id="step1" onchange="updateProgress()">
+              <label for="step1">Compte Agent Boutique créé</label>
+            </div>
+            <div class="checklist-item">
+              <input type="checkbox" id="step2" onchange="updateProgress()">
+              <label for="step2">Plan tarifaire sélectionné</label>
+            </div>
+            <div class="checklist-item">
+              <input type="checkbox" id="step3" onchange="updateProgress()">
+              <label for="step3">Informations de base renseignées</label>
+            </div>
           </div>
-          <div class="form-group">
-            <label for="contact_email">Email professionnel *</label>
-            <input type="email" id="contact_email" name="contact_email" required placeholder="jean@entreprise.com">
-          </div>
-        </div>
 
-        <div class="form-group">
-          <label for="company_name">Nom de l'entreprise</label>
-          <input type="text" id="company_name" name="company_name" placeholder="Entreprise ABC">
+          <h3>Objectifs de votre assistant</h3>
+          <p>Définissez ce que votre assistant IA doit accomplir :</p>
+          <ul>
+            <li>Qualifier automatiquement les prospects</li>
+            <li>Répondre aux questions fréquentes</li>
+            <li>Prendre des rendez-vous</li>
+            <li>Envoyer des propositions commerciales</li>
+            <li>Suivre les prospects chauds</li>
+          </ul>
+
+          <div class="action-buttons">
+            <button class="btn primary" onclick="nextStep()">Étape Suivante</button>
+          </div>
         </div>
       </div>
 
-      <!-- Step 2: Configuration -->
-      <div class="step-section" id="section2" style="display: none;">
-        <h3>⚙️ Étape 2: Configuration du service</h3>
-        
-        <div class="form-group">
-          <label for="plan">Plan souhaité *</label>
-          <select id="plan" name="plan" required>
-            <option value="">Choisissez un plan</option>
-            <option value="starter">Starter - 49€/mois</option>
-            <option value="pro">Pro - 149€/mois</option>
-            <option value="elite">Elite - 399€/mois</option>
-          </select>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label for="max_per_run">Messages max par exécution</label>
-            <input type="number" id="max_per_run" name="max_per_run" value="3" min="1" max="10">
+      <div class="step-panel">
+        <h2>Timeline de Configuration</h2>
+        <div class="timeline">
+          <div class="timeline-item">
+            <div class="timeline-date">Jour 1 - Aujourd'hui</div>
+            <div class="timeline-content">
+              <strong>Configuration initiale</strong><br>
+              Création du compte, sélection du plan, informations de base
+            </div>
           </div>
-          <div class="form-group">
-            <label for="cooldown_hours">Délai de recharge (heures)</label>
-            <input type="number" id="cooldown_hours" name="cooldown_hours" value="24" min="1" max="168">
+          
+          <div class="timeline-item">
+            <div class="timeline-date">Jour 2-3</div>
+            <div class="timeline-content">
+              <strong>Intégration WhatsApp</strong><br>
+              Configuration du numéro WhatsApp, test des messages
+            </div>
           </div>
-        </div>
-
-        <div class="form-group">
-          <label for="max_daily_actions">Actions max par jour</label>
-          <input type="number" id="max_daily_actions" name="max_daily_actions" value="1000" min="100" max="10000">
-        </div>
-      </div>
-
-      <!-- Step 3: Configuration WhatsApp -->
-      <div class="step-section" id="section3" style="display: none;">
-        <h3>📱 Étape 3: Configuration WhatsApp</h3>
-        
-        <div class="info-box">
-          <h4>📋 Documentation requise</h4>
-          <p>Vous aurez besoin de votre numéro WhatsApp Business et de la configuration webhook Meta</p>
-        </div>
-
-        <div class="form-group">
-          <label for="phone_number_id">ID Numéro WhatsApp Business *</label>
-          <input type="text" id="phone_number_id" name="phone_number_id" required placeholder="123456789012345">
-        </div>
-
-        <div class="form-group">
-          <label for="webhook_url">URL Webhook (générée automatiquement)</label>
-          <input type="text" id="webhook_url" name="webhook_url" readonly value="https://agent-boutique-api-production.up.railway.app/webhook/whatsapp">
-        </div>
-
-        <div class="form-group">
-          <label for="verify_token">Token de vérification (généré automatiquement)</label>
-          <input type="text" id="verify_token" name="verify_token" readonly value="my_verify_token_2468">
-        </div>
-      </div>
-
-      <!-- Step 4: Validation -->
-      <div class="step-section" id="section4" style="display: none;">
-        <h3>✅ Étape 4: Validation et finalisation</h3>
-        
-        <div class="info-box">
-          <h4>🎯 Prêt à démarrer ?</h4>
-          <p>Vérifiez toutes les informations ci-dessous avant de finaliser votre configuration.</p>
-        </div>
-
-        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-          <h4 style="color: #2563eb; margin-bottom: 15px;">📋 Récapitulatif de votre configuration</h4>
-          <div id="recapitulatif" style="line-height: 1.8;">
-            <!-- Sera rempli par JavaScript -->
+          
+          <div class="timeline-item">
+            <div class="timeline-date">Jour 4-5</div>
+            <div class="timeline-content">
+              <strong>Personnalisation IA</strong><br>
+              Configuration des réponses, scénarios de qualification
+            </div>
+          </div>
+          
+          <div class="timeline-item">
+            <div class="timeline-date">Jour 6-7</div>
+            <div class="timeline-content">
+              <strong>Tests et validation</strong><br>
+              Tests complets, formation de l'équipe, lancement
+            </div>
           </div>
         </div>
 
-        <div class="form-group">
-          <label>
-            <input type="checkbox" id="terms_accepted" name="terms_accepted" required>
-            J'accepte les <a href="/terms.html" target="_blank">Conditions Générales d'Utilisation</a> et la <a href="/privacy.html" target="_blank">Politique de Confidentialité</a>
-          </label>
-        </div>
-
-        <div class="form-group">
-          <label>
-            <input type="checkbox" id="newsletter_accepted" name="newsletter_accepted">
-            Je souhaite recevoir les actualités et conseils d'optimisation
-          </label>
-        </div>
+        <h3>Temps estimé</h3>
+        <ul>
+          <li><strong>Configuration initiale :</strong> 30 minutes</li>
+          <li><strong>Intégration WhatsApp :</strong> 15 minutes</li>
+          <li><strong>Personnalisation IA :</strong> 1-2 heures</li>
+          <li><strong>Tests et validation :</strong> 1 heure</li>
+          <li><strong>Total estimé :</strong> 2-4 heures</li>
+        </ul>
       </div>
+    </div>
 
-      <!-- Navigation -->
-      <div class="steps-nav">
-        <button type="button" class="btn btn-secondary" id="prevBtn" onclick="changeStep(-1)" style="display: none;">Précédent</button>
-        <button type="button" class="btn" id="nextBtn" onclick="changeStep(1)">Suivant</button>
-      </div>
-    </form>
+    <div class="action-buttons">
+      <button class="btn secondary" onclick="previousStep()">Étape Précédente</button>
+      <button class="btn" onclick="saveProgress()">Sauvegarder la progression</button>
+      <button class="btn secondary" onclick="contactSupport()">Besoin d'aide ?</button>
+    </div>
+
+    <div class="footer">
+      <p>&copy; 2026 Agent Boutique. Tous droits réservés.</p>
+      <p>
+        <a href="/">Accueil</a> | 
+        <a href="/pricing.html">Tarifs</a> | 
+        <a href="/contact.html">Contact</a> | 
+        <a href="/privacy.html">Confidentialité</a>
+      </p>
+    </div>
   </div>
 
   <script>
-    let currentStep = 1;
-    const totalSteps = 4;
+    let currentStepIndex = 0;
+    const steps = [
+      {
+        title: "1. Configuration Initiale",
+        description: "Commençons par configurer les informations essentielles pour votre assistant IA.",
+        checklist: [
+          "Compte Agent Boutique créé",
+          "Plan tarifaire sélectionné", 
+          "Informations de base renseignées"
+        ],
+        objectives: [
+          "Qualifier automatiquement les prospects",
+          "Répondre aux questions fréquentes",
+          "Prendre des rendez-vous",
+          "Envoyer des propositions commerciales",
+          "Suivre les prospects chauds"
+        ]
+      },
+      {
+        title: "2. Intégration WhatsApp",
+        description: "Connectons votre numéro WhatsApp et configurons les messages de base.",
+        checklist: [
+          "Numéro WhatsApp configuré",
+          "Webhook vérifié",
+          "Messages de test envoyés"
+        ],
+        objectives: [
+          "Réception des messages clients",
+          "Envoi de réponses automatiques",
+          "Gestion des erreurs",
+          "Suivi des conversations"
+        ]
+      },
+      {
+        title: "3. Personnalisation IA",
+        description: "Personnalisons les réponses de votre assistant selon votre activité.",
+        checklist: [
+          "Scénarios de qualification définis",
+          "Réponses personnalisées créées",
+          "Règles de qualification configurées"
+        ],
+        objectives: [
+          "Questions de qualification pertinentes",
+          "Réponses adaptées à votre secteur",
+          "Score de qualification automatique",
+          "Transfert vers commercial si nécessaire"
+        ]
+      },
+      {
+        title: "4. Tests et Lancement",
+        description: "Testons complètement le système avant le lancement officiel.",
+        checklist: [
+          "Scénarios de test validés",
+          "Équipe formée",
+          "Monitoring configuré",
+          "Lancement officiel"
+        ],
+        objectives: [
+          "Validation de tous les scénarios",
+          "Formation de l'équipe commerciale",
+          "Configuration du dashboard",
+          "Lancement en production"
+        ]
+      }
+    ];
 
-    function updateProgressBar() {
-      for (let i = 1; i <= totalSteps; i++) {
-        const stepElement = document.getElementById(`step${i}`);
-        stepElement.classList.remove('active', 'completed');
-        
-        if (i < currentStep) {
-          stepElement.classList.add('completed');
-        } else if (i === currentStep) {
-          stepElement.classList.add('active');
-        }
-      }
-    }
-
-    function showStep(step) {
-      for (let i = 1; i <= totalSteps; i++) {
-        const section = document.getElementById(`section${i}`);
-        section.style.display = i === step ? 'block' : 'none';
-      }
+    function updateProgress() {
+      const checkboxes = document.querySelectorAll('input[type="checkbox"]:checked');
+      const progress = (checkboxes.length / 3) * 100;
+      document.getElementById('progress').style.width = progress + '%';
       
-      updateProgressBar();
-      updateNavigationButtons();
-      
-      if (step === 4) {
-        updateRecapitulatif();
-      }
-    }
-
-    function updateNavigationButtons() {
-      const prevBtn = document.getElementById('prevBtn');
-      const nextBtn = document.getElementById('nextBtn');
-      
-      prevBtn.style.display = currentStep === 1 ? 'none' : 'block';
-      
-      if (currentStep === totalSteps) {
-        nextBtn.textContent = 'Finaliser la configuration';
-        nextBtn.onclick = submitForm;
-      } else {
-        nextBtn.textContent = 'Suivant';
-        nextBtn.onclick = () => changeStep(1);
-      }
+      if (checkboxes.length === 3) {
     }
 
     function changeStep(direction) {

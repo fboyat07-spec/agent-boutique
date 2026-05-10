@@ -3,89 +3,312 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Démo Live - Agent Boutique</title>
+  <title>Démo - Agent Boutique</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.6; color: #333; background: #f8f9fa; }
-    .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
-    .header { text-align: center; padding: 40px 0; margin-bottom: 40px; }
-    .header h1 { font-size: 3em; color: #2563eb; margin-bottom: 15px; }
-    .header p { font-size: 1.3em; color: #666; }
-    .demo-container { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 40px; }
-    .demo-panel { background: white; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); overflow: hidden; }
-    .panel-header { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; padding: 20px; text-align: center; }
-    .panel-header h3 { font-size: 1.5em; margin-bottom: 5px; }
-    .panel-header p { opacity: 0.9; font-size: 0.9em; }
-    .panel-content { padding: 30px; }
-    .whatsapp-interface { background: #f0f0f0; border-radius: 10px; padding: 20px; height: 500px; overflow-y: auto; }
-    .message { margin-bottom: 15px; display: flex; align-items: flex-start; }
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; 
+      line-height: 1.6; 
+      color: #1a1a1a; 
+      background: #ffffff;
+    }
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+    
+    /* Header */
+    .header { text-align: center; padding: 80px 0; margin-bottom: 60px; }
+    .header h1 { 
+      font-size: 2.5rem; 
+      font-weight: 700; 
+      margin-bottom: 16px; 
+      color: #1e293b;
+    }
+    .header p { 
+      font-size: 1.125rem; 
+      color: #64748b; 
+      max-width: 600px; 
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+    
+    /* Demo Container */
+    .demo-container { 
+      display: grid; 
+      grid-template-columns: 1fr 1fr; 
+      gap: 32px; 
+      margin-bottom: 60px; 
+    }
+    .demo-panel { 
+      background: white; 
+      border-radius: 12px; 
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); 
+      overflow: hidden; 
+      border: 1px solid #e2e8f0;
+    }
+    
+    /* Panel Header */
+    .panel-header { 
+      background: linear-gradient(135deg, #1e293b 0%, #334155 100%); 
+      color: white; 
+      padding: 24px; 
+      text-align: center; 
+    }
+    .panel-header h3 { 
+      font-size: 1.25rem; 
+      margin-bottom: 4px; 
+      font-weight: 600;
+    }
+    .panel-header p { 
+      opacity: 0.9; 
+      font-size: 0.875rem; 
+    }
+    .panel-content { padding: 32px; }
+    
+    /* WhatsApp Interface */
+    .whatsapp-interface { 
+      background: #f8fafc; 
+      border-radius: 8px; 
+      padding: 24px; 
+      height: 500px; 
+      overflow-y: auto; 
+      border: 1px solid #e2e8f0;
+    }
+    .message { 
+      margin-bottom: 16px; 
+      display: flex; 
+      align-items: flex-start; 
+    }
     .message.user { justify-content: flex-end; }
     .message.ai { justify-content: flex-start; }
-    .message-bubble { max-width: 70%; padding: 12px 16px; border-radius: 18px; word-wrap: break-word; }
-    .message.user .message-bubble { background: #dcf8c6; color: #303030; border-bottom-right-radius: 5px; }
-    .message.ai .message-bubble { background: #ffffff; color: #303030; border-bottom-left-radius: 5px; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
-    .message-time { font-size: 0.8em; color: #666; margin-top: 5px; text-align: right; }
+    .message-bubble { 
+      max-width: 70%; 
+      padding: 12px 16px; 
+      border-radius: 16px; 
+      word-wrap: break-word; 
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+    .message.user .message-bubble { 
+      background: #0ea5e9; 
+      color: white; 
+      border-bottom-right-radius: 4px; 
+    }
+    .message.ai .message-bubble { 
+      background: white; 
+      color: #1e293b; 
+      border-bottom-left-radius: 4px; 
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05); 
+      border: 1px solid #e2e8f0;
+    }
+    .message-time { 
+      font-size: 0.75rem; 
+      color: #64748b; 
+      margin-top: 4px; 
+      text-align: right; 
+    }
     .message.ai .message-time { text-align: left; }
-    .typing-indicator { display: flex; align-items: center; padding: 10px; }
+    
+    /* Typing Indicator */
+    .typing-indicator { 
+      display: flex; 
+      align-items: center; 
+      padding: 12px 16px; 
+    }
     .typing-dots { display: flex; gap: 4px; }
-    .typing-dot { width: 8px; height: 8px; background: #666; border-radius: 50%; animation: typing 1.4s infinite; }
+    .typing-dot { 
+      width: 6px; 
+      height: 6px; 
+      background: #64748b; 
+      border-radius: 50%; 
+      animation: typing 1.4s infinite; 
+    }
     .typing-dot:nth-child(2) { animation-delay: 0.2s; }
     .typing-dot:nth-child(3) { animation-delay: 0.4s; }
     @keyframes typing {
-      0%, 60%, 100% { transform: translateY(0); }
-      30% { transform: translateY(-10px); }
+      0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+      30% { transform: translateY(-4px); opacity: 1; }
     }
-    .admin-panel { background: #1a1a2a; color: white; border-radius: 10px; padding: 20px; height: 500px; overflow-y: auto; }
-    .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #333; }
-    .admin-header h4 { color: #4CAF50; }
-    .admin-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
-    .stat-box { background: rgba(76, 175, 80, 0.1); padding: 15px; border-radius: 8px; text-align: center; border: 1px solid #4CAF50; }
-    .stat-number { font-size: 2em; font-weight: bold; color: #4CAF50; margin-bottom: 5px; }
-    .stat-label { font-size: 0.9em; opacity: 0.8; }
-    .conversation-list { margin-top: 20px; }
-    .conversation-item { background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; margin-bottom: 10px; cursor: pointer; transition: background 0.3s; }
-    .conversation-item:hover { background: rgba(255,255,255,0.1); }
-    .conversation-item.active { background: rgba(76, 175, 80, 0.2); border: 1px solid #4CAF50; }
-    .conversation-name { font-weight: 600; margin-bottom: 5px; }
-    .conversation-info { font-size: 0.9em; opacity: 0.8; }
-    .conversation-status { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.8em; margin-left: 10px; }
-    .status-new { background: #2196F3; }
-    .status-qualified { background: #4CAF50; }
-    .status-interested { background: #FF9800; }
-    .status-closing { background: #F44336; }
-    .controls { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); text-align: center; }
-    .controls h3 { color: #2563eb; margin-bottom: 20px; }
-    .button-group { display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; }
+    
+    /* Admin Panel */
+    .admin-panel { 
+      background: #1e293b; 
+      color: white; 
+      border-radius: 8px; 
+      padding: 24px; 
+      height: 500px; 
+      overflow-y: auto; 
+    }
+    .admin-header { 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      margin-bottom: 24px; 
+      padding-bottom: 16px; 
+      border-bottom: 1px solid #334155; 
+    }
+    .admin-header h4 { 
+      color: #10b981; 
+      font-weight: 600;
+    }
+    .admin-stats { 
+      display: grid; 
+      grid-template-columns: 1fr 1fr; 
+      gap: 16px; 
+      margin-bottom: 24px; 
+    }
+    .stat-box { 
+      background: rgba(16, 185, 129, 0.1); 
+      padding: 16px; 
+      border-radius: 8px; 
+      text-align: center; 
+      border: 1px solid #10b981; 
+    }
+    .stat-number { 
+      font-size: 1.5rem; 
+      font-weight: 700; 
+      color: #10b981; 
+      margin-bottom: 4px; 
+    }
+    .stat-label { 
+      font-size: 0.875rem; 
+      opacity: 0.9; 
+    }
+    .conversation-list { margin-top: 24px; }
+    .conversation-list h4 { 
+      margin-bottom: 16px; 
+      color: #10b981; 
+      font-weight: 600;
+      font-size: 1rem;
+    }
+    .conversation-item { 
+      background: rgba(255, 255, 255, 0.05); 
+      padding: 12px; 
+      border-radius: 8px; 
+      margin-bottom: 8px; 
+      cursor: pointer; 
+      transition: background 0.2s ease; 
+    }
+    .conversation-item:hover { 
+      background: rgba(255, 255, 255, 0.08); 
+    }
+    .conversation-item.active { 
+      background: rgba(16, 185, 129, 0.15); 
+      border: 1px solid #10b981; 
+    }
+    .conversation-name { 
+      font-weight: 600; 
+      margin-bottom: 4px; 
+      font-size: 0.95rem;
+    }
+    .conversation-info { 
+      font-size: 0.875rem; 
+      opacity: 0.8; 
+      margin-bottom: 2px;
+    }
+    .conversation-status { 
+      display: inline-block; 
+      padding: 2px 8px; 
+      border-radius: 12px; 
+      font-size: 0.75rem; 
+      margin-left: 8px; 
+      font-weight: 500;
+    }
+    .status-new { background: #3b82f6; }
+    .status-qualified { background: #10b981; }
+    .status-interested { background: #f59e0b; }
+    .status-closing { background: #ef4444; }
+    
+    /* Controls */
+    .controls { 
+      background: white; 
+      padding: 48px 32px; 
+      border-radius: 12px; 
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); 
+      text-align: center; 
+      border: 1px solid #e2e8f0;
+    }
+    .controls h3 { 
+      color: #1e293b; 
+      margin-bottom: 24px; 
+      font-weight: 600;
+      font-size: 1.5rem;
+    }
+    .info-box { 
+      background: #f0f9ff; 
+      border: 1px solid #bae6fd; 
+      padding: 20px; 
+      border-radius: 8px; 
+      margin-bottom: 32px; 
+    }
+    .info-box h4 { 
+      color: #0369a1; 
+      margin-bottom: 8px; 
+      font-weight: 600;
+    }
+    .info-box p { 
+      color: #0c4a6e; 
+      margin: 0; 
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+    .button-group { 
+      display: flex; 
+      gap: 16px; 
+      justify-content: center; 
+      flex-wrap: wrap; 
+    }
     .btn { 
-      background: #2563eb; color: white; padding: 15px 30px; border: none; border-radius: 8px; 
-      font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s; 
+      background: #1e293b; 
+      color: white; 
+      padding: 14px 28px; 
+      border: none; 
+      border-radius: 8px; 
+      font-size: 1rem; 
+      font-weight: 600; 
+      cursor: pointer; 
+      transition: all 0.2s ease; 
+      border: 2px solid transparent;
     }
-    .btn:hover { background: #1d4ed8; transform: translateY(-2px); }
-    .btn.secondary { background: white; color: #2563eb; border: 2px solid #2563eb; }
-    .btn.secondary:hover { background: #f8f9fa; }
-    .btn.success { background: #28a745; }
-    .btn.success:hover { background: #218838; }
-    .info-box { background: #e7f3ff; border: 1px solid #b3d7ff; padding: 20px; border-radius: 10px; margin: 20px 0; }
-    .info-box h4 { color: #004085; margin-bottom: 10px; }
+    .btn:hover { 
+      background: #0f172a; 
+      transform: translateY(-1px);
+    }
+    .btn.secondary { 
+      background: white; 
+      color: #1e293b; 
+      border: 2px solid #e2e8f0; 
+    }
+    .btn.secondary:hover { 
+      background: #f8fafc; 
+      border-color: #cbd5e1;
+    }
+    .btn.primary { 
+      background: #0ea5e9; 
+    }
+    .btn.primary:hover { 
+      background: #0284c7; 
+    }
+    
+    /* Responsive */
     @media (max-width: 768px) {
-      .demo-container { grid-template-columns: 1fr; }
+      .header { padding: 60px 0; }
+      .demo-container { grid-template-columns: 1fr; gap: 24px; }
       .admin-stats { grid-template-columns: 1fr; }
-      .button-group { flex-direction: column; }
+      .button-group { flex-direction: column; align-items: center; }
     }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="header">
-      <h1>🤖 Démo Live Agent Boutique</h1>
-      <p>Explorez l'assistant IA WhatsApp en temps réel</p>
+      <h1>Démo Interactive</h1>
+      <p>Découvrez l'assistant IA WhatsApp en conditions réelles</p>
     </div>
 
     <div class="demo-container">
       <!-- WhatsApp Interface -->
       <div class="demo-panel">
         <div class="panel-header">
-          <h3>📱 Interface WhatsApp</h3>
+          <h3>Interface WhatsApp</h3>
           <p>Conversation client en temps réel</p>
         </div>
         <div class="panel-content">
@@ -99,14 +322,14 @@
             
             <div class="message ai">
               <div class="message-bubble">
-                Bonjour ! 👋 Merci pour votre intérêt. Je suis l'assistant IA d'Agent Boutique et je vais vous aider.
+                Bonjour ! Merci pour votre intérêt. Je suis l'assistant IA d'Agent Boutique et je vais vous aider.
                 
                 Pourriez-vous me dire :
                 1. Quel type de site web recherchez-vous ? (vitrine, e-commerce, blog, etc.)
                 2. Quel est votre budget approximatif ?
                 3. Avez-vous un délai particulier ?
                 
-                Je vais analyser vos besoins et vous proposer la meilleure solution adaptée à votre projet ! 🚀
+                Je vais analyser vos besoins et vous proposer la meilleure solution adaptée à votre projet.
               </div>
               <div class="message-time">10:23</div>
             </div>
@@ -124,7 +347,7 @@
                 <div class="typing-dot"></div>
                 <div class="typing-dot"></div>
               </div>
-              <span style="margin-left: 10px;">L'IA analyse votre demande...</span>
+              <span style="margin-left: 8px;">L'IA analyse votre demande...</span>
             </div>
           </div>
         </div>
@@ -133,14 +356,14 @@
       <!-- Admin Panel -->
       <div class="demo-panel">
         <div class="panel-header">
-          <h3>🎛️ Tableau de Bord Admin</h3>
+          <h3>Tableau de Bord Admin</h3>
           <p>Monitoring en temps réel</p>
         </div>
         <div class="panel-content">
           <div class="admin-panel">
             <div class="admin-header">
-              <h4>📊 Dashboard Live</h4>
-              <span style="color: #4CAF50;">● EN LIGNE</span>
+              <h4>Dashboard Live</h4>
+              <span style="color: #10b981;">● EN LIGNE</span>
             </div>
             
             <div class="admin-stats">
@@ -163,12 +386,12 @@
             </div>
 
             <div class="conversation-list">
-              <h4 style="margin-bottom: 15px; color: #4CAF50;">💬 Conversations Actives</h4>
+              <h4>Conversations Actives</h4>
               
               <div class="conversation-item active">
-                <div class="conversation-name">👕 Boutique Mode</div>
+                <div class="conversation-name">Boutique Mode</div>
                 <div class="conversation-info">
-                  📱 +33 6 12 34 56 78
+                  Contact sur demande
                   <span class="conversation-status status-qualified">QUALIFIÉ</span>
                 </div>
                 <div class="conversation-info">
@@ -177,9 +400,9 @@
               </div>
 
               <div class="conversation-item">
-                <div class="conversation-name">🏠 TechPro Services</div>
+                <div class="conversation-name">TechPro Services</div>
                 <div class="conversation-info">
-                  📱 +33 6 98 76 54 32
+                  Contact sur demande
                   <span class="conversation-status status-interested">INTÉRESSÉ</span>
                 </div>
                 <div class="conversation-info">
@@ -188,9 +411,9 @@
               </div>
 
               <div class="conversation-item">
-                <div class="conversation-name">🍕 Pizza Express</div>
+                <div class="conversation-name">Pizza Express</div>
                 <div class="conversation-info">
-                  📱 +33 6 45 67 89 01
+                  Contact sur demande
                   <span class="conversation-status status-new">NOUVEAU</span>
                 </div>
                 <div class="conversation-info">
@@ -199,9 +422,9 @@
               </div>
 
               <div class="conversation-item">
-                <div class="conversation-name">🚗 Auto Garage Plus</div>
+                <div class="conversation-name">Auto Garage Plus</div>
                 <div class="conversation-info">
-                  📱 +33 6 23 45 67 89
+                  Contact sur demande
                   <span class="conversation-status status-closing">EN CLOSING</span>
                 </div>
                 <div class="conversation-info">
@@ -216,27 +439,27 @@
 
     <!-- Controls -->
     <div class="controls">
-      <h3>🎮 Contrôles de la Démo</h3>
+      <h3>Contrôles de la Démo</h3>
       <div class="info-box">
-        <h4>💡 Cette démo simule une utilisation réelle</h4>
+        <h4>Cette démo simule une utilisation réelle</h4>
         <p>Toutes les interactions sont des exemples pour illustrer les capacités de l'IA Agent Boutique en conditions réelles.</p>
       </div>
       
       <div class="button-group">
-        <button class="btn success" onclick="startNewConversation()">
-          🆕 Nouvelle Conversation
+        <button class="btn primary" onclick="startNewConversation()">
+          Nouvelle Conversation
         </button>
         <button class="btn" onclick="simulateQualification()">
-          🎯 Simuler Qualification
+          Simuler Qualification
         </button>
         <button class="btn" onclick="showAnalytics()">
-          📊 Voir Analytics
+          Voir Analytics
         </button>
         <button class="btn secondary" onclick="window.open('/console/console.html', '_blank')">
-          🎛️ Console Admin Réelle
+          Console Admin Réelle
         </button>
         <button class="btn secondary" onclick="window.open('/contact.html?subject=demo', '_blank')">
-          📞 Demander une Démo
+          Demander une Démo
         </button>
       </div>
     </div>
@@ -266,7 +489,7 @@
       const qualificationMessage = `
         <div class="message ai">
           <div class="message-bubble">
-            🎯 **ANALYSE COMPLÈTE**
+            **ANALYSE COMPLÈTE**
             
             **Profil Client :** 
             - Type: E-commerce (vêtements)
@@ -285,7 +508,7 @@
             2. Planifier appel suivi
             3. Créer dossier client
             
-            Voulez-vous que je prépare une offre personnalisée ? 🚀
+            Voulez-vous que je prépare une offre personnalisée ?
           </div>
           <div class="message-time">${new Date().toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'})}</div>
         </div>
@@ -306,7 +529,7 @@
               <div class="typing-dot"></div>
               <div class="typing-dot"></div>
             </div>
-            <span style="margin-left: 10px;">L'IA analyse votre demande...</span>
+            <span style="margin-left: 8px;">L'IA analyse votre demande...</span>
           </div>
         </div>
       `;
@@ -327,22 +550,22 @@
               
               Basé sur votre demande, je peux vous proposer :
               
-              🎯 **Solution Personnalisée**
+              **Solution Personnalisée**
               - Site e-commerce moderne et responsive
               - Intégration paiement sécurisée
               - Interface admin intuitive
               - Optimisation SEO
               
-              💰 **Investissement :** 5000€
-              📈 **ROI Attendu :** 247% sur 12 mois
-              ⏱️ **Délai :** 2 mois (respecté)
+              **Investissement :** 5000€
+              **ROI Attendu :** 247% sur 12 mois
+              **Délai :** 2 mois (respecté)
               
               Souhaitez-vous :
               1. Recevoir une démo technique ?
               2. Parler à un conseiller commercial ?
               3. Obtenir un devis détaillé ?
               
-              Je suis là pour vous accompagner ! 🤖✨
+              Je suis là pour vous accompagner.
             </div>
             <div class="message-time">${new Date().toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'})}</div>
           </div>
@@ -353,7 +576,7 @@
     }
 
     function showAnalytics() {
-      alert('📊 Analytics en temps réel :\n\n• 247% ROI moyen\n• 68% taux conversion\n• 3.2x croissance leads\n• 24/7 disponibilité\n\nAccédez à la console admin pour les détails complets.');
+      alert('Analytics en temps réel :\n\n• 247% ROI moyen\n• 68% taux conversion\n• 3.2x croissance leads\n• 24/7 disponibilité\n\nAccédez à la console admin pour les détails complets.');
     }
 
     // Auto-scroll vers le bas

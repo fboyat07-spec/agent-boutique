@@ -168,12 +168,12 @@ CONTEXTE PRODUIT :
 - Gain de temps : répond 24h/24 sans intervention humaine
 - Augmente les conversions de 30 à 50% selon les secteurs
 - 3 plans sans engagement :
-  * Starter 49€/mois — indépendants, artisans, petits commerces (1 numéro, 500 conversations/mois)
+  * Starter 79€/mois — indépendants, artisans, petits commerces (1 numéro, 500 conversations/mois)
   * Pro 149€/mois — PME et commerces (conversations illimitées, GPT-4o, analytics)
   * Elite 399€/mois — agences et franchises (5 numéros, multi-tenant, support prioritaire)
 
 Liens de paiement disponibles :
-- Starter (49€) : ${starter.link || '[LIEN_STARTER]'}
+- Starter (79€) : ${starter.link || '[LIEN_STARTER]'}
 - Pro (149€) : ${pro.link || '[LIEN_PRO]'}
 - Elite (399€) : ${elite.link || '[LIEN_ELITE]'}
 

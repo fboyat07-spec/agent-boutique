@@ -3,67 +3,344 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Agent Boutique - Assistant IA WhatsApp pour votre Business</title>
-  <meta name="description" content="Transformez vos conversations WhatsApp en clients payants avec l'IA Agent Boutique. Qualification automatique, suivi prospect, et optimisation conversion.">
+  <title>Agent Boutique - Assistant WhatsApp IA pour Commerces et PME</title>
+  <meta name="description" content="Automatisez vos réponses clients sur WhatsApp et augmentez vos conversions avec l'IA Agent Boutique. Solution professionnelle pour commerces et PME.">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.6; color: #333; }
-    .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
-    .header { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; padding: 80px 0; text-align: center; }
-    .header h1 { font-size: 3.5em; font-weight: 700; margin-bottom: 20px; text-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-    .header .tagline { font-size: 1.4em; margin-bottom: 30px; opacity: 0.9; }
-    .header .cta { background: white; color: #2563eb; padding: 20px 40px; border-radius: 50px; text-decoration: none; font-weight: 600; font-size: 1.2em; display: inline-block; transition: transform 0.3s, box-shadow 0.3s; }
-    .header .cta:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
-    .features { padding: 80px 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 40px; }
-    .feature { text-align: center; padding: 40px 30px; background: #f8f9fa; border-radius: 15px; border: 1px solid #e9ecef; transition: transform 0.3s, box-shadow 0.3s; }
-    .feature:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
-    .feature .icon { font-size: 3em; margin-bottom: 20px; color: #2563eb; }
-    .feature h3 { font-size: 1.5em; margin-bottom: 15px; color: #2563eb; }
-    .feature p { color: #666; line-height: 1.6; }
-    .demo { background: #f8f9fa; padding: 80px 0; text-align: center; }
-    .demo h2 { font-size: 2.5em; margin-bottom: 30px; color: #333; }
-    .demo .screenshots { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 30px; margin: 40px 0; }
-    .demo .screenshot { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-    .demo .screenshot img { width: 100%; height: 200px; object-fit: cover; border-radius: 8px; margin-bottom: 15px; }
-    .demo .screenshot h4 { color: #2563eb; margin-bottom: 10px; }
-    .demo .screenshot p { color: #666; font-size: 0.9em; }
-    .roi { background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 80px 0; }
-    .roi h2 { font-size: 2.5em; margin-bottom: 30px; text-align: center; }
-    .roi .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 30px; margin: 40px 0; }
-    .roi .stat { background: rgba(255,255,255,0.1); padding: 30px; border-radius: 10px; text-align: center; }
-    .roi .stat .number { font-size: 3em; font-weight: 700; margin-bottom: 10px; }
-    .roi .stat .label { font-size: 1.1em; opacity: 0.9; }
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; 
+      line-height: 1.6; 
+      color: #1a1a1a; 
+      background: #ffffff;
+    }
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+    
+    /* Header Hero */
+    .header { 
+      background: linear-gradient(135deg, #1e293b 0%, #334155 100%); 
+      color: white; 
+      padding: 100px 0; 
+      text-align: center; 
+      position: relative;
+      overflow: hidden;
+    }
+    .header::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    }
+    .header-content { position: relative; z-index: 1; }
+    .header h1 { 
+      font-size: 3.5rem; 
+      font-weight: 700; 
+      margin-bottom: 24px; 
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+    }
+    .header .tagline { 
+      font-size: 1.25rem; 
+      margin-bottom: 40px; 
+      opacity: 0.9; 
+      font-weight: 400;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .header .cta { 
+      background: #0ea5e9; 
+      color: white; 
+      padding: 16px 32px; 
+      border-radius: 8px; 
+      text-decoration: none; 
+      font-weight: 600; 
+      font-size: 1.125rem; 
+      display: inline-block; 
+      transition: all 0.2s ease;
+      border: 2px solid transparent;
+    }
+    .header .cta:hover { 
+      background: #0284c7; 
+      transform: translateY(-1px);
+      box-shadow: 0 10px 25px rgba(14, 165, 233, 0.3);
+    }
+    
+    /* Features */
+    .features { padding: 80px 0; }
+    .features h2 { 
+      font-size: 2.5rem; 
+      font-weight: 700; 
+      text-align: center; 
+      margin-bottom: 60px; 
+      color: #1e293b;
+    }
+    .features-grid { 
+      display: grid; 
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); 
+      gap: 32px; 
+    }
+    .feature { 
+      background: #f8fafc; 
+      border: 1px solid #e2e8f0; 
+      border-radius: 12px; 
+      padding: 40px 32px; 
+      transition: all 0.2s ease;
+      height: 100%;
+    }
+    .feature:hover { 
+      transform: translateY(-4px); 
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+      border-color: #cbd5e1;
+    }
+    .feature-icon { 
+      width: 48px; 
+      height: 48px; 
+      background: #0ea5e9; 
+      border-radius: 8px; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      margin-bottom: 24px; 
+      color: white;
+      font-size: 24px;
+    }
+    .feature h3 { 
+      font-size: 1.5rem; 
+      margin-bottom: 16px; 
+      color: #1e293b; 
+      font-weight: 600;
+    }
+    .feature p { color: #64748b; line-height: 1.7; font-size: 1rem; }
+    
+    /* Demo Section */
+    .demo { background: #f8fafc; padding: 80px 0; }
+    .demo h2 { 
+      font-size: 2.5rem; 
+      margin-bottom: 48px; 
+      text-align: center; 
+      color: #1e293b;
+    }
+    .demo-grid { 
+      display: grid; 
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
+      gap: 32px; 
+      margin: 48px 0; 
+    }
+    .demo-card { 
+      background: white; 
+      padding: 32px; 
+      border-radius: 12px; 
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); 
+      border: 1px solid #e2e8f0;
+    }
+    .demo-card h4 { 
+      color: #1e293b; 
+      margin-bottom: 16px; 
+      font-size: 1.25rem; 
+      font-weight: 600;
+    }
+    .demo-card p { color: #64748b; font-size: 0.95rem; line-height: 1.6; }
+    
+    /* ROI Section */
+    .roi { 
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); 
+      color: white; 
+      padding: 80px 0; 
+    }
+    .roi h2 { 
+      font-size: 2.5rem; 
+      margin-bottom: 48px; 
+      text-align: center; 
+      font-weight: 700;
+    }
+    .stats-grid { 
+      display: grid; 
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
+      gap: 32px; 
+      margin: 48px 0; 
+    }
+    .stat { 
+      background: rgba(255, 255, 255, 0.05); 
+      padding: 32px 24px; 
+      border-radius: 12px; 
+      text-align: center; 
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .stat .number { 
+      font-size: 3rem; 
+      font-weight: 700; 
+      margin-bottom: 8px; 
+      color: #0ea5e9;
+    }
+    .stat .label { font-size: 1rem; opacity: 0.9; }
+    
+    /* Pricing */
     .pricing { padding: 80px 0; background: white; }
-    .pricing h2 { font-size: 2.5em; margin-bottom: 30px; text-align: center; color: #333; }
-    .pricing .plans { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 30px; margin: 40px 0; }
-    .pricing .plan { background: #f8f9fa; border: 2px solid #e9ecef; border-radius: 15px; padding: 40px 30px; text-align: center; transition: transform 0.3s, box-shadow 0.3s; }
-    .pricing .plan:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
-    .pricing .plan.featured { border-color: #2563eb; transform: scale(1.05); }
-    .pricing .plan h3 { font-size: 1.8em; margin-bottom: 10px; color: #2563eb; }
-    .pricing .plan .price { font-size: 2.5em; font-weight: 700; margin-bottom: 20px; }
-    .pricing .plan .price span { font-size: 0.4em; opacity: 0.7; }
-    .pricing .plan ul { list-style: none; margin: 30px 0; text-align: left; }
-    .pricing .plan li { margin-bottom: 12px; padding-left: 25px; position: relative; }
-    .pricing .plan li::before { content: "✓"; position: absolute; left: 0; color: #28a745; font-weight: bold; }
-    .pricing .plan .cta { background: #2563eb; color: white; padding: 15px 30px; border-radius: 25px; text-decoration: none; font-weight: 600; display: inline-block; margin-top: 20px; transition: background 0.3s; }
-    .pricing .plan .cta:hover { background: #1d4ed8; }
-    .cta-section { background: #f8f9fa; padding: 60px 0; text-align: center; }
-    .cta-section h2 { font-size: 2.2em; margin-bottom: 20px; color: #333; }
-    .cta-section .buttons { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; }
-    .cta-section .btn { background: #2563eb; color: white; padding: 20px 40px; border-radius: 50px; text-decoration: none; font-weight: 600; font-size: 1.1em; transition: transform 0.3s, box-shadow 0.3s; }
-    .cta-section .btn:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
-    .cta-section .btn.secondary { background: white; color: #2563eb; border: 2px solid #2563eb; }
-    .cta-section .btn.secondary:hover { background: #f8f9fa; }
-    .footer { background: #333; color: white; text-align: center; padding: 40px 0; }
-    .footer .links { display: flex; justify-content: center; gap: 30px; margin-bottom: 20px; }
-    .footer .links a { color: white; text-decoration: none; transition: opacity 0.3s; }
-    .footer .links a:hover { opacity: 0.8; }
+    .pricing h2 { 
+      font-size: 2.5rem; 
+      margin-bottom: 48px; 
+      text-align: center; 
+      color: #1e293b;
+    }
+    .pricing-grid { 
+      display: grid; 
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
+      gap: 32px; 
+      margin: 48px 0; 
+    }
+    .plan { 
+      background: #f8fafc; 
+      border: 1px solid #e2e8f0; 
+      border-radius: 12px; 
+      padding: 40px 32px; 
+      text-align: center; 
+      transition: all 0.2s ease;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+    .plan:hover { 
+      transform: translateY(-4px); 
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+    }
+    .plan.featured { 
+      border-color: #0ea5e9; 
+      background: white;
+      box-shadow: 0 8px 24px rgba(14, 165, 233, 0.15);
+    }
+    .plan h3 { 
+      font-size: 1.5rem; 
+      margin-bottom: 8px; 
+      color: #1e293b; 
+      font-weight: 600;
+    }
+    .plan .price { 
+      font-size: 3rem; 
+      font-weight: 700; 
+      margin-bottom: 24px; 
+      color: #1e293b;
+    }
+    .plan .price span { 
+      font-size: 1rem; 
+      opacity: 0.7; 
+      font-weight: 400;
+    }
+    .plan ul { 
+      list-style: none; 
+      margin: 32px 0; 
+      text-align: left; 
+      flex-grow: 1;
+    }
+    .plan li { 
+      margin-bottom: 12px; 
+      padding-left: 24px; 
+      position: relative; 
+      color: #475569;
+      line-height: 1.5;
+    }
+    .plan li::before { 
+      content: "✓"; 
+      position: absolute; 
+      left: 0; 
+      color: #10b981; 
+      font-weight: bold; 
+    }
+    .plan .cta { 
+      background: #1e293b; 
+      color: white; 
+      padding: 14px 28px; 
+      border-radius: 8px; 
+      text-decoration: none; 
+      font-weight: 600; 
+      display: inline-block; 
+      margin-top: auto; 
+      transition: all 0.2s ease;
+      border: 2px solid transparent;
+    }
+    .plan .cta:hover { 
+      background: #0f172a; 
+      transform: translateY(-1px);
+    }
+    .plan.featured .cta { 
+      background: #0ea5e9; 
+    }
+    .plan.featured .cta:hover { 
+      background: #0284c7; 
+    }
+    
+    /* CTA Section */
+    .cta-section { background: #f8fafc; padding: 80px 0; text-align: center; }
+    .cta-section h2 { 
+      font-size: 2.25rem; 
+      margin-bottom: 32px; 
+      color: #1e293b; 
+      font-weight: 700;
+    }
+    .cta-buttons { 
+      display: flex; 
+      gap: 16px; 
+      justify-content: center; 
+      flex-wrap: wrap; 
+    }
+    .btn { 
+      background: #1e293b; 
+      color: white; 
+      padding: 16px 32px; 
+      border-radius: 8px; 
+      text-decoration: none; 
+      font-weight: 600; 
+      font-size: 1rem; 
+      transition: all 0.2s ease;
+      border: 2px solid transparent;
+      display: inline-block;
+    }
+    .btn:hover { 
+      background: #0f172a; 
+      transform: translateY(-1px);
+    }
+    .btn.secondary { 
+      background: white; 
+      color: #1e293b; 
+      border: 2px solid #e2e8f0;
+    }
+    .btn.secondary:hover { 
+      background: #f8fafc; 
+      border-color: #cbd5e1;
+    }
+    
+    /* Footer */
+    .footer { 
+      background: #1e293b; 
+      color: white; 
+      text-align: center; 
+      padding: 48px 0; 
+    }
+    .footer-links { 
+      display: flex; 
+      justify-content: center; 
+      gap: 32px; 
+      margin-bottom: 24px; 
+      flex-wrap: wrap;
+    }
+    .footer-links a { 
+      color: #94a3b8; 
+      text-decoration: none; 
+      transition: color 0.2s ease;
+    }
+    .footer-links a:hover { color: white; }
+    .footer p { color: #94a3b8; margin: 0; }
+    
+    /* Responsive */
     @media (max-width: 768px) {
-      .header h1 { font-size: 2.5em; }
-      .features { grid-template-columns: 1fr; padding: 40px 0; }
-      .demo .screenshots { grid-template-columns: 1fr; }
-      .pricing .plans { grid-template-columns: 1fr; }
-      .cta-section .buttons { flex-direction: column; align-items: center; }
+      .header { padding: 60px 0; }
+      .header h1 { font-size: 2.5rem; }
+      .features, .demo, .roi, .pricing, .cta-section { padding: 60px 0; }
+      .features-grid, .demo-grid, .stats-grid, .pricing-grid { grid-template-columns: 1fr; gap: 24px; }
+      .cta-buttons { flex-direction: column; align-items: center; }
+      .footer-links { flex-direction: column; gap: 16px; }
     }
   </style>
 </head>
@@ -71,76 +348,63 @@
   <div class="container">
     <!-- Header Hero -->
     <div class="header">
-      <h1>🤖 Agent Boutique</h1>
-      <p class="tagline">Transformez vos conversations WhatsApp en clients payants avec l'IA</p>
-      <a href="#pricing" class="cta">Démarrer gratuitement →</a>
+      <div class="header-content">
+        <h1>Assistant WhatsApp IA pour Commerces et PME</h1>
+        <p class="tagline">Automatisez vos réponses clients et augmentez vos conversions.</p>
+        <a href="#pricing" class="cta">Commencer maintenant</a>
+      </div>
     </div>
 
     <!-- Features -->
     <div class="features">
-      <div class="feature">
-        <div class="icon">🎯</div>
-        <h3>Qualification Automatique</h3>
-        <p>L'IA analyse et qualifie vos prospects en temps réel pour identifier les opportunités les plus prometteuses.</p>
-      </div>
-      <div class="feature">
-        <div class="icon">💬</div>
-        <h3>Conversations Intelligentes</h3>
-        <p>Chaque interaction est personnalisée selon votre business pour maximiser l'engagement et la conversion.</p>
-      </div>
-      <div class="feature">
-        <div class="icon">📊</div>
-        <h3>Analytics Avancées</h3>
-        <p>Suivez vos performances en temps réel : taux de conversion, ROI, et optimisation continue.</p>
-      </div>
-      <div class="feature">
-        <div class="icon">⚡</div>
-        <h3>Setup Rapide</h3>
-        <p>Installation en 5 minutes. Connectez simplement votre numéro WhatsApp et commencez à convertir immédiatement.</p>
+      <h2>Pourquoi choisir Agent Boutique</h2>
+      <div class="features-grid">
+        <div class="feature">
+          <div class="feature-icon">🎯</div>
+          <h3>Qualification Automatique</h3>
+          <p>L'IA analyse et qualifie vos prospects en temps réel pour identifier les opportunités les plus prometteuses.</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">💬</div>
+          <h3>Conversations Intelligentes</h3>
+          <p>Chaque interaction est personnalisée selon votre business pour maximiser l'engagement et la conversion.</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">📊</div>
+          <h3>Analytics Avancées</h3>
+          <p>Suivez vos performances en temps réel : taux de conversion, ROI, et optimisation continue.</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">⚡</div>
+          <h3>Setup Rapide</h3>
+          <p>Installation en 5 minutes. Connectez simplement votre numéro WhatsApp et commencez à convertir immédiatement.</p>
+        </div>
       </div>
     </div>
 
     <!-- Demo Section -->
     <div class="demo">
-      <h2>📱 Voir l'Agent en Action</h2>
-      <div class="screenshots">
-        <div class="screenshot">
-          <div style="background: #f0f0f0; height: 200px; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-bottom: 15px;">
-            <div style="text-align: center;">
-              <div style="font-size: 2em; margin-bottom: 10px;">💬</div>
-              <div style="color: #666;">"Bonjour, je suis intéressé par vos services"</div>
-            </div>
-          </div>
+      <h2>Voir l'Assistant en Action</h2>
+      <div class="demo-grid">
+        <div class="demo-card">
           <h4>Conversation WhatsApp</h4>
-          <p>Vos prospects discutent naturellement avec l'IA qui qualifie et engage</p>
+          <p>Vos prospects discutent naturellement avec l'IA qui qualifie et engage chaque conversation.</p>
         </div>
-        <div class="screenshot">
-          <div style="background: #1a1a2a; height: 200px; border-radius: 8px; padding: 20px; margin-bottom: 15px;">
-            <div style="color: #4CAF50; text-align: center;">
-              <div style="font-size: 1.5em; margin-bottom: 10px;">✅</div>
-              <div style="font-weight: bold;">Lead Qualifié - Score: 85/100</div>
-            </div>
-          </div>
+        <div class="demo-card">
           <h4>Tableau de Bord Admin</h4>
-          <p>Suivez en temps réel les conversations, les scores et les performances</p>
+          <p>Suivez en temps réel les conversations, les scores et les performances de votre assistant.</p>
         </div>
-        <div class="screenshot">
-          <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); height: 200px; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-bottom: 15px;">
-            <div style="color: white; text-align: center;">
-              <div style="font-size: 2em; margin-bottom: 10px;">💰</div>
-              <div style="font-weight: bold;">+247% ROI</div>
-            </div>
-          </div>
+        <div class="demo-card">
           <h4>Analytics & ROI</h4>
-          <p>Mesurez précisément votre retour sur investissement et optimisez vos conversions</p>
+          <p>Mesurez précisément votre retour sur investissement et optimisez vos conversions.</p>
         </div>
       </div>
     </div>
 
     <!-- ROI Section -->
     <div class="roi">
-      <h2>📈 Résultats Provenus</h2>
-      <div class="stats">
+      <h2>Résultats Mesurables</h2>
+      <div class="stats-grid">
         <div class="stat">
           <div class="number">247%</div>
           <div class="label">ROI Moyen</div>
@@ -162,11 +426,11 @@
 
     <!-- Pricing Section -->
     <div class="pricing" id="pricing">
-      <h2>💰 Choisissez Votre Plan</h2>
-      <div class="plans">
+      <h2>Choisissez Votre Plan</h2>
+      <div class="pricing-grid">
         <div class="plan">
           <h3>Starter</h3>
-          <div class="price">49€<span>/mois</span></div>
+          <div class="price">79€<span>/mois</span></div>
           <ul>
             <li>Jusqu'à 100 messages/jour</li>
             <li>Jusqu'à 50 leads/mois</li>
@@ -174,7 +438,7 @@
             <li>Analytics de base</li>
             <li>1 numéro WhatsApp</li>
           </ul>
-          <a href="/contact.html?subject=demo" class="cta">Essai Gratuit →</a>
+          <a href="/contact.html?subject=demo" class="cta">Essai Gratuit</a>
         </div>
         <div class="plan featured">
           <h3>Pro</h3>
@@ -187,11 +451,11 @@
             <li>3 numéros WhatsApp</li>
             <li>API d'intégration</li>
           </ul>
-          <a href="/contact.html?subject=demo" class="cta">Démarrer →</a>
+          <a href="/contact.html?subject=demo" class="cta">Démarrer</a>
         </div>
         <div class="plan">
           <h3>Elite</h3>
-          <div class="price">399€<span>/mois</span></div>
+          <div class="price">299€<span>/mois</span></div>
           <ul>
             <li>Messages illimités</li>
             <li>Leads illimités</li>
@@ -201,15 +465,18 @@
             <li>API complète</li>
             <li>Onboarding personnalisé</li>
           </ul>
-          <a href="/contact.html?subject=demo" class="cta">Contactez-nous →</a>
+          <a href="/contact.html?subject=demo" class="cta">Contactez-nous</a>
         </div>
       </div>
+      <p style="text-align: center; margin-top: 32px; color: #64748b; font-size: 1.125rem;">
+        <strong>Setup initial à partir de 149€</strong>
+      </p>
     </div>
 
     <!-- CTA Section -->
     <div class="cta-section">
-      <h2>🚀 Prêt à Transformer Votre Business ?</h2>
-      <div class="buttons">
+      <h2>Prêt à Transformer Votre Business ?</h2>
+      <div class="cta-buttons">
         <a href="/contact.html?subject=demo" class="btn">Demander une Démo</a>
         <a href="/console/console.html" class="btn secondary">Voir la Console Admin</a>
         <a href="/pricing.html" class="btn secondary">Voir les Tarifs</a>
@@ -218,14 +485,14 @@
 
     <!-- Footer -->
     <div class="footer">
-      <div class="links">
+      <div class="footer-links">
         <a href="/privacy.html">Confidentialité</a>
         <a href="/terms.html">Conditions</a>
         <a href="/contact.html">Contact</a>
         <a href="/console/console.html">Console Admin</a>
       </div>
       <p>&copy; 2026 Agent Boutique. Tous droits réservés.</p>
-      <p>🤖 L'IA qui transforme vos conversations en clients payants</p>
+      <p>Assistant WhatsApp IA pour commerces et PME</p>
     </div>
   </div>
 </body>

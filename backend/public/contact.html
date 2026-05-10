@@ -6,75 +6,217 @@
   <title>Contact - Agent Boutique</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.6; color: #333; background: #f8f9fa; }
-    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-    .header { text-align: center; padding: 40px 0; margin-bottom: 40px; }
-    .header h1 { font-size: 2.5em; color: #2563eb; margin-bottom: 10px; }
-    .header p { font-size: 1.2em; color: #666; }
-    .contact-form { background: white; padding: 40px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 30px; }
-    .form-group { margin-bottom: 20px; }
-    .form-group label { display: block; font-weight: 600; margin-bottom: 8px; color: #333; }
-    .form-group input, .form-group textarea, .form-group select { 
-      width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; 
-      font-size: 16px; transition: border-color 0.3s; 
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; 
+      line-height: 1.6; 
+      color: #1a1a1a; 
+      background: #ffffff;
     }
-    .form-group input:focus, .form-group textarea:focus, .form-group select:focus { 
-      outline: none; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); 
+    .container { max-width: 800px; margin: 0 auto; padding: 0 24px; }
+    
+    /* Header */
+    .header { text-align: center; padding: 80px 0; margin-bottom: 60px; }
+    .header h1 { 
+      font-size: 2.5rem; 
+      font-weight: 700; 
+      margin-bottom: 16px; 
+      color: #1e293b;
     }
-    .form-group textarea { min-height: 120px; resize: vertical; }
+    .header p { 
+      font-size: 1.125rem; 
+      color: #64748b; 
+      max-width: 600px; 
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+    
+    /* Contact Form */
+    .contact-form { 
+      background: white; 
+      padding: 48px 32px; 
+      border-radius: 12px; 
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); 
+      margin-bottom: 48px; 
+      border: 1px solid #e2e8f0;
+    }
+    .form-group { margin-bottom: 24px; }
+    .form-group label { 
+      display: block; 
+      font-weight: 600; 
+      margin-bottom: 8px; 
+      color: #1e293b;
+      font-size: 0.95rem;
+    }
+    .form-group input, .form-group select, .form-group textarea { 
+      width: 100%; 
+      padding: 14px 16px; 
+      border: 1px solid #e2e8f0; 
+      border-radius: 8px; 
+      font-size: 1rem; 
+      transition: all 0.2s ease; 
+      background: white;
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { 
+      outline: none; 
+      border-color: #0ea5e9; 
+      box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1); 
+    }
+    .form-group textarea { min-height: 120px; resize: vertical; font-family: inherit; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
     .btn { 
-      background: #2563eb; color: white; padding: 15px 30px; border: none; border-radius: 6px; 
-      font-size: 16px; font-weight: 600; cursor: pointer; width: 100%; 
-      transition: background 0.3s; 
+      background: #1e293b; 
+      color: white; 
+      padding: 16px 32px; 
+      border: none; 
+      border-radius: 8px; 
+      font-size: 1rem; 
+      font-weight: 600; 
+      cursor: pointer; 
+      transition: all 0.2s ease; 
+      width: 100%;
+      border: 2px solid transparent;
     }
-    .btn:hover { background: #1d4ed8; }
-    .contact-info { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-    .contact-info h3 { color: #2563eb; margin-bottom: 20px; }
-    .contact-info p { margin-bottom: 15px; font-size: 1.1em; }
-    .contact-info .icon { margin-right: 10px; }
-    .success-message { background: #d4edda; color: #155724; padding: 15px; border-radius: 6px; margin-bottom: 20px; display: none; }
-    .error-message { background: #f8d7da; color: #721c24; padding: 15px; border-radius: 6px; margin-bottom: 20px; display: none; }
+    .btn:hover { 
+      background: #0f172a; 
+      transform: translateY(-1px);
+    }
+    
+    /* Contact Info */
+    .contact-info { 
+      background: white; 
+      padding: 48px 32px; 
+      border-radius: 12px; 
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); 
+      border: 1px solid #e2e8f0;
+    }
+    .contact-info h3 { 
+      color: #1e293b; 
+      margin-bottom: 32px; 
+      font-size: 1.5rem; 
+      font-weight: 600;
+    }
+    .contact-item { 
+      margin-bottom: 24px; 
+      display: flex; 
+      align-items: center; 
+    }
+    .contact-item:last-child { margin-bottom: 0; }
+    .contact-item .icon { 
+      width: 48px; 
+      height: 48px; 
+      background: #f8fafc; 
+      border-radius: 8px; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      margin-right: 20px; 
+      color: #0ea5e9; 
+      font-size: 20px;
+      border: 1px solid #e2e8f0;
+    }
+    .contact-item .text { flex: 1; }
+    .contact-item .text h4 { 
+      margin-bottom: 4px; 
+      color: #1e293b; 
+      font-weight: 600;
+      font-size: 1.125rem;
+    }
+    .contact-item .text p { 
+      color: #64748b; 
+      margin: 0; 
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+    
+    /* Messages */
+    .success-message { 
+      background: #f0fdf4; 
+      color: #166534; 
+      padding: 16px 20px; 
+      border-radius: 8px; 
+      margin-bottom: 24px; 
+      display: none; 
+      border: 1px solid #bbf7d0;
+    }
+    .error-message { 
+      background: #fef2f2; 
+      color: #991b1b; 
+      padding: 16px 20px; 
+      border-radius: 8px; 
+      margin-bottom: 24px; 
+      display: none; 
+      border: 1px solid #fecaca;
+    }
+    
+    /* Footer */
+    .footer { 
+      text-align: center; 
+      padding: 48px 0; 
+      color: #64748b; 
+      border-top: 1px solid #f1f5f9;
+      margin-top: 60px;
+    }
+    .footer p { margin-bottom: 8px; }
+    .footer a { 
+      color: #0ea5e9; 
+      text-decoration: none; 
+      font-weight: 500;
+    }
+    .footer a:hover { text-decoration: underline; }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+      .header { padding: 60px 0; }
+      .contact-form, .contact-info { padding: 32px 24px; }
+      .form-row { grid-template-columns: 1fr; }
+      .contact-item { flex-direction: column; text-align: center; }
+      .contact-item .icon { margin-right: 0; margin-bottom: 12px; }
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="header">
-      <h1>🤖 Agent Boutique</h1>
-      <p>Contactez-nous</p>
+      <h1>Contact</h1>
+      <p>Une question ? Besoin d'une démo ? Notre équipe est là pour vous aider.</p>
+    </div>
+
+    <div id="success-message" class="success-message">
+      Message envoyé avec succès ! Nous vous répondrons dans les plus brefs délais.
+    </div>
+    <div id="error-message" class="error-message">
+      Erreur lors de l'envoi du message. Veuillez réessayer.
     </div>
 
     <div class="contact-form">
-      <h2>Envoyez-nous un message</h2>
-      <div id="success-message" class="success-message">Message envoyé avec succès ! Nous vous répondrons dans les 24h.</div>
-      <div id="error-message" class="error-message">Erreur lors de l'envoi. Veuillez réessayer.</div>
-      
       <form id="contact-form">
-        <div class="form-group">
-          <label for="name">Nom complet *</label>
-          <input type="text" id="name" name="name" required>
-        </div>
-
-        <div class="form-group">
-          <label for="email">Email *</label>
-          <input type="email" id="email" name="email" required>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="name">Nom complet *</label>
+            <input type="text" id="name" name="name" required placeholder="Jean Dupont">
+          </div>
+          <div class="form-group">
+            <label for="email">Email professionnel *</label>
+            <input type="email" id="email" name="email" required placeholder="jean@entreprise.com">
+          </div>
         </div>
 
         <div class="form-group">
           <label for="company">Entreprise</label>
-          <input type="text" id="company" name="company">
+          <input type="text" id="company" name="company" placeholder="Entreprise ABC">
         </div>
 
         <div class="form-group">
           <label for="phone">Téléphone</label>
-          <input type="tel" id="phone" name="phone">
+          <input type="tel" id="phone" name="phone" placeholder="+33 6 12 34 56 78">
         </div>
 
         <div class="form-group">
           <label for="subject">Sujet *</label>
           <select id="subject" name="subject" required>
             <option value="">Choisissez un sujet</option>
-            <option value="demo">Demande de démo</option>
-            <option value="pricing">Questions tarifs</option>
+            <option value="demo">Demander une démo</option>
+            <option value="pricing">Questions sur les tarifs</option>
             <option value="support">Support technique</option>
             <option value="partnership">Partenariat</option>
             <option value="other">Autre</option>
@@ -83,7 +225,7 @@
 
         <div class="form-group">
           <label for="message">Message *</label>
-          <textarea id="message" name="message" required placeholder="Décrivez votre besoin..."></textarea>
+          <textarea id="message" name="message" required placeholder="Décrivez votre projet ou vos questions..."></textarea>
         </div>
 
         <button type="submit" class="btn">Envoyer le message</button>
@@ -91,15 +233,49 @@
     </div>
 
     <div class="contact-info">
-      <h3>📞 Autres moyens de contact</h3>
-      <p><span class="icon">📧</span> <strong>Email :</strong> contact@agentboutique.com</p>
-      <p><span class="icon">📱</span> <strong>Téléphone :</strong> +33 1 23 45 67 89</p>
-      <p><span class="icon">📍</span> <strong>Adresse :</strong> 123 Tech Street, 75001 Paris, France</p>
-      <p><span class="icon">🕐</span> <strong>Horaires :</strong> Lun-Ven 9h-18h CET</p>
+      <h3>Informations de contact</h3>
       
-      <h3>🚀 Démarrage rapide</h3>
-      <p><strong>Intéressé par une démo ?</strong> Contactez-nous pour une démonstration personnalisée de 30 minutes.</p>
-      <p><strong>Questions techniques ?</strong> Notre équipe support est disponible pour vous aider.</p>
+      <div class="contact-item">
+        <div class="icon">📧</div>
+        <div class="text">
+          <h4>Email</h4>
+          <p>Contact sur demande</p>
+        </div>
+      </div>
+
+      <div class="contact-item">
+        <div class="icon">📱</div>
+        <div class="text">
+          <h4>Téléphone</h4>
+          <p>Contact sur demande</p>
+        </div>
+      </div>
+
+      <div class="contact-item">
+        <div class="icon">🕐</div>
+        <div class="text">
+          <h4>Horaires</h4>
+          <p>Lun-Ven: 9h-18h<br>Sam: 9h-12h</p>
+        </div>
+      </div>
+
+      <div class="contact-item">
+        <div class="icon">📍</div>
+        <div class="text">
+          <h4>Adresse</h4>
+          <p>Contact sur demande</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <p>&copy; 2026 Agent Boutique. Tous droits réservés.</p>
+      <p>
+        <a href="/">Accueil</a> | 
+        <a href="/pricing.html">Tarifs</a> | 
+        <a href="/privacy.html">Confidentialité</a> | 
+        <a href="/terms.html">Conditions</a>
+      </p>
     </div>
   </div>
 
@@ -107,24 +283,27 @@
     document.getElementById('contact-form').addEventListener('submit', function(e) {
       e.preventDefault();
       
-      // Récupérer les données du formulaire
-      const formData = new FormData(this);
-      const data = Object.fromEntries(formData);
+      // Simuler l'envoi du formulaire
+      const successMessage = document.getElementById('success-message');
+      const errorMessage = document.getElementById('error-message');
       
-      // Validation simple
-      if (!data.name || !data.email || !data.message) {
-        document.getElementById('error-message').style.display = 'block';
-        document.getElementById('success-message').style.display = 'none';
-        return;
-      }
+      // Cacher les messages précédents
+      successMessage.style.display = 'none';
+      errorMessage.style.display = 'none';
       
-      // Simuler l'envoi (remplacer par vrai appel API)
-      console.log('Contact form submitted:', data);
-      
-      // Afficher le message de succès
-      document.getElementById('success-message').style.display = 'block';
-      document.getElementById('error-message').style.display = 'none';
-      
+      // Simuler un délai d'envoi
+      setTimeout(() => {
+        // Afficher le message de succès
+        successMessage.style.display = 'block';
+        
+        // Réinitialiser le formulaire
+        this.reset();
+        
+        // Cacher le message après 5 secondes
+        setTimeout(() => {
+          successMessage.style.display = 'none';
+        }, 5000);
+      }, 1000);
       // Réinitialiser le formulaire
       this.reset();
       

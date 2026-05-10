@@ -1087,8 +1087,15 @@ app.get('/api/console/conversations', consoleAuth, async (req, res) => {
 // CONSOLE CONVERSATION ADMIN PANEL - READ ONLY SAFE EXTENSION
 try {
   app.use('/api/console', require('./routes/consoleConversationRoutes'));
-} catch (error) {
-  console.log('[CONSOLE CONVERSATION ROUTES ERROR]', error.message);
+} catch (err) {
+  console.error('[CONSOLE CONVERSATION ROUTES ERROR]', err.message);
+}
+
+// ADMIN CHAT PANEL - SAFE ISOLATED ROUTES
+try {
+  app.use('/api/admin', require('./routes/adminChatRoutes'));
+} catch (err) {
+  console.error('[ADMIN CHAT ROUTES ERROR]', err.message);
 }
 
 app.post('/api/console/instruction', consoleAuth, async (req, res) => {
