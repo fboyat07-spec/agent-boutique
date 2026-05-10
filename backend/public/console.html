@@ -643,97 +643,27 @@
           <input type="text" class="search-input" placeholder="Rechercher...">
         </div>
       </div>
-      <div class="conversations-list">
-        <!-- Conversations will be populated here -->
-        <div class="conversation-item active">
-          <div class="conversation-avatar">JD</div>
-          <div class="conversation-info">
-            <div class="conversation-name">Non configuré</div>
-            <div class="conversation-last-message">Bonjour, je souhaiterais avoir plus d'informations...</div>
-            <div class="conversation-meta">
-              <span class="conversation-badge ai">IA</span>
-              <span>14:23</span>
-            </div>
-          </div>
-          <div class="unread-indicator"></div>
-        </div>
-        
-        <div class="conversation-item">
-          <div class="conversation-avatar" style="background: var(--orange);">MC</div>
-          <div class="conversation-info">
-            <div class="conversation-name">Marie Curie</div>
-            <div class="conversation-last-message">Quels sont les tarifs pour votre solution ?</div>
-            <div class="conversation-meta">
-              <span class="conversation-badge human">HUMAN</span>
-              <span>13:45</span>
-            </div>
-          </div>
-        </div>
-        
-        <div class="conversation-item">
-          <div class="conversation-avatar">PL</div>
-          <div class="conversation-info">
-            <div class="conversation-name">Pierre Lemoine</div>
-            <div class="conversation-last-message">Merci pour votre réponse rapide !</div>
-            <div class="conversation-meta">
-              <span class="conversation-badge ai">IA</span>
-              <span>Hier</span>
-            </div>
-          </div>
-        </div>
+      <div class="conversations-list" id="conversationsList">
+        <!-- Conversations will be loaded from API -->
+        <div class="loading-state">Chargement des conversations...</div>
       </div>
     </div>
 
     <!-- ── Zone Chat Principal ───────────────────────────────────── -->
     <div class="chat-area">
-      <div class="chat-header">
+      <div class="chat-header" id="chatHeader">
         <div class="chat-contact-info">
-          <div class="chat-contact-avatar">JD</div>
+          <div class="chat-contact-avatar" id="chatContactAvatar">--</div>
           <div class="chat-contact-details">
-            <div class="chat-contact-name">Non configuré</div>
-            <div class="chat-contact-status">Non configuré</div>
+            <div class="chat-contact-name" id="chatContactName">Sélectionnez une conversation</div>
+            <div class="chat-contact-status" id="chatContactStatus">--</div>
           </div>
         </div>
       </div>
       
-      <div class="chat-messages">
-        <div class="message user">
-          <div class="message-avatar">JD</div>
-          <div class="message-content">
-            <div class="message-text">Bonjour, je souhaiterais avoir plus d'informations sur votre solution d'assistant WhatsApp</div>
-            <div class="message-time">14:23</div>
-          </div>
-        </div>
-        
-        <div class="message">
-          <div class="message-avatar">IA</div>
-          <div class="message-content">
-            <div class="message-text">Bonjour Jean ! Je suis ravi de vous présenter Agent Boutique. Notre solution d'IA vous permet d'automatiser vos réponses WhatsApp 24h/24 et d'augmenter vos conversions de 30 à 50%. Quels types de produits ou services vendez-vous ?</div>
-            <div class="message-time">14:24</div>
-          </div>
-        </div>
-        
-        <div class="message user">
-          <div class="message-avatar">JD</div>
-          <div class="message-content">
-            <div class="message-text">Je vends des vêtements pour enfants en ligne</div>
-            <div class="message-time">14:25</div>
-          </div>
-        </div>
-        
-        <div class="message">
-          <div class="message-avatar">IA</div>
-          <div class="message-content">
-            <div class="message-text">Parfait ! Pour votre boutique de vêtements, je vous recommande notre plan Pro à 149€/mois. Il vous offrira des conversations illimitées, des analytics avancées et un support prioritaire. Souhaitez-vous que je vous envoie le lien d'essai gratuit ?</div>
-            <div class="message-time">14:26</div>
-          </div>
-        </div>
-        
-        <div class="typing-indicator">
-          <div class="typing-dot"></div>
-          <div class="typing-dot"></div>
-          <div class="typing-dot"></div>
-        </div>
+      <div class="chat-messages" id="chatMessages">
+        <!-- Messages will be loaded from API -->
+        <div class="loading-state">Sélectionnez une conversation pour afficher les messages</div>
       </div>
       
       <div class="chat-input">
@@ -752,19 +682,19 @@
       <div class="right-panel-header">
         <div class="right-panel-title">Informations Lead</div>
       </div>
-      <div class="right-panel-content">
+      <div class="right-panel-content" id="rightPanelContent">
         <div class="lead-info-section">
           <div class="lead-info-title">Statut</div>
           <div class="lead-info-item">
             <span class="lead-info-label">Mode actuel</span>
-            <span class="status-badge ai">IA</span>
+            <span class="status-badge" id="currentModeBadge">--</span>
           </div>
         </div>
         
         <div class="lead-info-section">
           <div class="lead-info-title">Score Lead</div>
           <div class="lead-score">
-            <div class="score-value">85</div>
+            <div class="score-value" id="leadScore">--</div>
             <div class="score-label">/100</div>
           </div>
         </div>
@@ -773,29 +703,30 @@
           <div class="lead-info-title">Informations</div>
           <div class="lead-info-item">
             <span class="lead-info-label">Nom</span>
-            <span class="lead-info-value">Non configuré</span>
+            <span class="lead-info-value" id="leadName">--</span>
           </div>
           <div class="lead-info-item">
             <span class="lead-info-label">Téléphone</span>
-            <span class="lead-info-value">Non configuré</span>
+            <span class="lead-info-value" id="leadPhone">--</span>
           </div>
           <div class="lead-info-item">
             <span class="lead-info-label">Business</span>
-            <span class="lead-info-value">Non configuré</span>
+            <span class="lead-info-value" id="leadBusiness">--</span>
           </div>
           <div class="lead-info-item">
             <span class="lead-info-label">Messages</span>
-            <span class="lead-info-value">Non configuré</span>
+            <span class="lead-info-value" id="leadMessages">--</span>
           </div>
         </div>
         
         <div class="lead-info-section">
           <div class="lead-info-title">Actions Rapides</div>
           <div class="action-buttons">
-            <button class="action-button primary">Prendre en main</button>
-            <button class="action-button">Voir l'historique</button>
-            <button class="action-button">Envoyer lien paiement</button>
-            <button class="action-button">Archiver</button>
+            <button class="action-button primary" id="takeoverBtn">Prendre en main</button>
+            <button class="action-button" id="releaseBtn" style="display: none;">Relâcher vers IA</button>
+            <button class="action-button" id="historyBtn">Voir l'historique</button>
+            <button class="action-button" id="paymentBtn">Envoyer lien paiement</button>
+            <button class="action-button" id="archiveBtn">Archiver</button>
           </div>
         </div>
       </div>
@@ -803,53 +734,361 @@
   </div>
 
   <script>
-    // Auto-resize textarea
+    // Configuration
+    const API_BASE = '/api/admin/chat';
+    const AUTH_TOKEN = 'console_admin_2024'; // Token d'authentification admin
+    
+    // État global
+    let currentConversationId = null;
+    let currentTenantId = 'DEFAULT'; // Tenant par défaut
+    let conversations = [];
+    
+    // Éléments DOM
+    const conversationsList = document.getElementById('conversationsList');
+    const chatMessages = document.getElementById('chatMessages');
     const messageInput = document.querySelector('.message-input');
-    if (messageInput) {
-      messageInput.addEventListener('input', function() {
-      this.style.height = 'auto';
-      this.style.height = Math.min(this.scrollHeight, 120) + 'px';
-    });
-
-    // Send message on Enter
-    messageInput.addEventListener('keydown', function(e) {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        sendMessage();
+    const sendButton = document.querySelector('.send-button');
+    const searchInput = document.querySelector('.search-input');
+    
+    // Header elements
+    const chatContactAvatar = document.getElementById('chatContactAvatar');
+    const chatContactName = document.getElementById('chatContactName');
+    const chatContactStatus = document.getElementById('chatContactStatus');
+    
+    // Right panel elements
+    const currentModeBadge = document.getElementById('currentModeBadge');
+    const leadScore = document.getElementById('leadScore');
+    const leadName = document.getElementById('leadName');
+    const leadPhone = document.getElementById('leadPhone');
+    const leadBusiness = document.getElementById('leadBusiness');
+    const leadMessages = document.getElementById('leadMessages');
+    
+    // Action buttons
+    const takeoverBtn = document.getElementById('takeoverBtn');
+    const releaseBtn = document.getElementById('releaseBtn');
+    
+    // Helper pour fetch avec auth
+    async function apiCall(url, options = {}) {
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${AUTH_TOKEN}`,
+          'Content-Type': 'application/json',
+          ...options.headers
+        },
+        ...options
+      });
+      
+      if (!response.ok) {
+        throw new Error(`API Error: ${response.status}`);
       }
-    });
+      
+      return response.json();
     }
-
-    function sendMessage() {
+    
+    // Charger toutes les conversations
+    async function loadConversations() {
+      try {
+        const data = await apiCall(`${API_BASE}/conversations`);
+        conversations = data.conversations;
+        renderConversations();
+      } catch (error) {
+        console.error('[CONSOLE] Error loading conversations:', error);
+        conversationsList.innerHTML = '<div class="error-state">Erreur de chargement des conversations</div>';
+      }
+    }
+    
+    // Afficher les conversations
+    function renderConversations() {
+      if (!conversations.length) {
+        conversationsList.innerHTML = '<div class="empty-state">Aucune conversation</div>';
+        return;
+      }
+      
+      conversationsList.innerHTML = conversations.map(conv => `
+        <div class="conversation-item ${conv.id === currentConversationId ? 'active' : ''}" data-id="${conv.id}">
+          <div class="conversation-avatar">${conv.phone.substring(0, 2).toUpperCase()}</div>
+          <div class="conversation-info">
+            <div class="conversation-name">${conv.phone}</div>
+            <div class="conversation-last-message">${conv.lastMessage?.content || 'Nouveau message'}</div>
+            <div class="conversation-meta">
+              <span class="conversation-badge ${conv.mode.toLowerCase()}">${conv.mode}</span>
+              <span>${formatTime(conv.lastInteraction)}</span>
+            </div>
+          </div>
+          ${conv.unread ? '<div class="unread-indicator"></div>' : ''}
+        </div>
+      `).join('');
+      
+      // Ajouter les écouteurs d'événements
+      document.querySelectorAll('.conversation-item').forEach(item => {
+        item.addEventListener('click', () => selectConversation(item.dataset.id));
+      });
+    }
+    
+    // Sélectionner une conversation
+    async function selectConversation(conversationId) {
+      currentConversationId = conversationId;
+      
+      // Mettre à jour l'UI
+      document.querySelectorAll('.conversation-item').forEach(item => {
+        item.classList.toggle('active', item.dataset.id === conversationId);
+      });
+      
+      try {
+        const data = await apiCall(`${API_BASE}/conversation/${conversationId}`);
+        const conversation = data.conversation;
+        
+        // Mettre à jour le header
+        updateChatHeader(conversation);
+        
+        // Afficher les messages
+        renderMessages(conversation.messages);
+        
+        // Mettre à jour le right panel
+        updateRightPanel(conversation);
+        
+      } catch (error) {
+        console.error('[CONSOLE] Error loading conversation:', error);
+        chatMessages.innerHTML = '<div class="error-state">Erreur de chargement des messages</div>';
+      }
+    }
+    
+    // Mettre à jour le header chat
+    function updateChatHeader(conversation) {
+      const initials = conversation.phone.substring(0, 2).toUpperCase();
+      chatContactAvatar.textContent = initials;
+      chatContactName.textContent = conversation.phone;
+      chatContactStatus.textContent = conversation.phone;
+    }
+    
+    // Afficher les messages
+    function renderMessages(messages) {
+      if (!messages.length) {
+        chatMessages.innerHTML = '<div class="empty-state">Aucun message</div>';
+        return;
+      }
+      
+      chatMessages.innerHTML = messages.map(msg => `
+        <div class="message ${msg.sender}">
+          <div class="message-avatar">${msg.sender === 'admin' ? 'AD' : 'IA'}</div>
+          <div class="message-content">
+            <div class="message-text">${msg.content}</div>
+            <div class="message-time">${formatTime(msg.timestamp)}</div>
+          </div>
+        </div>
+      `).join('');
+      
+      // Scroll en bas
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+    
+    // Mettre à jour le right panel
+    function updateRightPanel(conversation) {
+      const mode = conversation.mode || 'IA';
+      currentModeBadge.textContent = mode;
+      currentModeBadge.className = `status-badge ${mode.toLowerCase()}`;
+      
+      // Afficher/cacher les boutons selon le mode
+      takeoverBtn.style.display = mode === 'IA' ? 'block' : 'none';
+      releaseBtn.style.display = mode === 'HUMAN' ? 'block' : 'none';
+      
+      // Mettre à jour les infos (pour l'instant basiques)
+      leadScore.textContent = '--';
+      leadName.textContent = 'Non configuré';
+      leadPhone.textContent = conversation.phone;
+      leadBusiness.textContent = 'Non configuré';
+      leadMessages.textContent = conversation.messages?.length || 0;
+    }
+    
+    // Envoyer un message
+    async function sendMessage() {
       const message = messageInput.value.trim();
-      if (message) {
-        console.log('Sending message:', message);
+      if (!message || !currentConversationId) return;
+      
+      const conversation = conversations.find(c => c.id === currentConversationId);
+      if (!conversation) return;
+      
+      try {
+        const data = await apiCall(`${API_BASE}/send`, {
+          method: 'POST',
+          body: JSON.stringify({
+            phone: conversation.phone,
+            message: message,
+            conversationId: currentConversationId,
+            tenant_id: currentTenantId
+          })
+        });
+        
+        // Ajouter le message à l'UI
+        const newMessage = data.message;
+        const messagesContainer = chatMessages.querySelector('.empty-state') ? 
+          chatMessages : chatMessages;
+        
+        if (!messagesContainer.querySelector('.empty-state')) {
+          messagesContainer.innerHTML += `
+            <div class="message admin">
+              <div class="message-avatar">AD</div>
+              <div class="message-content">
+                <div class="message-text">${newMessage.content}</div>
+                <div class="message-time">${formatTime(newMessage.timestamp)}</div>
+              </div>
+            </div>
+          `;
+          chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        // Vider l'input
         messageInput.value = '';
         messageInput.style.height = 'auto';
+        
+        // Recharger les conversations pour mettre à jour
+        await loadConversations();
+        
+      } catch (error) {
+        console.error('[CONSOLE] Error sending message:', error);
+        alert('Erreur lors de l\'envoi du message');
       }
     }
-
-    // Conversation item clicks
-    document.querySelectorAll('.conversation-item').forEach(item => {
-      item.addEventListener('click', function() {
-        document.querySelectorAll('.conversation-item').forEach(i => i.classList.remove('active'));
-        this.classList.add('active');
+    
+    // Prendre le contrôle
+    async function takeOver() {
+      if (!currentConversationId) return;
+      
+      try {
+        const data = await apiCall(`${API_BASE}/takeover`, {
+          method: 'POST',
+          body: JSON.stringify({
+            conversationId: currentConversationId,
+            tenant_id: currentTenantId
+          })
+        });
+        
+        // Mettre à jour l'UI
+        currentModeBadge.textContent = 'HUMAN';
+        currentModeBadge.className = 'status-badge human';
+        takeoverBtn.style.display = 'none';
+        releaseBtn.style.display = 'block';
+        
+        // Recharger les conversations
+        await loadConversations();
+        
+      } catch (error) {
+        console.error('[CONSOLE] Error taking over:', error);
+        alert('Erreur lors de la prise de contrôle');
+      }
+    }
+    
+    // Relâcher vers IA
+    async function release() {
+      if (!currentConversationId) return;
+      
+      try {
+        const data = await apiCall(`${API_BASE}/release`, {
+          method: 'POST',
+          body: JSON.stringify({
+            conversationId: currentConversationId,
+            tenant_id: currentTenantId
+          })
+        });
+        
+        // Mettre à jour l'UI
+        currentModeBadge.textContent = 'IA';
+        currentModeBadge.className = 'status-badge ai';
+        takeoverBtn.style.display = 'block';
+        releaseBtn.style.display = 'none';
+        
+        // Recharger les conversations
+        await loadConversations();
+        
+      } catch (error) {
+        console.error('[CONSOLE] Error releasing:', error);
+        alert('Erreur lors du relâchement');
+      }
+    }
+    
+    // Formater l'heure
+    function formatTime(timestamp) {
+      if (!timestamp) return '--';
+      const date = new Date(timestamp);
+      const now = new Date();
+      const diffMs = now - date;
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMs / 3600000);
+      const diffDays = Math.floor(diffMs / 86400000);
+      
+      if (diffMins < 1) return 'À l\'instant';
+      if (diffMins < 60) return `Il y a ${diffMins} min`;
+      if (diffHours < 24) return `Il y a ${diffHours} h`;
+      if (diffDays < 7) return `Il y a ${diffDays} j`;
+      return date.toLocaleDateString('fr-FR');
+    }
+    
+    // Auto-resize textarea
+    if (messageInput) {
+      messageInput.addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = Math.min(this.scrollHeight, 120) + 'px';
       });
-    });
 
+      // Send message on Enter
+      messageInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          sendMessage();
+        }
+      });
+    }
+    
+    // Send button click
+    if (sendButton) {
+      sendButton.addEventListener('click', sendMessage);
+    }
+    
+    // Action buttons
+    if (takeoverBtn) {
+      takeoverBtn.addEventListener('click', takeOver);
+    }
+    
+    if (releaseBtn) {
+      releaseBtn.addEventListener('click', release);
+    }
+    
     // Search functionality
-    const searchInput = document.querySelector('.search-input');
     if (searchInput) {
       searchInput.addEventListener('input', function() {
-      const searchTerm = this.value.toLowerCase();
-      document.querySelectorAll('.conversation-item').forEach(item => {
-        const name = item.querySelector('.conversation-name').textContent.toLowerCase();
-        const lastMessage = item.querySelector('.conversation-last-message').textContent.toLowerCase();
-        const matches = name.includes(searchTerm) || lastMessage.includes(searchTerm);
-        item.style.display = matches ? 'flex' : 'none';
+        const searchTerm = this.value.toLowerCase();
+        const filteredConversations = conversations.filter(conv => 
+          conv.phone.toLowerCase().includes(searchTerm) ||
+          (conv.lastMessage?.content || '').toLowerCase().includes(searchTerm)
+        );
+        
+        conversationsList.innerHTML = filteredConversations.map(conv => `
+          <div class="conversation-item ${conv.id === currentConversationId ? 'active' : ''}" data-id="${conv.id}">
+            <div class="conversation-avatar">${conv.phone.substring(0, 2).toUpperCase()}</div>
+            <div class="conversation-info">
+              <div class="conversation-name">${conv.phone}</div>
+              <div class="conversation-last-message">${conv.lastMessage?.content || 'Nouveau message'}</div>
+              <div class="conversation-meta">
+                <span class="conversation-badge ${conv.mode.toLowerCase()}">${conv.mode}</span>
+                <span>${formatTime(conv.lastInteraction)}</span>
+              </div>
+            </div>
+            ${conv.unread ? '<div class="unread-indicator"></div>' : ''}
+          </div>
+        `).join('');
+        
+        // Ré-attacher les écouteurs
+        document.querySelectorAll('.conversation-item').forEach(item => {
+          item.addEventListener('click', () => selectConversation(item.dataset.id));
+        });
       });
-    });
     }
+    
+    // Initialisation
+    loadConversations();
+    
+    // Auto-refresh toutes les 30 secondes
+    setInterval(loadConversations, 30000);
   </script>
 </body>
 </html>
