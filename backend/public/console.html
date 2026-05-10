@@ -319,6 +319,50 @@
   </div>
   <!-- ── FIN BLOC ROI ────────────────────────────────────────────────────── -->
 
+  <!-- ── Conversations Admin Panel ───────────────────────────────────────────── -->
+  <div class="card" id="conversations-card">
+    <div class="card-header">
+      <span>💬</span>
+      <span class="card-title">Conversations Admin Panel</span>
+      <span class="card-badge" id="conv-count-badge">0 conv</span>
+    </div>
+    
+    <div style="display:grid; grid-template-columns:300px 1fr; gap:16px; height:400px;">
+      
+      <!-- Panel gauche : liste conversations -->
+      <div style="
+        background:var(--bg); border:1px solid var(--border); border-radius:8px;
+        padding:12px; overflow-y:auto;
+      ">
+        <div style="font-size:12px; font-weight:600; margin-bottom:12px; color:var(--muted);">
+          CONVERSATIONS RÉCENTES
+        </div>
+        <div id="conversations-list" style="display:flex; flex-direction:column; gap:8px;">
+          <div style="color:var(--muted); font-size:12px; text-align:center; padding:20px;">
+            Chargement...
+          </div>
+        </div>
+      </div>
+      
+      <!-- Panel droit : messages conversation -->
+      <div style="
+        background:var(--bg); border:1px solid var(--border); border-radius:8px;
+        padding:12px; overflow-y:auto; display:flex; flex-direction:column;
+      ">
+        <div id="conversation-header" style="font-size:12px; font-weight:600; margin-bottom:12px; color:var(--muted);">
+          Sélectionnez une conversation
+        </div>
+        <div id="conversation-messages" style="flex:1; font-size:12px; line-height:1.6;">
+          <div style="color:var(--muted); text-align:center; padding:40px;">
+            <div>💬</div>
+            <div style="margin-top:8px;">Aucune conversation sélectionnée</div>
+          </div>
+        </div>
+      </div>
+      
+    </div>
+  </div>
+
   <!-- ── Logs SSE ────────────────────────────────────────────────────────── -->
   <div class="card">
     <div class="card-header">
@@ -508,11 +552,159 @@ function escHtml(s) {
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
+/* ── Conversations Admin Panel ─────────────────────────────────────────────── */
+let selectedConversationId = null;
+let conversationTimer = null;
+
+async function loadConversations() {
+  const res = await apiFetch('/api/console/conversations').catch(() => null);
+  if (!res || !res.ok) return;
+  
+  const data = await res.json();
+  renderConversationsList(data.conversations);
+  el('conv-count-badge').textContent = `${data.total} conv`;
+}
+
+function renderConversationsList(conversations) {
+  const list = el('conversations-list');
+  
+  if (!conversations || conversations.length === 0) {
+    list.innerHTML = '<div style="color:var(--muted); font-size:12px; text-align:center; padding:20px;">Aucune conversation</div>';
+    return;
+  }
+  
+  list.innerHTML = conversations.map(conv => `
+    <div onclick="selectConversation('${conv.id}')" style="
+      padding:10px; border:1px solid var(--border); border-radius:6px; cursor:pointer;
+      background: ${selectedConversationId === conv.id ? 'var(--surface)' : 'var(--bg)'};
+      transition:background 0.15s;
+    " onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background='${selectedConversationId === conv.id ? 'var(--surface)' : 'var(--bg)'}'">
+      <div style="font-weight:600; font-size:12px; margin-bottom:4px;">${conv.name}</div>
+      <div style="color:var(--muted); font-size:11px; margin-bottom:2px;">📱 ${conv.phone}</div>
+      <div style="color:var(--muted); font-size:11px; margin-bottom:2px;">
+        <span style="color: ${getStageColor(conv.stage)};">● ${conv.stage.toUpperCase()}</span>
+        ${conv.businessType ? ` • ${conv.businessType}` : ''}
+      </div>
+      <div style="color:var(--muted); font-size:10px; margin-top:4px;">
+        ${formatTime(conv.lastInteractionAt)} • ${conv.messageCount} msgs
+      </div>
+      <div style="color:var(--text); font-size:11px; margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+        ${conv.lastMessage}
+      </div>
+    </div>
+  `).join('');
+}
+
+function getStageColor(stage) {
+  const colors = {
+    'new': 'var(--blue)',
+    'qualified': 'var(--green)', 
+    'interested': 'var(--purple)',
+    'closing': 'var(--orange)',
+    'won': 'var(--green)',
+    'lost': 'var(--red)'
+  };
+  return colors[stage] || 'var(--muted)';
+}
+
+function formatTime(timestamp) {
+  if (!timestamp) return '';
+  const date = new Date(timestamp);
+  const now = new Date();
+  const diffMs = now - date;
+  const diffMins = Math.floor(diffMs / 60000);
+  
+  if (diffMins < 1) return 'à l\'instant';
+  if (diffMins < 60) return `il y a ${diffMins}m`;
+  
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) return `il y a ${diffHours}h`;
+  
+  return date.toLocaleDateString('fr-FR');
+}
+
+async function selectConversation(convId) {
+  selectedConversationId = convId;
+  loadConversations(); // Refresh pour mettre à jour la sélection
+  
+  const res = await apiFetch(`/api/console/conversation/${convId}`).catch(() => null);
+  if (!res || !res.ok) return;
+  
+  const conv = await res.json();
+  renderConversationDetail(conv);
+}
+
+function renderConversationDetail(conv) {
+  el('conversation-header').innerHTML = `
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <div>
+        <strong>${conv.name}</strong> • 📱 ${conv.phone}
+        ${conv.businessType ? ` • ${conv.businessType}` : ''}
+      </div>
+      <div style="color: ${getStageColor(conv.stage)}; font-size:11px; font-weight:600;">
+        ● ${conv.stage.toUpperCase()}
+      </div>
+    </div>
+    <div style="color:var(--muted); font-size:11px; margin-top:4px;">
+    Score: ${conv.score} • Messages: ${conv.stats.messageCount} • Dernière: ${formatTime(conv.lastInteractionAt)}
+    </div>
+  `;
+  
+  const messagesDiv = el('conversation-messages');
+  if (!conv.messages || conv.messages.length === 0) {
+    messagesDiv.innerHTML = '<div style="color:var(--muted); text-align:center; padding:40px;">Aucun message</div>';
+    return;
+  }
+  
+  messagesDiv.innerHTML = conv.messages.map(msg => `
+    <div style="
+      margin-bottom:12px; padding:8px; border-radius:6px;
+      background: ${msg.sender === 'user' ? '#1a2a1a' : '#1a1a2a'};
+      border-left: 3px solid ${msg.sender === 'user' ? 'var(--green)' : 'var(--blue)'};
+    ">
+      <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+        <span style="font-weight:600; font-size:11px; color: ${msg.sender === 'user' ? 'var(--green)' : 'var(--blue)'};">
+          ${msg.sender === 'user' ? '👤 Client' : '🤖 IA'}
+        </span>
+        <span style="color:var(--muted); font-size:10px;">
+          ${new Date(msg.timestamp).toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'})}
+        </span>
+      </div>
+      <div style="color:var(--text); font-size:12px; line-height:1.4;">
+        ${msg.content}
+      </div>
+    </div>
+  `).join('');
+  
+  // Scroll vers le bas
+  messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
+
+function startConversationRefresh() {
+  // Refresh léger toutes les 30 secondes
+  conversationTimer = setInterval(() => {
+    loadConversations();
+    if (selectedConversationId) {
+      selectConversation(selectedConversationId);
+    }
+  }, 30000);
+}
+
+function stopConversationRefresh() {
+  if (conversationTimer) {
+    clearInterval(conversationTimer);
+    conversationTimer = null;
+  }
+}
+
 /* ── Boot ────────────────────────────────────────────────────────────────── */
 function boot() {
   loadStats();
   loadROI();
+  loadConversations();
   connectSSE();
+  startConversationRefresh();
+  
   setInterval(loadStats, 15000);
   roiTimer = setInterval(loadROI, 30000);
 }

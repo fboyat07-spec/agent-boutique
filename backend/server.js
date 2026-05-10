@@ -504,7 +504,9 @@ app.use(express.json({
 
 // Log after body parser to confirm parsing
 app.use((req, res, next) => {
-  console.log('[BODY PARSER CHECK]', {
+  console.log('[DIAGNOSTIC] REQUEST RECEIVED - MIDDLEWARE', {
+    method: req.method,
+    url: req.url,
     hasBody: !!req.body,
     bodyType: typeof req.body,
     bodyKeys: req.body ? Object.keys(req.body) : [],
@@ -887,12 +889,10 @@ async function processSingleMessage(message, tenant_id) {
         }
 
         console.log('[DIAGNOSTIC] ORCHESTRATOR REPLY RECEIVED - STEP 32', reply.slice(0, 80));
-        console.log('[DIAGNOSTIC] SENDING WHATSAPP MESSAGE - STEP 33');
+        console.log('[DIAGNOSTIC] ORCHESTRATOR MANAGES WHATSAPP SEND - STEP 33');
 
-        // Envoi WhatsApp
-        await sendWhatsAppMessage(senderPhone, reply, tenant_id);
-
-        console.log('[DIAGNOSTIC] WHATSAPP MESSAGE SENT - STEP 33', { messageId });
+        // L'orchestrateur gère déjà l'envoi via nodeSendWhatsApp() - PAS DE SEND DIRECT REDONDANT
+        console.log('[DIAGNOSTIC] REDUNDANT SEND PREVENTED - STEP 33', { messageId });
 
       } catch (orchError) {
         console.log('[DIAGNOSTIC] ORCHESTRATOR ERROR - STEP 32 ERROR', {
@@ -1074,6 +1074,13 @@ app.get('/api/console/conversations', consoleAuth, async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+// CONSOLE CONVERSATION ADMIN PANEL - READ ONLY SAFE EXTENSION
+try {
+  app.use('/api/console', require('./routes/consoleConversationRoutes'));
+} catch (error) {
+  console.log('[CONSOLE CONVERSATION ROUTES ERROR]', error.message);
+}
 
 app.post('/api/console/instruction', consoleAuth, async (req, res) => {
   try {

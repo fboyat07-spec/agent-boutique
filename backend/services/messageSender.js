@@ -57,9 +57,11 @@ async function sendWhatsAppMessage(to, message, tenant_id = null) {
       to,
       message: message.substring(0, 50) + '...',
       tenant_id,
-      stack: new Error().stack.split('\n').slice(1, 4),
+      stack: new Error().stack.split('\n').slice(1, 6),
       timestamp: Date.now()
     });
+    
+    console.log('[WHATSAPP_SEND_STACK_TRACE]', new Error().stack);
     
     const response = await axios.post(apiUrl, payload, {
       headers: {
