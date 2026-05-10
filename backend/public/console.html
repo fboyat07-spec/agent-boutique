@@ -648,7 +648,7 @@
         <div class="conversation-item active">
           <div class="conversation-avatar">JD</div>
           <div class="conversation-info">
-            <div class="conversation-name">Jean Dupont</div>
+            <div class="conversation-name">Non configuré</div>
             <div class="conversation-last-message">Bonjour, je souhaiterais avoir plus d'informations...</div>
             <div class="conversation-meta">
               <span class="conversation-badge ai">IA</span>
@@ -690,8 +690,8 @@
         <div class="chat-contact-info">
           <div class="chat-contact-avatar">JD</div>
           <div class="chat-contact-details">
-            <div class="chat-contact-name">Jean Dupont</div>
-            <div class="chat-contact-status">+33 6 12 34 56 78</div>
+            <div class="chat-contact-name">Non configuré</div>
+            <div class="chat-contact-status">Non configuré</div>
           </div>
         </div>
       </div>
@@ -773,19 +773,19 @@
           <div class="lead-info-title">Informations</div>
           <div class="lead-info-item">
             <span class="lead-info-label">Nom</span>
-            <span class="lead-info-value">Jean Dupont</span>
+            <span class="lead-info-value">Non configuré</span>
           </div>
           <div class="lead-info-item">
             <span class="lead-info-label">Téléphone</span>
-            <span class="lead-info-value">+33 6 12 34 56 78</span>
+            <span class="lead-info-value">Non configuré</span>
           </div>
           <div class="lead-info-item">
             <span class="lead-info-label">Business</span>
-            <span class="lead-info-value">Vêtements enfants</span>
+            <span class="lead-info-value">Non configuré</span>
           </div>
           <div class="lead-info-item">
             <span class="lead-info-label">Messages</span>
-            <span class="lead-info-value">4 aujourd'hui</span>
+            <span class="lead-info-value">Non configuré</span>
           </div>
         </div>
         
@@ -805,7 +805,8 @@
   <script>
     // Auto-resize textarea
     const messageInput = document.querySelector('.message-input');
-    messageInput.addEventListener('input', function() {
+    if (messageInput) {
+      messageInput.addEventListener('input', function() {
       this.style.height = 'auto';
       this.style.height = Math.min(this.scrollHeight, 120) + 'px';
     });
@@ -817,6 +818,7 @@
         sendMessage();
       }
     });
+    }
 
     function sendMessage() {
       const message = messageInput.value.trim();
@@ -837,7 +839,8 @@
 
     // Search functionality
     const searchInput = document.querySelector('.search-input');
-    searchInput.addEventListener('input', function() {
+    if (searchInput) {
+      searchInput.addEventListener('input', function() {
       const searchTerm = this.value.toLowerCase();
       document.querySelectorAll('.conversation-item').forEach(item => {
         const name = item.querySelector('.conversation-name').textContent.toLowerCase();
@@ -846,6 +849,7 @@
         item.style.display = matches ? 'flex' : 'none';
       });
     });
+    }
   </script>
 </body>
 </html>
