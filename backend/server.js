@@ -1026,6 +1026,12 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// ─── TEST ROUTE DIRECTE POUR DIAGNOSTIC RAILWAY ─────────────────────────────
+app.get('/api/test-admin-route', (req, res) => {
+  console.log('[TEST] /api/test-admin-route called');
+  res.json({ ok: true, message: 'Test route works', timestamp: new Date().toISOString() });
+});
+
 // ─── Console statique ─────────────────────────────────────────────────────────
 // index: 'console.html' → /console et /console/ servent console.html directement
 app.use('/console', express.static(path.join(__dirname, 'public'), { index: 'console.html' }));
@@ -1092,9 +1098,14 @@ try {
 }
 
 // ADMIN CHAT PANEL - SAFE ISOLATED ROUTES
+console.log('[BOOT] adminChatRoutes loading...');
 try {
-  app.use('/api/admin', require('./routes/adminChatRoutes'));
+  const adminChatRoutes = require('./routes/adminChatRoutes');
+  console.log('[BOOT] adminChatRoutes loaded successfully');
+  app.use('/api/admin', adminChatRoutes);
+  console.log('[BOOT] Mounted /api/admin routes');
 } catch (err) {
+  console.error('[BOOT] FAILED TO LOAD adminChatRoutes', err);
   console.error('[ADMIN CHAT ROUTES ERROR]', err.message);
 }
 

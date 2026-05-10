@@ -262,4 +262,15 @@ router.get('/status', adminAuth, async (req, res) => {
   }
 });
 
+// ÉTAPE 4 - Test route admin directe pour diagnostic Railway
+router.get('/debug', (req, res) => {
+  console.log('[ADMIN DEBUG] /api/admin/debug called');
+  res.json({ 
+    ok: true, 
+    message: 'Admin routes are mounted', 
+    timestamp: new Date().toISOString(),
+    routes: ['conversations', 'conversation/:id', 'send', 'takeover', 'release', 'status', 'debug']
+  });
+});
+
 module.exports = router;
