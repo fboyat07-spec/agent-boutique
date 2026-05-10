@@ -1017,6 +1017,15 @@ try {
 // ─── Prospecting routes ───────────────────────────────────────────────────────
 app.use('/api/prospecting', require('./routes/prospecting.routes'));
 
+// ─── Static files serving ─────────────────────────────────────────────────────
+// Servir tous les fichiers du dossier public à la racine
+app.use(express.static(path.join(__dirname, 'public')));
+
+// ─── Route racine pour index.html ─────────────────────────────────────────────
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
 // ─── Console statique ─────────────────────────────────────────────────────────
 // index: 'console.html' → /console et /console/ servent console.html directement
 app.use('/console', express.static(path.join(__dirname, 'public'), { index: 'console.html' }));
