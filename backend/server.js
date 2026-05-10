@@ -1163,22 +1163,31 @@ function isFirestoreEnabled() {
   return !!process.env.FIREBASE_PROJECT_ID;
 }
 
+// ÉTAPE 6 - Route trace avant 404 global pour diagnostic
+app.use((req, res, next) => {
+  console.log('[ROUTE TRACE]', req.method, req.originalUrl);
+  next();
+});
+
 // Global error handler
 app.use((error, req, res, next) => {
   incError();
   console.log('[GLOBAL ERROR]', error.message, error.stack);
   res.status(500).json({
     error: 'Internal server error',
-    message: isProduction ? 'Something went wrong' : error.message
+    message: 'Something went wrong'
   });
 });
 
-// 404 handler
+// 404 handler avec diagnostic détaillé
 app.use((req, res) => {
-  console.log('[404 NOT FOUND]', req.method, req.url);
+  console.error('[404 FINAL]', req.method, req.originalUrl);
   res.status(404).json({
     error: 'Not found',
-    message: `Route ${req.method} ${req.url} not found`
+    message: 'Route not found',
+    route: req.originalUrl,
+    method: req.method,
+    timestamp: new Date().toISOString()
   });
 });
 
