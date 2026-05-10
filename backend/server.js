@@ -1032,6 +1032,19 @@ app.get('/api/test-admin-route', (req, res) => {
   res.json({ ok: true, message: 'Test route works', timestamp: new Date().toISOString() });
 });
 
+// ─── ÉTAPE 4 - TEST PROCESS EXPRESS ───────────────────────────────────────────────
+app.get('/api/runtime-check', (req, res) => {
+  console.log('[RUNTIME CHECK] Called');
+  res.json({
+    ok: true,
+    commit: '9b7b51a',
+    process: process.pid,
+    uptime: process.uptime(),
+    nodeVersion: process.version,
+    timestamp: new Date().toISOString()
+  });
+});
+
 // ─── Console statique ─────────────────────────────────────────────────────────
 // index: 'console.html' → /console et /console/ servent console.html directement
 app.use('/console', express.static(path.join(__dirname, 'public'), { index: 'console.html' }));
@@ -1100,12 +1113,16 @@ try {
 // ADMIN CHAT PANEL - SAFE ISOLATED ROUTES
 console.log('[BOOT] adminChatRoutes loading...');
 try {
+  console.log('[BOOT] Attempting require ./routes/adminChatRoutes');
   const adminChatRoutes = require('./routes/adminChatRoutes');
   console.log('[BOOT] adminChatRoutes loaded successfully');
+  console.log('[BOOT] adminChatRoutes type:', typeof adminChatRoutes);
+  console.log('[BOOT] adminChatRoutes methods:', Object.getOwnPropertyNames(adminChatRoutes));
   app.use('/api/admin', adminChatRoutes);
   console.log('[BOOT] Mounted /api/admin routes');
 } catch (err) {
   console.error('[BOOT] FAILED TO LOAD adminChatRoutes', err);
+  console.error('[BOOT] Error stack:', err.stack);
   console.error('[ADMIN CHAT ROUTES ERROR]', err.message);
 }
 
@@ -1191,6 +1208,8 @@ app.use((req, res) => {
   });
 });
 
+console.log('🔥 SERVER.JS LIVE EXECUTED 🔥');
+console.log('🔥 COMMIT 9b7b51a LIVE 🔥');
 console.log('[SERVER INITIALIZATION COMPLETE]');
 console.log('[ORCHESTRATOR PIPELINE ACTIVE]');
 console.log('[AUTO-REPLY SYSTEMS REMOVED]');
