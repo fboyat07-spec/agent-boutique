@@ -1045,6 +1045,20 @@ app.get('/api/runtime-check', (req, res) => {
   });
 });
 
+// ─── ÉTAPE 1 - RUNTIME PROOF OBLIGATOIRE ───────────────────────────────────────
+app.get('/api/runtime-proof', (req, res) => {
+  console.log('[RUNTIME PROOF] Called');
+  res.json({
+    ok: true,
+    commit: 'cba9260',
+    timestamp: new Date().toISOString(),
+    pid: process.pid,
+    node: process.version,
+    env: process.env.RAILWAY_ENVIRONMENT || null,
+    uptime: process.uptime()
+  });
+});
+
 // ─── Console statique ─────────────────────────────────────────────────────────
 // index: 'console.html' → /console et /console/ servent console.html directement
 app.use('/console', express.static(path.join(__dirname, 'public'), { index: 'console.html' }));
@@ -1208,8 +1222,9 @@ app.use((req, res) => {
   });
 });
 
-console.log('🔥 SERVER.JS LIVE EXECUTED 🔥');
-console.log('🔥 COMMIT 9b7b51a LIVE 🔥');
+console.log('🔥 RUNTIME PROOF ACTIVE 🔥');
+console.log('🔥 COMMIT cba9260 LIVE 🔥');
+console.log('🔥 PID:', process.pid);
 console.log('[SERVER INITIALIZATION COMPLETE]');
 console.log('[ORCHESTRATOR PIPELINE ACTIVE]');
 console.log('[AUTO-REPLY SYSTEMS REMOVED]');
