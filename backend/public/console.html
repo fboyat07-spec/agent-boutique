@@ -630,6 +630,67 @@
     ::-webkit-scrollbar-thumb:hover {
       background: var(--border-strong);
     }
+
+    /* Runtime Controls Styles */
+    .runtime-controls {
+      margin-top: 16px;
+      padding: 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+    }
+    
+    .runtime-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    
+    .runtime-text {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    
+    .runtime-buttons {
+      display: flex;
+      gap: 8px;
+    }
+    
+    .runtime-button {
+      flex: 1;
+      padding: 8px 12px;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    
+    .runtime-button.start {
+      background: var(--green);
+      color: white;
+    }
+    
+    .runtime-button.start:hover {
+      background: #059669;
+    }
+    
+    .runtime-button.stop {
+      background: var(--red);
+      color: white;
+    }
+    
+    .runtime-button.stop:hover {
+      background: #dc2626;
+    }
+    
+    .runtime-button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
   </style>
 </head>
 <body>
@@ -641,6 +702,18 @@
         <div class="search-bar">
           <span class="search-icon">🔍</span>
           <input type="text" class="search-input" placeholder="Rechercher...">
+        </div>
+        
+        <!-- Runtime Controls -->
+        <div class="runtime-controls">
+          <div class="runtime-status">
+            <span class="status-badge" id="liveStatusBadge">● LIVE</span>
+            <span class="runtime-text" id="runtimeStatusText">RUNNING</span>
+          </div>
+          <div class="runtime-buttons">
+            <button class="runtime-button start" id="startBtn">▶ Démarrer</button>
+            <button class="runtime-button stop" id="stopBtn">■ Arrêter</button>
+          </div>
         </div>
       </div>
       <div class="conversations-list" id="conversationsList">
@@ -1084,11 +1157,103 @@
       });
     }
     
+    // Runtime Controls
+    const liveStatusBadge = document.getElementById('liveStatusBadge');
+    const runtimeStatusText = document.getElementById('runtimeStatusText');
+    const startBtn = document.getElementById('startBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    
+    // Charger l'état runtime initial
+    async function loadRuntimeStatus() {
+      try {
+        const data = await apiCall('/api/console/stats');
+        const status = data.agent_status || 'unknown';
+        updateRuntimeUI(status);
+      } catch (error) {
+        console.error('[CONSOLE] Error loading runtime status:', error);
+        updateRuntimeUI('unknown');
+      }
+    }
+    
+    // Mettre à jour l'UI runtime
+    function updateRuntimeUI(status) {
+      if (!liveStatusBadge || !runtimeStatusText || !startBtn || !stopBtn) return;
+      
+      const isRunning = status === 'running';
+      const isStopped = status === 'stopped';
+      const isUnknown = status === 'unknown';
+      
+      // Mettre à jour le badge et texte
+      liveStatusBadge.textContent = isUnknown ? '● OFFLINE' : '● LIVE';
+      liveStatusBadge.className = isUnknown ? 'status-badge' : 'status-badge ai';
+      runtimeStatusText.textContent = isUnknown ? 'UNKNOWN' : status.toUpperCase();
+      
+      // Mettre à jour les boutons
+      startBtn.disabled = isRunning;
+      stopBtn.disabled = isStopped;
+      
+      // Styles visuels selon l'état
+      if (isUnknown) {
+        liveStatusBadge.style.background = 'var(--orange)';
+      } else if (isRunning) {
+        liveStatusBadge.style.background = 'var(--green)';
+      } else {
+        liveStatusBadge.style.background = 'var(--red)';
+      }
+    }
+    
+    // Démarrer l'agent
+    async function startAgent() {
+      try {
+        const data = await apiCall('/api/console/power', {
+          method: 'POST',
+          body: JSON.stringify({ action: 'start' })
+        });
+        
+        console.log('[CONSOLE] Agent started:', data);
+        updateRuntimeUI('running');
+        
+      } catch (error) {
+        console.error('[CONSOLE] Error starting agent:', error);
+        alert('Erreur lors du démarrage de l\'agent');
+      }
+    }
+    
+    // Arrêter l'agent
+    async function stopAgent() {
+      try {
+        const data = await apiCall('/api/console/power', {
+          method: 'POST',
+          body: JSON.stringify({ action: 'stop' })
+        });
+        
+        console.log('[CONSOLE] Agent stopped:', data);
+        updateRuntimeUI('stopped');
+        
+      } catch (error) {
+        console.error('[CONSOLE] Error stopping agent:', error);
+        alert('Erreur lors de l\'arrêt de l\'agent');
+      }
+    }
+    
+    // Attacher les écouteurs d'événements
+    if (startBtn) {
+      startBtn.addEventListener('click', startAgent);
+    }
+    
+    if (stopBtn) {
+      stopBtn.addEventListener('click', stopAgent);
+    }
+    
     // Initialisation
     loadConversations();
+    loadRuntimeStatus();
     
     // Auto-refresh toutes les 30 secondes
-    setInterval(loadConversations, 30000);
+    setInterval(() => {
+      loadConversations();
+      loadRuntimeStatus();
+    }, 30000);
   </script>
 </body>
 </html>
