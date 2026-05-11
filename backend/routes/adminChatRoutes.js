@@ -74,7 +74,12 @@ router.get('/conversation/:id', adminAuth, async (req, res) => {
 // POST /api/admin/chat/send - Envoyer un message admin (SAFE)
 router.post('/send', adminAuth, async (req, res) => {
   try {
+    console.log('[ADMIN_CHAT SEND] Route entry');
+    console.log('[ADMIN_CHAT SEND] Body received:', JSON.stringify(req.body, null, 2));
+    
     const { phone, message, conversationId, tenant_id } = req.body;
+    
+    console.log('[ADMIN_CHAT SEND] Parsed params:', { phone, message, conversationId, tenant_id });
 
     if (!phone || !message) {
       return res.status(400).json({ error: 'Phone and message are required' });
@@ -113,10 +118,12 @@ router.post('/send', adminAuth, async (req, res) => {
 
     // Envoyer le message via WhatsApp (pipeline existant)
     try {
+      console.log('[ADMIN_CHAT SEND] Attempting WhatsApp send:', { phone, message, tenant_id });
       await sendWhatsAppMessage(phone, message, tenant_id);
-      console.log('[ADMIN_CHAT] Message sent via WhatsApp:', { phone, tenant_id, messageId: adminMessage.id });
+      console.log('[ADMIN_CHAT SEND] WhatsApp send success:', { phone, tenant_id, messageId: adminMessage.id });
     } catch (whatsappError) {
-      console.error('[ADMIN_CHAT] WhatsApp send error:', whatsappError);
+      console.error('[ADMIN_CHAT SEND] WhatsApp send error:', whatsappError);
+      console.error('[ADMIN_CHAT SEND] WhatsApp error stack:', whatsappError.stack);
       // Ne pas bloquer l'opération, juste logger
     }
 
@@ -139,7 +146,8 @@ router.post('/send', adminAuth, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('[ADMIN_CHAT] Error sending message:', error);
+    console.error('[ADMIN_CHAT SEND] Main error caught:', error);
+    console.error('[ADMIN_CHAT SEND] Error stack:', error.stack);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
