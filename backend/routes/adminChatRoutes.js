@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Conversation = require('../models/Conversation');
 const Lead = require('../models/Lead');
-const { sendWhatsAppMessage } = require('../services/whatsappService');
+const { sendWhatsAppMessage } = require('../services/messageSender');
 const { v4: uuidv4 } = require('uuid');
 
 // Middleware d'authentification admin (réutilise consoleAuth)

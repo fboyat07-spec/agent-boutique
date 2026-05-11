@@ -1,6 +1,6 @@
 const Conversation = require('../models/Conversation');
 const Lead = require('../models/Lead');
-const { sendWhatsAppMessage } = require('./whatsappService');
+const { sendWhatsAppMessage } = require('./messageSender');
 
 class AdminChatService {
   constructor() {
