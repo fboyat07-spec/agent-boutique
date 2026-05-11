@@ -1134,7 +1134,7 @@ try {
   console.log('[BOOT] adminChatRoutes loaded successfully');
   console.log('[BOOT] adminChatRoutes type:', typeof adminChatRoutes);
   console.log('[BOOT] adminChatRoutes methods:', Object.getOwnPropertyNames(adminChatRoutes));
-  app.use('/api/admin', adminChatRoutes);
+  app.use('/api/admin/chat', adminChatRoutes);
   console.log('[BOOT] Mounted /api/admin routes');
 } catch (err) {
   console.error('[BOOT] FAILED TO LOAD adminChatRoutes', err);
