@@ -99,7 +99,7 @@ router.post('/send', adminAuth, async (req, res) => {
       conversation = new Conversation({
         tenant_id,
         phone,
-        stage: 'active',
+        stage: 'new',
         messages: [],
         lastInteractionAt: new Date()
       });
@@ -107,7 +107,6 @@ router.post('/send', adminAuth, async (req, res) => {
 
     // Ajouter le message admin à la conversation
     const adminMessage = {
-      id: uuidv4(),
       sender: 'admin',
       content: message,
       timestamp: new Date(),
