@@ -88,7 +88,9 @@ router.post('/send', adminAuth, async (req, res) => {
     // Vérifier si le lead existe
     const lead = await Lead.findOne({ phone, tenant_id });
     if (!lead) {
-      return res.status(404).json({ error: 'Lead not found' });
+      console.log('[ADMIN_CHAT SEND] Lead not found, continuing with WhatsApp send:', { phone, tenant_id });
+      // NE PAS bloquer l'envoi WhatsApp si phone et message valides
+      // Fallback safe pour permettre l'envoi même sans Lead Mongo
     }
 
     // Trouver ou créer la conversation
