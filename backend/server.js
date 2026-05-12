@@ -496,9 +496,6 @@ app.use(cors({
   credentials: true
 }));
 
-// Stripe webhook — AVANT express.json (utilise req.rawBody capturé par verify)
-app.use('/api/saas', require('./routes/saasWebhook'));
-
 // JSON body parser - CRITICAL FOR WEBHOOK with raw body capture
 app.use(express.json({
   verify: (req, res, buf) => {
@@ -506,6 +503,9 @@ app.use(express.json({
   },
   limit: '1mb'
 }));
+
+// Stripe webhook — APRÈS express.json (req.rawBody capturé par le hook verify)
+app.use('/api/saas', require('./routes/saasWebhook'));
 
 // Log after body parser to confirm parsing
 app.use((req, res, next) => {
