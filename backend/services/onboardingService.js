@@ -53,7 +53,7 @@ async function createTenant({ name, whatsapp_token, phone_number_id, verify_toke
       },
     });
 
-    console.log(`[ONBOARDING] ✅ Tenant created | tenant: ${tenant_id}`);
+    console.log(`[ONBOARDING] ✅ Tenant created | tenant: ${tenant_id} | name: ${name}`);
     return { tenant_id, status: 'pending' };
 
   } catch (err) {
