@@ -470,6 +470,35 @@
         ⚙️ <strong>Variable Railway à ajouter :</strong><br>
         <code id="success-railway-var" style="font-size:0.82rem;word-break:break-all;"></code>
       </div>
+
+      <!-- ── Choix de plan Stripe ──────────────────────────────────────── -->
+      <div id="plan-selection" style="margin:24px 0 0;">
+        <p style="font-weight:600;font-size:0.95rem;margin-bottom:16px;">
+          🚀 Activez votre agent en choisissant votre plan :
+        </p>
+        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;">
+          <a id="link-starter" href="#" target="_blank" rel="noopener"
+             style="display:flex;justify-content:space-between;align-items:center;padding:14px 18px;background:#f0f9ff;border:2px solid #0ea5e9;border-radius:10px;text-decoration:none;color:#1e293b;font-weight:600;">
+            <span>⭐ Starter</span>
+            <span style="color:#0ea5e9;">79 €/mois →</span>
+          </a>
+          <a id="link-pro" href="#" target="_blank" rel="noopener"
+             style="display:flex;justify-content:space-between;align-items:center;padding:14px 18px;background:#fdf4ff;border:2px solid #a855f7;border-radius:10px;text-decoration:none;color:#1e293b;font-weight:600;">
+            <span>🔥 Pro</span>
+            <span style="color:#a855f7;">149 €/mois →</span>
+          </a>
+          <a id="link-elite" href="#" target="_blank" rel="noopener"
+             style="display:flex;justify-content:space-between;align-items:center;padding:14px 18px;background:#fff7ed;border:2px solid #f97316;border-radius:10px;text-decoration:none;color:#1e293b;font-weight:600;">
+            <span>💎 Elite</span>
+            <span style="color:#f97316;">399 €/mois →</span>
+          </a>
+        </div>
+        <p style="font-size:0.8rem;color:#64748b;text-align:center;">
+          Pas maintenant —
+          <a href="/console" style="color:#0ea5e9;">continuer avec l'essai gratuit →</a>
+        </p>
+      </div>
+
       <a href="/console" class="btn-console">Accéder à la console →</a>
     </div>
 
@@ -747,6 +776,9 @@ async function step4Submit() {
       document.getElementById('btn4').style.display = 'none';
       document.querySelectorAll('#step4 .btn-secondary').forEach(b => b.style.display = 'none');
       document.getElementById('success-final').style.display = '';
+
+      // Charger les liens Stripe pour le panneau plan-selection
+      initPaymentLinks(tid);
     } else {
       const reason = data.error || 'Erreur inconnue';
       if (res.status === 403) {
@@ -759,6 +791,24 @@ async function step4Submit() {
     showAlert('alert4', 'error', '❌ Erreur réseau : ' + err.message);
   } finally {
     setLoading('btn4', false);
+  }
+}
+
+// ── Liens Stripe pour le panneau plan-selection ──────────────────────────────
+async function initPaymentLinks(tid) {
+  try {
+    const res = await fetch(
+      '/api/onboarding/payment-links?tenant_id=' + encodeURIComponent(tid)
+    );
+    const data = await res.json();
+    if (data.starter) document.getElementById('link-starter').href = data.starter;
+    if (data.pro)     document.getElementById('link-pro').href     = data.pro;
+    if (data.elite)   document.getElementById('link-elite').href   = data.elite;
+    if (!data.starter && !data.pro && !data.elite) {
+      document.getElementById('plan-selection').style.display = 'none';
+    }
+  } catch {
+    document.getElementById('plan-selection').style.display = 'none';
   }
 }
 </script>

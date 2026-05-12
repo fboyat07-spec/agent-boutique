@@ -123,6 +123,24 @@ router.get('/config', (req, res) => {
   });
 });
 
+// ── GET /api/onboarding/payment-links ────────────────────────────────────────
+// Expose les 3 liens Stripe avec client_reference_id = tenant_id.
+// JAMAIS de STRIPE_SECRET_KEY ni de STRIPE_WEBHOOK_SECRET dans la réponse.
+router.get('/payment-links', (req, res) => {
+  const { tenant_id } = req.query;
+  const suffix = tenant_id
+    ? `?client_reference_id=${encodeURIComponent(tenant_id)}`
+    : '';
+  res.json({
+    starter: process.env.SALES_PAYMENT_LINK_STARTER
+      ? process.env.SALES_PAYMENT_LINK_STARTER + suffix : null,
+    pro: process.env.SALES_PAYMENT_LINK_PRO
+      ? process.env.SALES_PAYMENT_LINK_PRO + suffix : null,
+    elite: process.env.SALES_PAYMENT_LINK_ELITE
+      ? process.env.SALES_PAYMENT_LINK_ELITE + suffix : null,
+  });
+});
+
 // ── GET /api/onboarding/whatsapp-callback ─────────────────────────────────────
 // Reçoit le code OAuth depuis Meta Embedded Signup, échange et met à jour le tenant.
 router.get('/whatsapp-callback', async (req, res) => {

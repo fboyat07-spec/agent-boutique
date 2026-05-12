@@ -3,6 +3,12 @@ const router = express.Router();
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const User = require('../models/User');
 const SaaSTenant = require('../models/SaaSTenant');
+const {
+  activateTenantAgent,
+  deactivateTenantAgent,
+  scheduleDeactivation,
+  cancelScheduledDeactivation
+} = require('../services/billingService');
 
 // Webhook Stripe pour gérer les événements d'abonnement
 router.post('/stripe', express.raw({ type: 'application/json' }), async (req, res) => {
@@ -10,7 +16,7 @@ router.post('/stripe', express.raw({ type: 'application/json' }), async (req, re
   let event;
 
   try {
-    event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
+    event = stripe.webhooks.constructEvent(req.rawBody, sig, process.env.STRIPE_WEBHOOK_SECRET);
   } catch (err) {
     console.log('[STRIPE WEBHOOK ERROR]', err.message);
     return res.status(400).send(`Webhook Error: ${err.message}`);
@@ -69,7 +75,32 @@ router.post('/stripe', express.raw({ type: 'application/json' }), async (req, re
         tenant_id: session.metadata.tenant_id,
         subscription_id: session.subscription
       });
-      
+
+      // ── ACTIVATION AGENT — couvre regular sessions + payment links ───────────
+      {
+        const subId = session.subscription;
+        const tenantRef = session.client_reference_id;
+        if (tenantRef && subId) {
+          // Payment link (pas de metadata) : lier tenant via client_reference_id
+          await SaaSTenant.updateOne(
+            { tenant_id: tenantRef },
+            {
+              $set: {
+                stripe_subscription_id: subId,
+                stripe_customer_id: session.customer,
+                subscription_status: 'active',
+                updated_at: new Date()
+              }
+            }
+          );
+          console.log(`[BILLING] ✅ Tenant linked | tenant: ${tenantRef} | subscription: ${subId}`);
+          await activateTenantAgent(subId, tenantRef);
+        } else if (subId) {
+          // Cas regular session avec metadata déjà traité plus haut
+          await activateTenantAgent(subId);
+        }
+      }
+
       break;
 
     case 'invoice.payment_failed':
@@ -92,7 +123,26 @@ router.post('/stripe', express.raw({ type: 'application/json' }), async (req, re
       );
       
       console.log('[STRIPE WEBHOOK] Subscription marked as past_due');
+
+      // ── GRACE PERIOD — désactivation planifiée 24h ─────────────────────────
+      if (failedInvoice.subscription) {
+        scheduleDeactivation(failedInvoice.subscription);
+      }
+
       break;
+
+    case 'invoice.payment_succeeded': {
+      const paidInvoice = event.data.object;
+      console.log('[STRIPE WEBHOOK] invoice.payment_succeeded', {
+        customer: paidInvoice.customer,
+        subscription: paidInvoice.subscription
+      });
+      if (paidInvoice.subscription) {
+        cancelScheduledDeactivation(paidInvoice.subscription);
+        await activateTenantAgent(paidInvoice.subscription);
+      }
+      break;
+    }
 
     case 'customer.subscription.deleted':
       const cancelledSubscription = event.data.object;
@@ -114,6 +164,12 @@ router.post('/stripe', express.raw({ type: 'application/json' }), async (req, re
       );
       
       console.log('[STRIPE WEBHOOK] Subscription cancelled');
+
+      // ── DÉSACTIVATION IMMÉDIATE de l'agent ─────────────────────────────────
+      if (cancelledSubscription.id) {
+        await deactivateTenantAgent(cancelledSubscription.id, 'subscription_deleted');
+      }
+
       break;
 
     default:
