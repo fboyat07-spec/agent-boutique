@@ -188,10 +188,10 @@ const AGENT_TOOLS = [
 
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
 
-function buildSystemPrompt(user) {
+function buildSystemPrompt(user, running_summary) {
   const storeName = user?.store_name || 'Agent Boutique';
   const { starter, pro, elite } = paymentLinks;
-  return `Tu es un agent commercial IA expert en closing pour ${storeName}.
+  let prompt = `Tu es un agent commercial IA expert en closing pour ${storeName}.
 Tu aides des entrepreneurs et commerçants français à automatiser leurs ventes via WhatsApp avec de l'IA.
 
 TON OBJECTIF : Convertir chaque prospect en client payant, avec empathie et sans pression excessive.
@@ -222,6 +222,13 @@ RÈGLES ABSOLUES :
 6. Maximum 2-3 phrases par message WhatsApp
 
 Choisis l'outil le plus adapté au contexte. Ne fais qu'UNE seule action par message.`;
+
+  // Injection non-destructive du résumé de conversation (si disponible)
+  if (running_summary) {
+    prompt += `\n\nCONTEXTE CONVERSATION (résumé automatique — basé sur l'historique) :\n${running_summary}`;
+  }
+
+  return prompt;
 }
 
 // ─── NŒUDS DU GRAPH ───────────────────────────────────────────────────────────
@@ -229,35 +236,42 @@ Choisis l'outil le plus adapté au contexte. Ne fais qu'UNE seule action par mes
 async function nodeLoadState(state) {
   const { phone, tenant_id } = state;
   try {
-    const [user, convo] = await Promise.all([
+    const { getSummary } = require('./conversationSummaryService');
+
+    const [user, convo, summaryDoc] = await Promise.all([
       User.findOne({ tenant_id }),
-      Conversation.findOne({ phone, tenant_id })
+      Conversation.findOne({ phone, tenant_id }),
+      getSummary(phone, tenant_id),   // null si absent ou erreur (fallback safe)
     ]);
 
     if (!user) {
       console.warn('[ORCHESTRATOR] User not found for tenant:', tenant_id);
     }
 
+    // Si résumé disponible → garder seulement les 3 derniers échanges (réduction tokens)
+    // Sinon → comportement existant : 10 derniers messages
+    const historyLimit = summaryDoc?.running_summary ? 3 : 10;
     const history = (convo?.messages || [])
-      .slice(-10)
+      .slice(-historyLimit)
       .map(m => ({
         role: m.sender === phone ? 'user' : 'assistant',
         content: m.content
       }));
 
     const context = {
-      stage:    convo?.stage    || 'new',
+      stage:           convo?.stage    || 'new',
       history,
-      score:    convo?.score    || 0,
-      name:     convo?.name     || null,
-      business: convo?.business || null,
+      score:           convo?.score    || 0,
+      name:            convo?.name     || null,
+      business:        convo?.business || null,
       user,
+      running_summary: summaryDoc?.running_summary || null,  // null = pas encore de résumé
     };
 
     return { context };
   } catch (err) {
     console.warn('[ORCHESTRATOR] load_state error:', err.message);
-    return { context: { stage: 'new', history: [], score: 0, user: null } };
+    return { context: { stage: 'new', history: [], score: 0, user: null, running_summary: null } };
   }
 }
 
@@ -292,7 +306,7 @@ async function nodeClassifyIntent(state) {
 async function nodeRoute(state) {
   const { message, context, intent } = state;
   const messages = [
-    { role: 'system', content: buildSystemPrompt(context.user) },
+    { role: 'system', content: buildSystemPrompt(context.user, context.running_summary) },
     ...context.history,
     {
       role: 'user',
@@ -405,7 +419,7 @@ async function nodeEndConversation(state) {
 async function nodePersistState(state) {
   const { phone, tenant_id, message, reply } = state;
   try {
-    await Conversation.findOneAndUpdate(
+    const updated = await Conversation.findOneAndUpdate(
       { phone, tenant_id },
       {
         $push: {
@@ -420,6 +434,13 @@ async function nodePersistState(state) {
       },
       { upsert: true, new: true }
     );
+
+    // Fire-and-forget summary update — JAMAIS de crash si ça échoue
+    const { maybeUpdateSummary } = require('./conversationSummaryService');
+    maybeUpdateSummary(phone, tenant_id, updated?.messages || []).catch(err =>
+      console.warn('[SUMMARY SERVICE] trigger error (non-bloquant):', err.message)
+    );
+
     await updateScore(phone, message, tenant_id).catch(err =>
       console.warn('[ORCHESTRATOR] updateScore error:', err.message)
     );
