@@ -19,6 +19,8 @@ const {
   sendTestMessage,
   activateAgent,
   rollbackTenant,
+  registerWebhook,
+  exchangeOAuthCode,
 } = require('../services/onboardingService');
 
 // ── POST /api/onboarding/create-tenant ───────────────────────────────────────
@@ -109,6 +111,35 @@ router.post('/activate-agent', async (req, res) => {
       return res.status(403).json({ error: err.message });
     }
     return res.status(500).json({ error: err.message });
+  }
+});
+
+// ── GET /api/onboarding/config ────────────────────────────────────────────────
+// Expose uniquement meta_app_id et meta_config_id — jamais META_APP_SECRET.
+router.get('/config', (req, res) => {
+  res.json({
+    meta_app_id:    process.env.META_APP_ID    || null,
+    meta_config_id: process.env.META_CONFIG_ID || null,
+  });
+});
+
+// ── GET /api/onboarding/whatsapp-callback ─────────────────────────────────────
+// Reçoit le code OAuth depuis Meta Embedded Signup, échange et met à jour le tenant.
+router.get('/whatsapp-callback', async (req, res) => {
+  const { code, tenant_id } = req.query;
+
+  if (!code || !tenant_id)
+    return res.status(400).json({ error: 'code et tenant_id requis' });
+
+  try {
+    await exchangeOAuthCode(code, tenant_id);
+    return res.redirect(`/onboarding?step=3&tenant_id=${encodeURIComponent(tenant_id)}`);
+  } catch (err) {
+    const reason = err.response?.data?.error?.message || err.message;
+    console.error(`[ONBOARDING] ❌ OAuth failed | tenant: ${tenant_id} | reason: ${reason}`);
+    return res.redirect(
+      `/onboarding?step=2&error=oauth_failed&tenant_id=${encodeURIComponent(tenant_id)}`
+    );
   }
 });
 
