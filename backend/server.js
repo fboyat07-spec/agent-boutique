@@ -891,10 +891,10 @@ async function processSingleMessage(message, tenant_id) {
         }
 
         console.log('[DIAGNOSTIC] ORCHESTRATOR REPLY RECEIVED - STEP 32', reply.slice(0, 80));
-        console.log('[DIAGNOSTIC] ORCHESTRATOR MANAGES WHATSAPP SEND - STEP 33');
 
-        // L'orchestrateur gère déjà l'envoi via nodeSendWhatsApp() - PAS DE SEND DIRECT REDONDANT
-        console.log('[DIAGNOSTIC] REDUNDANT SEND PREVENTED - STEP 33', { messageId });
+        // Envoi WhatsApp — l'orchestrateur retourne la réponse, server.js l'envoie
+        await sendWhatsAppMessage(senderPhone, reply, tenant_id);
+        console.log('[WHATSAPP SENT] STEP 33', { messageId, to: senderPhone, preview: reply.slice(0, 60) });
 
       } catch (orchError) {
         console.log('[DIAGNOSTIC] ORCHESTRATOR ERROR - STEP 32 ERROR', {
