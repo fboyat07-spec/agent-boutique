@@ -18,8 +18,7 @@ if (typeof globalThis.crypto === 'undefined') {
 const { Annotation, StateGraph, START, END } = require('@langchain/langgraph');
 const OpenAI = require('openai');
 
-const { sendWhatsAppMessage } = require('./messageSender');
-const { updateScore }          = require('./scoringService');
+const { updateScore } = require('./scoringService');
 
 const Conversation   = require('../models/Conversation');
 const User           = require('../models/User');
@@ -29,6 +28,41 @@ let _openai = null;
 function getOpenAI() {
   if (!_openai) _openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
   return _openai;
+}
+
+// ─── CHECKPOINT STORE (MongoDB persistant) ───────────────────────────────────────
+
+// Clé unique pour thread_id (stable par numéro + tenant)
+function getThreadId(phone, tenant_id) {
+  const crypto = require('crypto');
+  const phoneHash = crypto.createHash('sha256').update(phone).digest('hex').slice(0, 8);
+  return `conv_${phoneHash}_${tenant_id}`;
+}
+
+// Lazy-compiled app : MongoDBSaver → MemorySaver en fallback
+let _compiledApp = null;
+let _mongoCheckpointClient = null;
+
+async function getCompiledApp() {
+  if (_compiledApp) return _compiledApp;
+
+  let checkpointer;
+  try {
+    const { MongoDBSaver } = require('@langchain/langgraph-checkpoint-mongodb');
+    const { MongoClient } = require('mongodb');
+    const uri = process.env.MONGODB_URI || 'mongodb://localhost:27017/agent-boutique';
+    _mongoCheckpointClient = new MongoClient(uri);
+    await _mongoCheckpointClient.connect();
+    checkpointer = new MongoDBSaver({ client: _mongoCheckpointClient });
+    console.log('[ORCHESTRATOR] ✅ MongoDBSaver actif — checkpoints persistants');
+  } catch (err) {
+    console.warn('[ORCHESTRATOR] ⚠️  MongoDBSaver indisponible → MemorySaver (fallback):', err.message);
+    const { MemorySaver } = require('@langchain/langgraph-checkpoint');
+    checkpointer = new MemorySaver();
+  }
+
+  _compiledApp = workflow.compile({ checkpointer });
+  return _compiledApp;
 }
 
 // ─── ÉTAT PARTAGÉ ─────────────────────────────────────────────────────────────
@@ -42,7 +76,6 @@ const OrchestratorState = Annotation.Root({
   toolName:      Annotation({ reducer: (_, y) => y ?? _, default: () => null }),
   toolArgs:      Annotation({ reducer: (_, y) => y ?? _, default: () => null }),
   reply:         Annotation({ reducer: (_, y) => y ?? _, default: () => null }),
-  whatsapp_sent: Annotation({ reducer: (_, y) => y ?? _, default: () => false }),
 });
 
 // ─── OUTILS AGENT GPT-4 ───────────────────────────────────────────────────────
@@ -396,30 +429,6 @@ async function nodePersistState(state) {
   return {};
 }
 
-async function nodeSendWhatsApp(state) {
-  const { phone, reply, tenant_id } = state;
-  
-  // PROTECTION ANTI-DOUBLE - Un seul envoi WhatsApp autorisé par workflow
-  if (state.whatsapp_sent) {
-    console.log('[ORCHESTRATOR] WhatsApp already sent, skipping');
-    return state;
-  }
-  
-  if (reply) {
-    try {
-      await sendWhatsAppMessage(phone, reply, tenant_id);
-      
-      // Marquer l'envoi comme effectué UNIQUEMENT après succès réel
-      state.whatsapp_sent = true;
-      console.log('[ORCHESTRATOR] WhatsApp sent successfully', { phone, replyLength: reply.length });
-    } catch (err) {
-      console.error('[ORCHESTRATOR] send_whatsapp error:', err.message);
-      // Flag reste à false - permet les retries légitimes
-    }
-  }
-  return state;
-}
-
 // ─── CONSTRUCTION DU GRAPH ────────────────────────────────────────────────────
 
 const workflow = new StateGraph(OrchestratorState);
@@ -434,7 +443,6 @@ workflow.addNode('close_sale',       nodeCloseSale);
 workflow.addNode('schedule_followup', nodeScheduleFollowup);
 workflow.addNode('end_conversation', nodeEndConversation);
 workflow.addNode('persist_state',    nodePersistState);
-workflow.addNode('send_whatsapp',    nodeSendWhatsApp);
 
 // Arêtes fixes
 workflow.addEdge(START, 'load_state');
@@ -451,14 +459,12 @@ workflow.addConditionalEdges('route', (state) => state.toolName, {
   end_conversation: 'end_conversation',
 });
 
-// Tous les nœuds action → persist_state → send_whatsapp → END
+// Tous les nœuds action → persist_state → END
+// (l'envoi WhatsApp est géré par server.js sur la valeur de retour de orchestrate())
 for (const node of ['qualify_lead', 'present_offer', 'handle_objection', 'close_sale', 'schedule_followup', 'end_conversation']) {
   workflow.addEdge(node, 'persist_state');
 }
-workflow.addEdge('persist_state', 'send_whatsapp');
-workflow.addEdge('send_whatsapp', END);
-
-const app = workflow.compile();
+workflow.addEdge('persist_state', END);
 
 // ─── POINT D'ENTRÉE ───────────────────────────────────────────────────────────
 
@@ -471,12 +477,31 @@ const app = workflow.compile();
 async function orchestrate(phone, message, tenant_id) {
   console.log('[ORCHESTRATOR START]', { phone, tenant_id, message: message.slice(0, 60) });
   try {
-    const result = await app.invoke({ phone, message, tenant_id });
-    console.log('[ORCHESTRATOR DONE]', { toolName: result.toolName, replyPreview: result.reply?.slice(0, 60) });
+    const app      = await getCompiledApp();
+    const threadId = getThreadId(phone, tenant_id);
+    const config   = { configurable: { thread_id: threadId } };
+
+    const result = await app.invoke({ phone, message, tenant_id }, config);
+    console.log('[ORCHESTRATOR DONE]', {
+      toolName:     result.toolName,
+      replyPreview: result.reply?.slice(0, 60),
+      threadId,
+    });
     return result.reply;
   } catch (err) {
     console.error('[ORCHESTRATOR ERROR]', err.message, err.stack);
-    return null;
+    // Fallback sans checkpoint si erreur de persistence
+    try {
+      console.log('[ORCHESTRATOR FALLBACK] Sans checkpoint...');
+      const { MemorySaver } = require('@langchain/langgraph-checkpoint');
+      const fallbackApp = workflow.compile({ checkpointer: new MemorySaver() });
+      const result = await fallbackApp.invoke({ phone, message, tenant_id });
+      console.log('[ORCHESTRATOR FALLBACK DONE]', { replyPreview: result.reply?.slice(0, 60) });
+      return result.reply;
+    } catch (fallbackErr) {
+      console.error('[ORCHESTRATOR FALLBACK FAILED]', fallbackErr.message);
+      return null;
+    }
   }
 }
 
