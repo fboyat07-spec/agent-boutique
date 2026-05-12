@@ -10,7 +10,7 @@ async function resolveTenantFromPhoneId(phone_number_id) {
       return null;
     }
     
-    const tenant = await SaaSTenant.findOne({ phone_number_id });
+    const tenant = await SaaSTenant.findOne({ phone_number_id, 'settings.auto_reply_enabled': true });
     
     if (!tenant) {
       console.log('[TENANT_NOT_FOUND]', { phone_number_id });
