@@ -239,15 +239,15 @@
         <div class="icon">📧</div>
         <div class="text">
           <h4>Email</h4>
-          <p><a href="mailto:contact@agent-boutique.com" style="color: #0ea5e9; text-decoration: none;">contact@agent-boutique.com</a></p>
+          <p><a href="mailto:support@agentboutique.fr" style="color: #0ea5e9; text-decoration: none;">support@agentboutique.fr</a></p>
         </div>
       </div>
 
       <div class="contact-item">
-        <div class="icon">📱</div>
+        <div class="icon">💬</div>
         <div class="text">
-          <h4>Téléphone</h4>
-          <p>Contact sur demande</p>
+          <h4>Support</h4>
+          <p>Contact par email uniquement</p>
         </div>
       </div>
 
@@ -263,7 +263,7 @@
         <div class="icon">📍</div>
         <div class="text">
           <h4>Adresse</h4>
-          <p>Contact sur demande</p>
+          <p>2 rue des 3 capitaines<br>26400 CREST, France</p>
         </div>
       </div>
     </div>
@@ -280,39 +280,32 @@
   </div>
 
   <script>
-    document.getElementById('contact-form').addEventListener('submit', function(e) {
+    document.getElementById('contact-form').addEventListener('submit', function handleSubmit(e) {
       e.preventDefault();
-      
-      // Simuler l'envoi du formulaire
-      const successMessage = document.getElementById('success-message');
-      const errorMessage = document.getElementById('error-message');
-      
-      // Cacher les messages précédents
-      successMessage.style.display = 'none';
-      errorMessage.style.display = 'none';
-      
-      // Simuler un délai d'envoi
-      setTimeout(() => {
-        // Afficher le message de succès
-        successMessage.style.display = 'block';
-        
-        // Réinitialiser le formulaire
-        this.reset();
-        
-        // Cacher le message après 5 secondes
-        setTimeout(() => {
-          successMessage.style.display = 'none';
-        }, 5000);
-      }, 1000);
-      // Réinitialiser le formulaire
-      this.reset();
-      
-      // Optionnel: envoyer à un vrai endpoint
-      // fetch('/api/contact', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(data)
-      // });
+      const name    = document.getElementById('name')?.value    || '';
+      const email   = document.getElementById('email')?.value   || '';
+      const subject = document.getElementById('subject')?.value || 'Contact';
+      const message = document.getElementById('message')?.value || '';
+
+      const body = encodeURIComponent(
+        'Nom : ' + name + '\nEmail : ' + email + '\n\n' + message
+      );
+      const mailtoLink =
+        'mailto:support@agentboutique.fr' +
+        '?subject=' + encodeURIComponent('[Agent Boutique] ' + subject) +
+        '&body=' + body;
+
+      window.location.href = mailtoLink;
+
+      // Confirmation visuelle
+      const form = e.target;
+      form.innerHTML =
+        '<div style="text-align:center;padding:40px;">' +
+        '<div style="font-size:2rem;">✅</div>' +
+        '<p style="font-weight:600;margin-top:16px;">Message préparé !</p>' +
+        '<p style="color:#64748b;">Votre client mail va s\'ouvrir.' +
+        ' Envoyez le message pour nous contacter.</p>' +
+        '</div>';
     });
   </script>
 </body>
