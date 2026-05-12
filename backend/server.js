@@ -1196,6 +1196,9 @@ function isFirestoreEnabled() {
   return !!process.env.FIREBASE_PROJECT_ID;
 }
 
+// Onboarding SaaS
+app.use('/api/onboarding', require('./routes/onboardingRoutes'));
+
 // ÉTAPE 6 - Route trace avant 404 global pour diagnostic
 app.use((req, res, next) => {
   console.log('[ROUTE TRACE]', req.method, req.originalUrl);

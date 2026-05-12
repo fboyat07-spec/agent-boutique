@@ -3,507 +3,702 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Onboarding - Agent Boutique</title>
-  <meta name="description" content="Configurez votre assistant WhatsApp IA en quelques minutes. Guide d'intégration simple.">
-  <script src="/tracking.js"></script>
+  <title>Onboarding — Agent Boutique</title>
+  <meta name="description" content="Configurez votre assistant WhatsApp IA en quelques minutes.">
+  <script src="/tracking.js" defer></script>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { 
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; 
-      line-height: 1.6; 
-      color: #1a1a1a; 
-      background: #ffffff;
-    }
-    .container { max-width: 1000px; margin: 0 auto; padding: 0 24px; }
-    
-    /* Header */
-    .header { text-align: center; padding: 80px 0; margin-bottom: 60px; }
-    .header h1 { 
-      font-size: 2.5rem; 
-      font-weight: 700; 
-      margin-bottom: 16px; 
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: #f8fafc;
       color: #1e293b;
+      min-height: 100vh;
     }
-    .header p { 
-      font-size: 1.125rem; 
-      color: #64748b; 
-      max-width: 600px; 
-      margin: 0 auto;
-      line-height: 1.6;
+
+    /* ── Header ── */
+    .header {
+      background: #fff;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 20px 24px;
+      text-align: center;
     }
-    
-    /* Progress Bar */
-    .progress-bar { 
-      background: #e2e8f0; 
-      height: 8px; 
-      border-radius: 4px; 
-      margin-bottom: 48px; 
-      overflow: hidden; 
+    .header .logo { font-size: 1.25rem; font-weight: 700; color: #1e293b; }
+    .header .logo span { color: #0ea5e9; }
+
+    /* ── Container ── */
+    .container { max-width: 640px; margin: 0 auto; padding: 40px 24px 80px; }
+
+    /* ── Stepper ── */
+    .stepper {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 40px;
+      gap: 0;
     }
-    .progress-fill { 
-      background: linear-gradient(90deg, #0ea5e9, #0284c7); 
-      height: 100%; 
-      width: 25%; 
-      transition: width 0.5s ease; 
+    .step-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      position: relative;
     }
-    
-    /* Onboarding Container */
-    .onboarding-container { 
-      display: grid; 
-      grid-template-columns: 1fr 1fr; 
-      gap: 32px; 
-      margin-bottom: 48px; 
+    .step-item + .step-item::before {
+      content: '';
+      position: absolute;
+      left: calc(-50% - 8px);
+      top: 16px;
+      width: calc(100% - 16px);
+      height: 2px;
+      background: #e2e8f0;
+      z-index: 0;
     }
-    .step-panel { 
-      background: white; 
-      padding: 40px 32px; 
-      border-radius: 12px; 
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); 
-      border: 1px solid #e2e8f0;
+    .step-item.done + .step-item::before  { background: #0ea5e9; }
+    .step-dot {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.85rem;
+      border: 2px solid #e2e8f0;
+      background: #fff;
+      color: #94a3b8;
+      z-index: 1;
+      position: relative;
+      transition: all 0.3s;
     }
-    .step-panel h2 { 
-      color: #1e293b; 
-      font-size: 1.5rem; 
-      margin-bottom: 24px; 
-      font-weight: 600;
-    }
-    .step-panel h3 { 
-      color: #1e293b; 
-      font-size: 1.25rem; 
-      margin-bottom: 16px; 
-      margin-top: 32px; 
-      font-weight: 600;
-    }
-    .step-panel p { 
-      color: #475569; 
-      margin-bottom: 16px; 
-      line-height: 1.7; 
-    }
-    .step-panel ul { 
-      margin: 16px 0; 
-      padding-left: 24px; 
-    }
-    .step-panel li { 
-      margin-bottom: 8px; 
-      color: #475569;
-      line-height: 1.6;
-    }
-    
-    /* Checklist */
-    .checklist { 
-      background: #f8fafc; 
-      padding: 24px; 
-      border-radius: 8px; 
-      margin: 24px 0; 
-    }
-    .checklist-item { 
-      display: flex; 
-      align-items: center; 
-      margin-bottom: 12px; 
-    }
-    .checklist-item:last-child { margin-bottom: 0; }
-    .checklist-item input { 
-      margin-right: 12px; 
-      width: 18px; 
-      height: 18px; 
-      accent-color: #0ea5e9;
-    }
-    .checklist-item label { 
-      flex: 1; 
-      cursor: pointer; 
-      color: #475569;
-      font-size: 0.95rem;
-    }
-    
-    /* Timeline */
-    .timeline { 
-      position: relative; 
-      padding-left: 32px; 
-    }
-    .timeline::before { 
-      content: ''; 
-      position: absolute; 
-      left: 12px; 
-      top: 0; 
-      bottom: 0; 
-      width: 2px; 
-      background: #0ea5e9; 
-    }
-    .timeline-item { 
-      position: relative; 
-      margin-bottom: 24px; 
-    }
-    .timeline-item:last-child { margin-bottom: 0; }
-    .timeline-item::before { 
-      content: ''; 
-      position: absolute; 
-      left: -20px; 
-      top: 6px; 
-      width: 10px; 
-      height: 10px; 
-      background: #0ea5e9; 
-      border-radius: 50%; 
-    }
-    .timeline-date { 
-      color: #0ea5e9; 
-      font-weight: 600; 
-      margin-bottom: 8px; 
-      font-size: 0.95rem;
-    }
-    .timeline-content { 
-      background: #f8fafc; 
-      padding: 16px 20px; 
-      border-radius: 8px; 
-      border: 1px solid #e2e8f0;
-    }
-    .timeline-content strong { 
-      color: #1e293b; 
-      font-weight: 600;
-    }
-    
-    /* Buttons */
-    .btn { 
-      background: #1e293b; 
-      color: white; 
-      padding: 16px 32px; 
-      border: none; 
-      border-radius: 8px; 
-      font-size: 1rem; 
-      font-weight: 600; 
-      cursor: pointer; 
-      transition: all 0.2s ease; 
-      display: inline-block; 
-      text-decoration: none; 
-      margin: 8px;
-      border: 2px solid transparent;
-    }
-    .btn:hover { 
-      background: #0f172a; 
-      transform: translateY(-1px);
-    }
-    .btn.secondary { 
-      background: white; 
-      color: #1e293b; 
-      border: 2px solid #e2e8f0; 
-    }
-    .btn.secondary:hover { 
-      background: #f8fafc; 
-      border-color: #cbd5e1;
-    }
-    .btn.primary { 
-      background: #0ea5e9; 
-    }
-    .btn.primary:hover { 
-      background: #0284c7; 
-    }
-    .action-buttons { 
-      text-align: center; 
-      margin: 48px 0; 
-    }
-    
-    /* Success Message */
-    .success-message { 
-      background: #f0fdf4; 
-      color: #166534; 
-      padding: 16px 20px; 
-      border-radius: 8px; 
-      margin: 24px 0; 
-      display: none; 
-      border: 1px solid #bbf7d0;
-    }
-    
-    /* Footer */
-    .footer { 
-      text-align: center; 
-      padding: 48px 0; 
-      color: #64748b; 
-      border-top: 1px solid #f1f5f9;
-      margin-top: 60px;
-    }
-    .footer p { margin-bottom: 8px; }
-    .footer a { 
-      color: #0ea5e9; 
-      text-decoration: none; 
+    .step-item.active .step-dot  { border-color: #0ea5e9; color: #0ea5e9; background: #f0f9ff; }
+    .step-item.done   .step-dot  { border-color: #0ea5e9; background: #0ea5e9; color: #fff; }
+    .step-label {
+      font-size: 0.7rem;
+      color: #94a3b8;
+      white-space: nowrap;
       font-weight: 500;
     }
-    .footer a:hover { text-decoration: underline; }
-    
-    /* Responsive */
-    @media (max-width: 768px) {
-      .header { padding: 60px 0; }
-      .onboarding-container { grid-template-columns: 1fr; gap: 24px; }
-      .step-panel { padding: 32px 24px; }
-      .action-buttons { text-align: center; }
-      .btn { display: block; width: 100%; margin: 8px 0; }
+    .step-item.active .step-label { color: #0ea5e9; }
+    .step-item.done   .step-label { color: #0ea5e9; }
+
+    /* ── Card ── */
+    .card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 40px 36px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+    }
+    .card-title {
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+      color: #1e293b;
+    }
+    .card-sub {
+      color: #64748b;
+      font-size: 0.95rem;
+      margin-bottom: 28px;
+      line-height: 1.5;
+    }
+
+    /* ── Form fields ── */
+    .field { margin-bottom: 20px; }
+    .field label {
+      display: block;
+      font-weight: 600;
+      font-size: 0.875rem;
+      color: #374151;
+      margin-bottom: 6px;
+    }
+    .field label .req { color: #ef4444; margin-left: 2px; }
+    .field label .hint {
+      font-weight: 400;
+      color: #94a3b8;
+      font-size: 0.8rem;
+      margin-left: 6px;
+    }
+    .field input {
+      width: 100%;
+      padding: 11px 14px;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      color: #1e293b;
+      background: #fff;
+      transition: border-color 0.2s;
+      outline: none;
+    }
+    .field input:focus { border-color: #0ea5e9; box-shadow: 0 0 0 3px rgba(14,165,233,0.1); }
+    .field input::placeholder { color: #cbd5e1; }
+    .field input.error { border-color: #ef4444; }
+
+    .field-row { display: flex; gap: 10px; align-items: flex-end; }
+    .field-row .field { flex: 1; margin-bottom: 0; }
+    .btn-gen {
+      padding: 11px 16px;
+      background: #f1f5f9;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #475569;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.2s;
+      flex-shrink: 0;
+    }
+    .btn-gen:hover { background: #e2e8f0; }
+
+    /* ── Buttons ── */
+    .btn-primary {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 14px;
+      background: #0ea5e9;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+      margin-top: 8px;
+    }
+    .btn-primary:hover:not(:disabled) { background: #0284c7; }
+    .btn-primary:active:not(:disabled) { transform: scale(0.99); }
+    .btn-primary:disabled { background: #93c5fd; cursor: not-allowed; }
+
+    .btn-secondary {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 12px;
+      background: #fff;
+      color: #475569;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 10px;
+      transition: background 0.2s;
+    }
+    .btn-secondary:hover { background: #f8fafc; }
+
+    /* ── Spinner ── */
+    .spinner {
+      width: 18px; height: 18px;
+      border: 2px solid rgba(255,255,255,0.4);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      display: none;
+    }
+    .btn-primary.loading .spinner { display: block; }
+    .btn-primary.loading .btn-text { display: none; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Alerts ── */
+    .alert {
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      margin-top: 16px;
+      display: none;
+      line-height: 1.5;
+    }
+    .alert.show { display: block; }
+    .alert.success { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; }
+    .alert.error   { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
+    .alert.info    { background: #f0f9ff; border: 1px solid #bae6fd; color: #075985; }
+
+    /* ── Info boxes ── */
+    .info-box {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 18px 20px;
+      margin-bottom: 24px;
+    }
+    .info-box .row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      font-size: 0.9rem;
+    }
+    .info-box .row:last-child { margin-bottom: 0; }
+    .info-box .row .lbl { color: #64748b; font-weight: 500; }
+    .info-box .row .val {
+      font-weight: 700;
+      color: #1e293b;
+      font-family: 'Courier New', monospace;
+      font-size: 0.82rem;
+      background: #e2e8f0;
+      padding: 2px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      user-select: all;
+    }
+    .info-box .row .val:hover { background: #cbd5e1; }
+    .copy-hint { font-size: 0.75rem; color: #94a3b8; margin-top: 6px; }
+
+    /* ── Note ── */
+    .note {
+      font-size: 0.82rem;
+      color: #64748b;
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      border-radius: 8px;
+      padding: 10px 14px;
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+
+    /* ── Success state (step 4 done) ── */
+    .success-big {
+      text-align: center;
+      padding: 16px 0 8px;
+    }
+    .success-big .icon { font-size: 3.5rem; margin-bottom: 16px; }
+    .success-big h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: 10px; }
+    .success-big p  { color: #64748b; margin-bottom: 24px; line-height: 1.6; }
+    .btn-console {
+      display: inline-block;
+      padding: 14px 32px;
+      background: #1e293b;
+      color: #fff;
+      border-radius: 10px;
+      font-weight: 700;
+      text-decoration: none;
+      font-size: 1rem;
+      transition: background 0.2s;
+    }
+    .btn-console:hover { background: #0f172a; }
+
+    /* ── Responsive ── */
+    @media (max-width: 600px) {
+      .container { padding: 24px 16px 60px; }
+      .card { padding: 28px 20px; }
+      .step-label { display: none; }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <div class="header">
-      <h1>Onboarding</h1>
-      <p>Configuration guidée de votre assistant IA WhatsApp en quelques étapes simples</p>
+
+<div class="header">
+  <div class="logo">Agent<span>Boutique</span></div>
+</div>
+
+<div class="container">
+
+  <!-- Stepper -->
+  <div class="stepper" id="stepper">
+    <div class="step-item active" id="s1">
+      <div class="step-dot">1</div>
+      <div class="step-label">Compte</div>
     </div>
-
-    <div class="progress-bar">
-      <div class="progress-fill" id="progress"></div>
+    <div class="step-item" id="s2">
+      <div class="step-dot">2</div>
+      <div class="step-label">WhatsApp</div>
     </div>
-
-    <div id="success-message" class="success-message">
-      Étape complétée avec succès ! Passons à la suite.
+    <div class="step-item" id="s3">
+      <div class="step-dot">3</div>
+      <div class="step-label">Test</div>
     </div>
-
-    <div class="onboarding-container">
-      <div class="step-panel">
-        <h2>Étape Actuelle</h2>
-        <div id="current-step">
-          <h3>1. Configuration Initiale</h3>
-          <p>Commençons par configurer les informations essentielles pour votre assistant IA.</p>
-          
-          <div class="checklist">
-            <div class="checklist-item">
-              <input type="checkbox" id="step1" onchange="updateProgress()">
-              <label for="step1">Compte Agent Boutique créé</label>
-            </div>
-            <div class="checklist-item">
-              <input type="checkbox" id="step2" onchange="updateProgress()">
-              <label for="step2">Plan tarifaire sélectionné</label>
-            </div>
-            <div class="checklist-item">
-              <input type="checkbox" id="step3" onchange="updateProgress()">
-              <label for="step3">Informations de base renseignées</label>
-            </div>
-          </div>
-
-          <h3>Objectifs de votre assistant</h3>
-          <p>Définissez ce que votre assistant IA doit accomplir :</p>
-          <ul>
-            <li>Qualifier automatiquement les prospects</li>
-            <li>Répondre aux questions fréquentes</li>
-            <li>Prendre des rendez-vous</li>
-            <li>Envoyer des propositions commerciales</li>
-            <li>Suivre les prospects chauds</li>
-          </ul>
-
-          <div class="action-buttons">
-            <button class="btn primary" onclick="nextStep()">Étape Suivante</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="step-panel">
-        <h2>Timeline de Configuration</h2>
-        <div class="timeline">
-          <div class="timeline-item">
-            <div class="timeline-date">Jour 1 - Aujourd'hui</div>
-            <div class="timeline-content">
-              <strong>Configuration initiale</strong><br>
-              Création du compte, sélection du plan, informations de base
-            </div>
-          </div>
-          
-          <div class="timeline-item">
-            <div class="timeline-date">Jour 2-3</div>
-            <div class="timeline-content">
-              <strong>Intégration WhatsApp</strong><br>
-              Configuration du numéro WhatsApp, test des messages
-            </div>
-          </div>
-          
-          <div class="timeline-item">
-            <div class="timeline-date">Jour 4-5</div>
-            <div class="timeline-content">
-              <strong>Personnalisation IA</strong><br>
-              Configuration des réponses, scénarios de qualification
-            </div>
-          </div>
-          
-          <div class="timeline-item">
-            <div class="timeline-date">Jour 6-7</div>
-            <div class="timeline-content">
-              <strong>Tests et validation</strong><br>
-              Tests complets, formation de l'équipe, lancement
-            </div>
-          </div>
-        </div>
-
-        <h3>Temps estimé</h3>
-        <ul>
-          <li><strong>Configuration initiale :</strong> 30 minutes</li>
-          <li><strong>Intégration WhatsApp :</strong> 15 minutes</li>
-          <li><strong>Personnalisation IA :</strong> 1-2 heures</li>
-          <li><strong>Tests et validation :</strong> 1 heure</li>
-          <li><strong>Total estimé :</strong> 2-4 heures</li>
-        </ul>
-      </div>
-    </div>
-
-    <div class="action-buttons">
-      <button class="btn secondary" onclick="previousStep()">Étape Précédente</button>
-      <button class="btn" onclick="saveProgress()">Sauvegarder la progression</button>
-      <button class="btn secondary" onclick="contactSupport()">Besoin d'aide ?</button>
-    </div>
-
-    <div class="footer">
-      <p>&copy; 2026 Agent Boutique. Tous droits réservés.</p>
-      <p>
-        <a href="/">Accueil</a> | 
-        <a href="/pricing.html">Tarifs</a> | 
-        <a href="/contact.html">Contact</a> | 
-        <a href="/privacy.html">Confidentialité</a>
-      </p>
+    <div class="step-item" id="s4">
+      <div class="step-dot">4</div>
+      <div class="step-label">Activation</div>
     </div>
   </div>
 
-  <script>
-    let currentStepIndex = 0;
-    const steps = [
-      {
-        title: "1. Configuration Initiale",
-        description: "Commençons par configurer les informations essentielles pour votre assistant IA.",
-        checklist: [
-          "Compte Agent Boutique créé",
-          "Plan tarifaire sélectionné", 
-          "Informations de base renseignées"
-        ],
-        objectives: [
-          "Qualifier automatiquement les prospects",
-          "Répondre aux questions fréquentes",
-          "Prendre des rendez-vous",
-          "Envoyer des propositions commerciales",
-          "Suivre les prospects chauds"
-        ]
-      },
-      {
-        title: "2. Intégration WhatsApp",
-        description: "Connectons votre numéro WhatsApp et configurons les messages de base.",
-        checklist: [
-          "Numéro WhatsApp configuré",
-          "Webhook vérifié",
-          "Messages de test envoyés"
-        ],
-        objectives: [
-          "Réception des messages clients",
-          "Envoi de réponses automatiques",
-          "Gestion des erreurs",
-          "Suivi des conversations"
-        ]
-      },
-      {
-        title: "3. Personnalisation IA",
-        description: "Personnalisons les réponses de votre assistant selon votre activité.",
-        checklist: [
-          "Scénarios de qualification définis",
-          "Réponses personnalisées créées",
-          "Règles de qualification configurées"
-        ],
-        objectives: [
-          "Questions de qualification pertinentes",
-          "Réponses adaptées à votre secteur",
-          "Score de qualification automatique",
-          "Transfert vers commercial si nécessaire"
-        ]
-      },
-      {
-        title: "4. Tests et Lancement",
-        description: "Testons complètement le système avant le lancement officiel.",
-        checklist: [
-          "Scénarios de test validés",
-          "Équipe formée",
-          "Monitoring configuré",
-          "Lancement officiel"
-        ],
-        objectives: [
-          "Validation de tous les scénarios",
-          "Formation de l'équipe commerciale",
-          "Configuration du dashboard",
-          "Lancement en production"
-        ]
-      }
-    ];
+  <!-- ═══════════════════════════════════ ÉTAPE 1 ═══ -->
+  <div class="card" id="step1">
+    <div class="card-title">Créer votre compte</div>
+    <div class="card-sub">Renseignez vos informations et vos credentials WhatsApp Business pour configurer votre agent IA.</div>
 
-    function updateProgress() {
-      const checkboxes = document.querySelectorAll('input[type="checkbox"]:checked');
-      const progress = (checkboxes.length / 3) * 100;
-      document.getElementById('progress').style.width = progress + '%';
-      
-      if (checkboxes.length === 3) {
-    }
+    <div class="field">
+      <label>Nom du responsable <span class="req">*</span></label>
+      <input id="f-name" type="text" placeholder="Jean Dupont" autocomplete="name">
+    </div>
 
-    function changeStep(direction) {
-      const newStep = currentStep + direction;
-      
-      if (newStep >= 1 && newStep <= totalSteps) {
-        if (direction > 0 && !validateCurrentStep()) {
-          return;
-        }
-        currentStep = newStep;
-        showStep(currentStep);
-      }
-    }
+    <div class="field">
+      <label>Nom de l'entreprise <span class="req">*</span></label>
+      <input id="f-biz" type="text" placeholder="Ma Plomberie Lyon" autocomplete="organization">
+    </div>
 
-    function validateCurrentStep() {
-      const section = document.getElementById(`section${currentStep}`);
-      const requiredFields = section.querySelectorAll('[required]');
-      
-      for (const field of requiredFields) {
-        if (!field.value.trim()) {
-          field.focus();
-          alert('Veuillez remplir tous les champs obligatoires');
-          return false;
-        }
-      }
-      
-      return true;
-    }
+    <div class="field">
+      <label>
+        WhatsApp Token <span class="req">*</span>
+        <span class="hint">Commence par EAA… (Meta Business API)</span>
+      </label>
+      <input id="f-token" type="text" placeholder="EAA..." spellcheck="false" autocomplete="off">
+    </div>
 
-    function updateRecapitulatif() {
-      const formData = new FormData(document.getElementById('onboarding-form'));
-      const data = Object.fromEntries(formData);
-      
-      const recapitulatif = document.getElementById('recapitulatif');
-      recapitulatif.innerHTML = `
-        <p><strong>🏢 Entreprise:</strong> ${data.company_name || 'Non spécifiée'}</p>
-        <p><strong>👤 Contact:</strong> ${data.contact_name} (${data.contact_email})</p>
-        <p><strong>🆔 ID Tenant:</strong> ${data.tenant_id}</p>
-        <p><strong>💰 Plan:</strong> ${data.plan || 'Non sélectionné'}</p>
-        <p><strong>📱 WhatsApp:</strong> ${data.phone_number_id || 'Non configuré'}</p>
-        <p><strong>⚙️ Limites:</strong> ${data.max_per_run} msgs/exécution, ${data.cooldown_hours}h cooldown, ${data.max_daily_actions} actions/jour</p>
-        <p><strong>✅ CGU:</strong> ${data.terms_accepted ? 'Acceptées' : 'Non acceptées'}</p>
-        <p><strong>📧 Newsletter:</strong> ${data.newsletter_accepted ? 'Oui' : 'Non'}</p>
-      `;
-    }
+    <div class="field">
+      <label>
+        Phone Number ID <span class="req">*</span>
+        <span class="hint">Numérique — trouvé dans Meta Business Manager</span>
+      </label>
+      <input id="f-phone" type="text" placeholder="123456789012345" spellcheck="false" autocomplete="off">
+    </div>
 
-    function submitForm() {
-      if (!validateCurrentStep()) {
-        return;
-      }
-      
-      const formData = new FormData(document.getElementById('onboarding-form'));
-      const data = Object.fromEntries(formData);
-      
-      console.log('Onboarding submission:', data);
-      
-      // Simuler l'envoi API
-      setTimeout(() => {
-        document.getElementById('success-message').style.display = 'block';
-        document.getElementById('error-message').style.display = 'none';
-        
-        // Rediriger vers la console après 3 secondes
-        setTimeout(() => {
-          window.location.href = '/console/console.html';
-        }, 3000);
-      }, 1000);
-    }
+    <div class="field">
+      <label>
+        Verify Token <span class="req">*</span>
+        <span class="hint">8 caractères min — vous le choisirez aussi dans Meta</span>
+      </label>
+      <div class="field-row">
+        <div class="field">
+          <input id="f-verify" type="text" placeholder="mon_token_secret" spellcheck="false" autocomplete="off">
+        </div>
+        <button class="btn-gen" onclick="genVerifyToken()">⚡ Générer</button>
+      </div>
+    </div>
 
-    // Initialisation
-    showStep(1);
-    
-    // Tracking onboarding
-    window.AgentBoutiqueTracking.track('onboarding_start', {
-      step: 1,
-      totalSteps: 4
+    <div id="alert1" class="alert"></div>
+
+    <button class="btn-primary" id="btn1" onclick="step1Submit()">
+      <div class="spinner"></div>
+      <span class="btn-text">Créer mon compte →</span>
+    </button>
+  </div>
+
+  <!-- ═══════════════════════════════════ ÉTAPE 2 ═══ -->
+  <div class="card" id="step2" style="display:none">
+    <div class="card-title">Connecter WhatsApp</div>
+    <div class="card-sub">Nous vérifions que vos credentials Meta Graph API sont valides et actifs.</div>
+
+    <div class="info-box">
+      <div class="row">
+        <span class="lbl">Tenant ID</span>
+        <span class="val" id="show-tenant-id" title="Cliquer pour copier" onclick="copyText(this)">—</span>
+      </div>
+      <div class="row">
+        <span class="lbl">Phone Number ID</span>
+        <span class="val" id="show-phone-id" title="Cliquer pour copier" onclick="copyText(this)">—</span>
+      </div>
+      <div class="row">
+        <span class="lbl">Verify Token</span>
+        <span class="val" id="show-verify-token" title="Cliquer pour copier" onclick="copyText(this)">—</span>
+      </div>
+      <p class="copy-hint">💡 Cliquer sur une valeur pour la copier dans le presse-papiers</p>
+    </div>
+
+    <div class="note">
+      ⚠️ Si la validation échoue, vérifiez que votre token Meta est actif et que le Phone Number ID correspond bien à votre numéro WhatsApp Business.
+    </div>
+
+    <div id="alert2" class="alert"></div>
+
+    <button class="btn-primary" id="btn2" onclick="step2Submit()">
+      <div class="spinner"></div>
+      <span class="btn-text">Valider ma connexion WhatsApp →</span>
+    </button>
+    <button class="btn-secondary" onclick="backTo(1)">← Retour</button>
+  </div>
+
+  <!-- ═══════════════════════════════════ ÉTAPE 3 ═══ -->
+  <div class="card" id="step3" style="display:none">
+    <div class="card-title">Tester la connexion</div>
+    <div class="card-sub">Envoyez un message de test pour confirmer que l'envoi fonctionne correctement.</div>
+
+    <div class="info-box">
+      <div class="row">
+        <span class="lbl">Statut WhatsApp</span>
+        <span style="color:#16a34a;font-weight:700;font-size:0.9rem;">✅ Validé</span>
+      </div>
+      <div class="row">
+        <span class="lbl">Tenant ID</span>
+        <span class="val" id="show-tenant-id-3" title="Cliquer pour copier" onclick="copyText(this)">—</span>
+      </div>
+    </div>
+
+    <div class="note">
+      📱 Le message de test est envoyé au numéro associé à votre Phone Number ID. Il peut ne pas arriver selon la configuration Meta de votre numéro — l'activation reste possible même si ce test échoue.
+    </div>
+
+    <div id="alert3" class="alert"></div>
+
+    <button class="btn-primary" id="btn3" onclick="step3Submit()">
+      <div class="spinner"></div>
+      <span class="btn-text">Envoyer un message test →</span>
+    </button>
+    <button class="btn-secondary" id="btn3-skip" onclick="goTo(4)" style="display:none">Passer cette étape →</button>
+    <button class="btn-secondary" onclick="backTo(2)">← Retour</button>
+  </div>
+
+  <!-- ═══════════════════════════════════ ÉTAPE 4 ═══ -->
+  <div class="card" id="step4" style="display:none">
+    <div class="card-title">Activer votre agent</div>
+    <div class="card-sub">Tout est prêt. L'activation démarre votre période d'essai gratuite de 7 jours.</div>
+
+    <div class="info-box">
+      <div class="row">
+        <span class="lbl">Entreprise</span>
+        <span id="show-biz-name" style="font-weight:600;font-size:0.9rem;">—</span>
+      </div>
+      <div class="row">
+        <span class="lbl">Tenant ID</span>
+        <span class="val" id="show-tenant-id-4" title="Cliquer pour copier" onclick="copyText(this)">—</span>
+      </div>
+      <div class="row">
+        <span class="lbl">Période</span>
+        <span style="color:#0ea5e9;font-weight:700;font-size:0.9rem;">7 jours gratuits</span>
+      </div>
+    </div>
+
+    <div class="note">
+      🔗 Après activation, configurez votre webhook Meta en utilisant votre <strong>Verify Token</strong> ci-dessus.
+      L'URL webhook à renseigner dans Meta Business Manager est :<br>
+      <code id="show-webhook-url" style="font-size:0.8rem;word-break:break-all;"></code>
+    </div>
+
+    <div id="alert4" class="alert"></div>
+
+    <!-- État final (succès) -->
+    <div id="success-final" class="success-big" style="display:none">
+      <div class="icon">🎉</div>
+      <h2>Votre agent est actif !</h2>
+      <p>Votre assistant WhatsApp IA est maintenant opérationnel.<br>Connectez-vous à la console pour suivre vos conversations.</p>
+      <a href="/console" class="btn-console">Accéder à la console →</a>
+    </div>
+
+    <button class="btn-primary" id="btn4" onclick="step4Submit()">
+      <div class="spinner"></div>
+      <span class="btn-text">Activer mon agent →</span>
+    </button>
+    <button class="btn-secondary" onclick="backTo(3)">← Retour</button>
+  </div>
+
+</div><!-- /container -->
+
+<script>
+// ── État global ──────────────────────────────────────────────────────────────
+let tenantId   = null;
+let currentStep = 1;
+
+// ── Utilitaires UI ───────────────────────────────────────────────────────────
+function setLoading(btnId, loading) {
+  const btn = document.getElementById(btnId);
+  if (!btn) return;
+  btn.disabled = loading;
+  btn.classList.toggle('loading', loading);
+}
+
+function showAlert(id, type, msg) {
+  const el = document.getElementById(id);
+  el.className = 'alert show ' + type;
+  el.textContent = msg;
+}
+
+function hideAlert(id) {
+  const el = document.getElementById(id);
+  el.className = 'alert';
+  el.textContent = '';
+}
+
+function markFieldError(id, hasError) {
+  const el = document.getElementById(id);
+  if (el) el.classList.toggle('error', hasError);
+}
+
+function copyText(el) {
+  const txt = el.textContent.trim();
+  navigator.clipboard?.writeText(txt).then(() => {
+    const old = el.textContent;
+    el.textContent = '✅ Copié';
+    setTimeout(() => { el.textContent = old; }, 1500);
+  });
+}
+
+function goTo(n) {
+  // Cacher toutes les cards
+  [1,2,3,4].forEach(i => {
+    document.getElementById('step' + i).style.display = 'none';
+    const si = document.getElementById('s' + i);
+    si.classList.remove('active', 'done');
+    if (i < n) si.classList.add('done');
+    else if (i === n) si.classList.add('active');
+  });
+  document.getElementById('step' + n).style.display = '';
+  currentStep = n;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function backTo(n) { goTo(n); }
+
+// ── Générer un verify_token ───────────────────────────────────────────────────
+function genVerifyToken() {
+  const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+  let token = '';
+  for (let i = 0; i < 16; i++) token += chars[Math.floor(Math.random() * chars.length)];
+  document.getElementById('f-verify').value = token;
+  markFieldError('f-verify', false);
+}
+
+// ── ÉTAPE 1 — Créer le tenant ─────────────────────────────────────────────────
+async function step1Submit() {
+  hideAlert('alert1');
+
+  const name          = document.getElementById('f-name').value.trim();
+  const business_name = document.getElementById('f-biz').value.trim();
+  const whatsapp_token= document.getElementById('f-token').value.trim();
+  const phone_number_id = document.getElementById('f-phone').value.trim();
+  const verify_token  = document.getElementById('f-verify').value.trim();
+
+  // Validation client
+  let ok = true;
+  const checkField = (id, cond) => { markFieldError(id, !cond); if (!cond) ok = false; };
+  checkField('f-name',   name.length > 0);
+  checkField('f-biz',    business_name.length > 0);
+  checkField('f-token',  whatsapp_token.startsWith('EAA') && whatsapp_token.length > 5);
+  checkField('f-phone',  /^\d{10,20}$/.test(phone_number_id));
+  checkField('f-verify', verify_token.length >= 8);
+
+  if (!ok) {
+    showAlert('alert1', 'error', 'Veuillez corriger les champs en rouge avant de continuer.');
+    return;
+  }
+
+  setLoading('btn1', true);
+  try {
+    const res = await fetch('/api/onboarding/create-tenant', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, business_name, whatsapp_token, phone_number_id, verify_token }),
     });
-  </script>
+    const data = await res.json();
+
+    if (!res.ok) {
+      showAlert('alert1', 'error', '❌ ' + (data.error || 'Erreur inconnue'));
+      return;
+    }
+
+    // Stocker tenant_id, passer à l'étape 2
+    tenantId = data.tenant_id;
+    document.getElementById('show-tenant-id').textContent   = tenantId;
+    document.getElementById('show-phone-id').textContent    = phone_number_id;
+    document.getElementById('show-verify-token').textContent= verify_token;
+    document.getElementById('show-tenant-id-3').textContent = tenantId;
+    document.getElementById('show-tenant-id-4').textContent = tenantId;
+    document.getElementById('show-biz-name').textContent    = business_name;
+    document.getElementById('show-webhook-url').textContent =
+      window.location.origin + '/webhook/whatsapp';
+
+    goTo(2);
+  } catch (err) {
+    showAlert('alert1', 'error', '❌ Erreur réseau : ' + err.message);
+  } finally {
+    setLoading('btn1', false);
+  }
+}
+
+// ── ÉTAPE 2 — Valider WhatsApp ────────────────────────────────────────────────
+async function step2Submit() {
+  if (!tenantId) { showAlert('alert2', 'error', 'Session perdue — recommencez depuis l\'étape 1'); return; }
+  hideAlert('alert2');
+  setLoading('btn2', true);
+
+  try {
+    const res = await fetch('/api/onboarding/validate-whatsapp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tenant_id: tenantId }),
+    });
+    const data = await res.json();
+
+    if (res.ok && data.status === 'validated') {
+      showAlert('alert2', 'success', '✅ Connexion WhatsApp validée !');
+      setTimeout(() => goTo(3), 900);
+    } else {
+      const reason = data.reason || data.error || 'Erreur inconnue';
+      showAlert('alert2', 'error',
+        '❌ Validation échouée : ' + reason +
+        '\n\nVérifiez votre token et votre Phone Number ID puis réessayez.'
+      );
+    }
+  } catch (err) {
+    showAlert('alert2', 'error', '❌ Erreur réseau : ' + err.message);
+  } finally {
+    setLoading('btn2', false);
+  }
+}
+
+// ── ÉTAPE 3 — Message test ────────────────────────────────────────────────────
+async function step3Submit() {
+  if (!tenantId) { showAlert('alert3', 'error', 'Session perdue — recommencez'); return; }
+  hideAlert('alert3');
+  setLoading('btn3', true);
+
+  try {
+    const res = await fetch('/api/onboarding/test-connection', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tenant_id: tenantId }),
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      showAlert('alert3', 'success', '✅ Message test envoyé avec succès ! Vérifiez votre WhatsApp.');
+      setTimeout(() => goTo(4), 1200);
+    } else {
+      const reason = data.reason || 'Erreur inconnue';
+      showAlert('alert3', 'error',
+        '⚠️ Le message n\'a pas pu être envoyé : ' + reason
+      );
+      document.getElementById('btn3-skip').style.display = '';
+    }
+  } catch (err) {
+    showAlert('alert3', 'error', '❌ Erreur réseau : ' + err.message);
+    document.getElementById('btn3-skip').style.display = '';
+  } finally {
+    setLoading('btn3', false);
+  }
+}
+
+// ── ÉTAPE 4 — Activer l'agent ─────────────────────────────────────────────────
+async function step4Submit() {
+  if (!tenantId) { showAlert('alert4', 'error', 'Session perdue — recommencez'); return; }
+  hideAlert('alert4');
+  setLoading('btn4', true);
+
+  try {
+    const res = await fetch('/api/onboarding/activate-agent', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tenant_id: tenantId }),
+    });
+    const data = await res.json();
+
+    if (res.ok && data.success) {
+      // Marquer étape 4 done, afficher le succès final
+      document.getElementById('s4').classList.add('done');
+      document.getElementById('s4').classList.remove('active');
+      document.getElementById('btn4').style.display = 'none';
+      document.querySelectorAll('#step4 .btn-secondary').forEach(b => b.style.display = 'none');
+      document.getElementById('success-final').style.display = '';
+    } else {
+      const reason = data.error || 'Erreur inconnue';
+      if (res.status === 403) {
+        showAlert('alert4', 'error', '❌ ' + reason + ' — retournez valider WhatsApp.');
+      } else {
+        showAlert('alert4', 'error', '❌ Activation échouée : ' + reason);
+      }
+    }
+  } catch (err) {
+    showAlert('alert4', 'error', '❌ Erreur réseau : ' + err.message);
+  } finally {
+    setLoading('btn4', false);
+  }
+}
+</script>
 </body>
 </html>
