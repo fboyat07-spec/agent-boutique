@@ -305,6 +305,45 @@ async function nodeClassifyIntent(state) {
 
 async function nodeRoute(state) {
   const { message, context, intent } = state;
+
+  // ── GARDE PRÉ-GPT : routing déterministe ───────────────────────────────────
+  const intentType = intent?.intent;
+  const score      = context?.score || 0;
+  const stage      = context?.stage || 'new';
+
+  // off_topic → toujours qualifier d'abord
+  if (intentType === 'off_topic') {
+    console.log('[ORCHESTRATOR] Guard pré-GPT → qualify_lead (off_topic)');
+    return {
+      toolName: 'qualify_lead',
+      toolArgs: { question: 'Qu\'est-ce qui vous a amené à nous contacter aujourd\'hui ?', focus: 'need' }
+    };
+  }
+
+  // greeting sur un nouveau prospect → qualifier
+  if (intentType === 'greeting' && stage === 'new') {
+    console.log('[ORCHESTRATOR] Guard pré-GPT → qualify_lead (greeting+new)');
+    return {
+      toolName: 'qualify_lead',
+      toolArgs: { question: 'Bonjour ! Dites-moi, vous faites quoi comme activité ?', focus: 'business_type' }
+    };
+  }
+
+  // sentiment négatif → handle_objection (sauf si le prospect veut acheter, a un pb de prix ou n'est pas intéressé)
+  if (
+    intent?.sentiment === 'negative' &&
+    intentType !== 'ready_to_buy' &&
+    intentType !== 'objection_price' &&
+    intentType !== 'not_interested'
+  ) {
+    console.log('[ORCHESTRATOR] Guard pré-GPT → handle_objection (sentiment négatif)');
+    return {
+      toolName: 'handle_objection',
+      toolArgs: { objection_type: 'other', response: 'Je comprends votre hésitation. Qu\'est-ce qui vous freine ?' }
+    };
+  }
+  // ── FIN GARDE PRÉ-GPT ──────────────────────────────────────────────────────
+
   const messages = [
     { role: 'system', content: buildSystemPrompt(context.user, context.running_summary) },
     ...context.history,
@@ -330,6 +369,27 @@ async function nodeRoute(state) {
       const toolName = toolCall.function.name;
       const toolArgs = JSON.parse(toolCall.function.arguments);
       console.log('[ORCHESTRATOR] Tool choisi:', toolName, toolArgs);
+
+      // ── GARDE POST-GPT : bloquer close_sale prématuré ──────────────────────
+      if (
+        toolName === 'close_sale' &&
+        score < 30 &&
+        !['ready_to_buy', 'interest'].includes(intentType)
+      ) {
+        console.log('[ORCHESTRATOR] Guard post-GPT → close_sale bloqué (score:', score, '| intent:', intentType, ')');
+        if (stage === 'new' || stage === 'qualified') {
+          return {
+            toolName: 'qualify_lead',
+            toolArgs: { question: 'Pour mieux vous conseiller, dites-moi : vous gérez quel type de business ?', focus: 'business_type' }
+          };
+        }
+        return {
+          toolName: 'present_offer',
+          toolArgs: { pitch: 'On aide les entrepreneurs à répondre automatiquement sur WhatsApp — 24h/24, sans effort. Votre secteur, c\'est quoi ?', include_price: false }
+        };
+      }
+      // ── FIN GARDE POST-GPT ──────────────────────────────────────────────────
+
       return { toolName, toolArgs };
     }
 
