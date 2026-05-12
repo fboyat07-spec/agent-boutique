@@ -59,6 +59,10 @@ async function run() {
     ['agent',    'Le Pro à 149€ serait parfait pour vous'],
     ['prospect', 'je veux réfléchir'],
     ['agent',    'Bien sûr, je reste disponible'],
+    ['prospect', 'vous couvrez aussi la région Rhône-Alpes ?'],
+    ['agent',    'Oui, le service est national, 100% en ligne'],
+    ['prospect', 'ok je suis intéressé, comment on démarre ?'],
+    ['agent',    'Je vous envoie le lien d\'inscription directement'],
   ];
   for (const [sender, content] of convData) {
     enoughMsgs.push({ sender: sender === 'prospect' ? TEST_PHONE : 'agent', content, timestamp: new Date() });

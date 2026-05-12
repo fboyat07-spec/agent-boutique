@@ -19,7 +19,10 @@ const crypto = require('crypto');
 const ConversationSummary = require('../models/ConversationSummary');
 
 // Déclencher le résumé tous les N messages utilisateur (configurable via env)
-const SUMMARY_EVERY_N = parseInt(process.env.SUMMARY_EVERY_N || '6', 10);
+const SUMMARY_EVERY_N = parseInt(process.env.SUMMARY_EVERY_N || '8', 10);
+
+// Délai minimum entre deux résumés (évite les rafales GPT inutiles)
+const SUMMARY_COOLDOWN_MS = parseInt(process.env.SUMMARY_COOLDOWN_MS || String(30 * 60 * 1000), 10); // 30 min
 
 // Lazy OpenAI (même pattern que orchestrator.js)
 let _openai = null;
@@ -87,8 +90,16 @@ async function maybeUpdateSummary(phone, tenant_id, messages) {
 
     // Lire le résumé précédent (si existant)
     const existing = await ConversationSummary.findOne({ phone, tenant_id })
-      .select('running_summary')
+      .select('running_summary updated_at')
       .lean();
+
+    // Cooldown : ne pas générer si un résumé a déjà été produit récemment
+    if (existing?.updated_at && Date.now() - new Date(existing.updated_at).getTime() < SUMMARY_COOLDOWN_MS) {
+      const remainMin = Math.round((SUMMARY_COOLDOWN_MS - (Date.now() - new Date(existing.updated_at).getTime())) / 60000);
+      console.log('[SUMMARY SERVICE] Cooldown actif — résumé ignoré', { phone, tenant_id, nextAllowedIn: `${remainMin}min` });
+      return;
+    }
+
     const prevSummary = existing?.running_summary || '';
 
     // Construire le contexte des N derniers échanges (2×N pour avoir les paires)
@@ -127,7 +138,7 @@ Si un résumé précédent existe, l'enrichir avec les nouveaux échanges sans r
 
     const response = await getOpenAI().chat.completions.create({
       model:       'gpt-4o-mini',
-      max_tokens:  280,
+      max_tokens:  500,
       temperature: 0.2,
       messages: [
         { role: 'system', content: systemPrompt },
