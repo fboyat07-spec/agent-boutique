@@ -889,7 +889,11 @@
     // Configuration
     const API_BASE = '/api/admin/chat';
     const CONSOLE_API_BASE = '/api/console';
-    const AUTH_TOKEN = 'console_admin_2024'; // Token d'authentification admin
+    // Vérification login — redirige si pas de token en session
+    if (!sessionStorage.getItem('console_token')) {
+      window.location.href = '/login-console.html';
+    }
+    const AUTH_TOKEN = sessionStorage.getItem('console_token') || '';
     
     // État global
     let currentConversationId = null;

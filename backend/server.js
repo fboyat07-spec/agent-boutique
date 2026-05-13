@@ -1190,6 +1190,16 @@ app.get('/api/console/roi', consoleAuth, async (req, res) => {
   }
 });
 
+// Login console — pas de consoleAuth (route publique pour authentifier)
+app.post('/api/console/login', (req, res) => {
+  const { password } = req.body || {};
+  const CONSOLE_TOKEN = process.env.CONSOLE_TOKEN || 'console_admin_2024';
+  if (password === CONSOLE_TOKEN) {
+    return res.json({ token: CONSOLE_TOKEN, success: true });
+  }
+  return res.status(401).json({ error: 'Mot de passe incorrect' });
+});
+
 // Helper functions for environment validation
 function getPersistenceMode() {
   return process.env.MONGODB_URI ? 'mongodb' : 'memory';
