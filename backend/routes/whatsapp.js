@@ -19,8 +19,8 @@ const router  = express.Router();
 // ─── Config ──────────────────────────────────────────────────────────────────
 
 const GRAPH_API_VERSION = 'v19.0';
-const PHONE_ID          = process.env.WHATSAPP_PHONE_ID;
 const TOKEN             = process.env.WHATSAPP_TOKEN;
+const PHONE_ID          = process.env.PHONE_NUMBER_ID || process.env.WHATSAPP_PHONE_NUMBER_ID;
 
 // ─── State séquences en mémoire ──────────────────────────────────────────────
 
@@ -42,7 +42,7 @@ const sequences = new Map();
  */
 async function sendTemplate(to, templateName, variables = []) {
   if (!TOKEN || !PHONE_ID) {
-    throw new Error('WHATSAPP_TOKEN ou WHATSAPP_PHONE_ID manquant dans .env');
+    throw new Error('WHATSAPP_TOKEN ou PHONE_NUMBER_ID / WHATSAPP_PHONE_NUMBER_ID manquant dans .env');
   }
 
   const url = `https://graph.facebook.com/${GRAPH_API_VERSION}/${PHONE_ID}/messages`;
