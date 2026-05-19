@@ -1212,6 +1212,9 @@ function isFirestoreEnabled() {
 // Onboarding SaaS
 app.use('/api/onboarding', require('./routes/onboardingRoutes'));
 
+// WhatsApp Cloud API — templates & séquences automatisées
+app.use('/api/whatsapp', require('./routes/whatsapp'));
+
 // ÉTAPE 6 - Route trace avant 404 global pour diagnostic
 app.use((req, res, next) => {
   console.log('[ROUTE TRACE]', req.method, req.originalUrl);
