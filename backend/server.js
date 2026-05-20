@@ -794,7 +794,7 @@ async function processSingleMessage(message, tenant_id) {
     // Validation structure message
     const senderPhone = message.from;
     const messageType = message?.type;
-    const messageText = message?.text?.body;
+    let messageText = message?.text?.body;
     
     // Debug logs for extracted message
     console.log('[EXTRACTED]', {
@@ -850,7 +850,43 @@ async function processSingleMessage(message, tenant_id) {
     // ── ORCHESTRATEUR AGENTIQUE ──────────────────────────────────────────────
     // Remplace l'ancien pipeline fixe (processIncomingReply → processLead → send)
     // par un agent GPT-4 qui raisonne : Classify → Decide → Act
-    if (messageType === 'text' && messageText) {
+
+    // ── Audio → transcription Whisper avant le pipeline ──────────────────────
+    if (messageType === 'audio' && message.audio?.id) {
+      console.log('[AUDIO] Message vocal reçu - transcription Whisper...', { messageId, audioId: message.audio.id });
+      try {
+        const metaRes = await axios.get(
+          `https://graph.facebook.com/v19.0/${message.audio.id}`,
+          { headers: { Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}` } }
+        );
+        const audioUrl = metaRes.data.url;
+        const audioRes = await axios.get(audioUrl, {
+          headers: { Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}` },
+          responseType: 'arraybuffer',
+        });
+        const audioBuffer = Buffer.from(audioRes.data);
+        const OpenAI = require('openai');
+        const { toFile } = require('openai');
+        const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+        const transcription = await openai.audio.transcriptions.create({
+          model: 'whisper-1',
+          file: await toFile(audioBuffer, 'audio.ogg', { type: 'audio/ogg' }),
+          response_format: 'text',
+        });
+        const transcribedText = (typeof transcription === 'string' ? transcription : (transcription?.text || '')).trim();
+        if (!transcribedText) {
+          console.log('[AUDIO] Transcription vide, message ignoré');
+          return;
+        }
+        console.log('[AUDIO] Transcription OK:', transcribedText.slice(0, 100));
+        messageText = transcribedText; // injecté dans le pipeline texte ci-dessous
+      } catch (audioErr) {
+        console.log('[AUDIO] Erreur transcription:', audioErr.message);
+        return;
+      }
+    }
+
+    if ((messageType === 'text' || messageType === 'audio') && messageText) {
       console.log('[DIAGNOSTIC] CHECKING RATE LIMIT - STEP 28');
       // Rate limiting inchangé
       const canSend = await rateLimiter.canSendMessage(senderPhone, 50, 3600);
@@ -920,9 +956,9 @@ async function processSingleMessage(message, tenant_id) {
     } else {
       console.log('[DIAGNOSTIC] PIPELINE BLOCKED - STEP 28 ERROR', { 
         messageId,
-        reason: !messageType ? 'no_type' : 
-                messageType !== 'text' ? 'not_text' : 
-                !messageText.trim() ? 'empty_text' : 'unknown',
+        reason: !messageType ? 'no_type' :
+                (messageType !== 'text' && messageType !== 'audio') ? 'not_text' :
+                !messageText?.trim() ? 'empty_text' : 'unknown',
         messageType,
         hasText: !!messageText
       });
