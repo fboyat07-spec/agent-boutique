@@ -730,7 +730,7 @@ async function processWebhook(webhookBody) {
 
           const userText = message.text?.body;
 
-          if (!userText) continue;
+          if (!userText && message.type !== 'audio') continue;
 
           const contentKey = (message.from + '_' + (message.text?.body || '').trim().toLowerCase().slice(0, 50));
           try {
