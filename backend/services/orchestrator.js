@@ -20,9 +20,10 @@ const OpenAI = require('openai');
 
 const { updateScore } = require('./scoringService');
 
-const Conversation   = require('../models/Conversation');
-const User           = require('../models/User');
-const paymentLinks   = require('../config/paymentLinks');
+const Conversation     = require('../models/Conversation');
+const User             = require('../models/User');
+const paymentLinks     = require('../config/paymentLinks');
+const WhatsAppSequence = require('../models/WhatsAppSequence');
 
 let _openai = null;
 function getOpenAI() {
@@ -626,6 +627,10 @@ async function orchestrate(phone, message, tenant_id) {
           },
         },
         { upsert: true }
+      );
+      await WhatsAppSequence.findOneAndUpdate(
+        { to: phone, status: 'active' },
+        { $set: { status: 'stopped' } }
       );
       return OPT_OUT_REPLY;
     }
