@@ -18,7 +18,7 @@ const router  = express.Router();
 
 // ─── Config ──────────────────────────────────────────────────────────────────
 
-const GRAPH_API_VERSION = 'v19.0';
+const GRAPH_API_VERSION = 'v20.0';
 const TOKEN             = process.env.WHATSAPP_TOKEN;
 const PHONE_ID          = process.env.PHONE_NUMBER_ID || process.env.WHATSAPP_PHONE_NUMBER_ID;
 
