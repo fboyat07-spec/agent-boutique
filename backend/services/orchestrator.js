@@ -255,7 +255,7 @@ Choisis l'outil le plus adapté au contexte. Ne fais qu'UNE seule action par mes
 // ─── DÉTECTION STOP / OPT-OUT ─────────────────────────────────────────────────
 
 const OPT_OUT_SIGNALS = [
-  'bloquer', 'stop', 'arrêter', 'pas intéressé', 'non merci',
+  'bloquer', 'stop', 'pas intéressé', 'non merci',
   'laissez-moi', 'ne plus', 'merde', 'nul',
 ];
 
@@ -484,7 +484,7 @@ async function nodeCloseSale(state) {
     { $set: { stage: 'closing' }, $inc: { score: 25 } },
     { upsert: true }
   );
-  return { reply: `${toolArgs.closing_message}\n\n👉 ${plan.label} ${plan.price} : ${link}` };
+  return { reply: toolArgs.closing_message };
 }
 
 async function nodeScheduleFollowup(state) {
