@@ -79,13 +79,15 @@ const OrchestratorState = Annotation.Root({
 });
 
 // ─── OUTILS AGENT GPT-4 ───────────────────────────────────────────────────────
+// COLD OUTREACH PRIORITY: When in doubt between qualifying and ending →
+// ALWAYS end_conversation. Never repeat the same tool twice in a row.
 
 const AGENT_TOOLS = [
   {
     type: 'function',
     function: {
       name: 'qualify_lead',
-      description: 'Utiliser pour TOUT premier contact et TOUTE réponse décrivant un métier ou secteur d\'activité. L\'agent s\'adapte à tous types de business.',
+      description: 'Use ONLY when prospect shows genuine curiosity or asks a question. NEVER use on first message. NEVER use if prospect said no/not interested.',
       parameters: {
         type: 'object',
         properties: {
@@ -118,7 +120,7 @@ const AGENT_TOOLS = [
     type: 'function',
     function: {
       name: 'handle_objection',
-      description: 'Répondre à une objection (prix, besoin, timing, concurrence).',
+      description: 'Répondre à une objection (prix, besoin, timing, concurrence). If prospect says no twice OR says they are not interested → use end_conversation instead, NEVER handle_objection.',
       parameters: {
         type: 'object',
         properties: {
@@ -174,7 +176,7 @@ const AGENT_TOOLS = [
     type: 'function',
     function: {
       name: 'end_conversation',
-      description: 'Clore la conversation UNIQUEMENT si le prospect dit explicitement qu\'il n\'est pas intéressé ou demande d\'arrêter. JAMAIS sur un premier message, JAMAIS sur une réponse courte comme un type de métier.',
+      description: 'Use when: prospect says no/not interested/stop/bloquer/occupé/pas mon secteur, OR after 2 negative responses, OR prospect seems confused after explanation. ALWAYS prefer this over repeating questions.',
       parameters: {
         type: 'object',
         properties: {
