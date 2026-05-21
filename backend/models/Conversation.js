@@ -9,8 +9,14 @@ const conversationSchema = new mongoose.Schema({
   },
   stage: {
     type: String,
-    enum: ['new', 'qualified', 'interested', 'closing', 'won', 'lost'],
+    enum: ['new', 'qualified', 'interested', 'closing', 'won', 'lost', 'opted_out'],
     default: 'new'
+  },
+  status: {
+    type: String,
+    enum: ['active', 'opted_out'],
+    default: 'active',
+    index: true,
   },
   score: {
     type: Number,
