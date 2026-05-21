@@ -87,7 +87,7 @@ const AGENT_TOOLS = [
     type: 'function',
     function: {
       name: 'qualify_lead',
-      description: 'Use ONLY when prospect shows genuine curiosity or asks a question. NEVER use on first message. NEVER use if prospect said no/not interested.',
+      description: 'Use when prospect says Bonjour, asks a question, or shows any curiosity. Ask ONE short friendly question about their business.',
       parameters: {
         type: 'object',
         properties: {
@@ -176,7 +176,7 @@ const AGENT_TOOLS = [
     type: 'function',
     function: {
       name: 'end_conversation',
-      description: 'Use when: prospect says no/not interested/stop/bloquer/occupé/pas mon secteur, OR after 2 negative responses, OR prospect seems confused after explanation. ALWAYS prefer this over repeating questions.',
+      description: 'Use ONLY when prospect explicitly refuses: no/not interested/stop/bloquer/occupé/pas mon secteur, OR after 2 clearly negative responses. NEVER use on neutral greetings like Bonjour, or questions about the offer.',
       parameters: {
         type: 'object',
         properties: {
