@@ -176,7 +176,7 @@ const AGENT_TOOLS = [
     type: 'function',
     function: {
       name: 'end_conversation',
-      description: 'Use ONLY when prospect explicitly refuses: no/not interested/stop/bloquer/occupé/pas mon secteur, OR after 2 clearly negative responses. NEVER use on neutral greetings like Bonjour, or questions about the offer.',
+      description: 'Use ONLY when prospect explicitly refuses: no/not interested/stop/bloquer/occupé/pas mon secteur, OR after 2 clearly negative responses, OR prospect says they have no shop, are closing their business, or their activity doesn\'t match the offer. NEVER use on neutral greetings like Bonjour, or questions about the offer.',
       parameters: {
         type: 'object',
         properties: {
@@ -262,6 +262,8 @@ Choisis l'outil le plus adapté au contexte. Ne fais qu'UNE seule action par mes
 const OPT_OUT_SIGNALS = [
   'bloquer', 'stop', 'pas intéressé', 'non merci',
   'laissez-moi', 'ne plus', 'merde', 'nul',
+  'j arrête', 'j arrete', 'je ferme', 'je cesse',
+  'plus d activité', 'pas de boutique', 'pas boutique', 'coach', 'je ne suis pas',
 ];
 
 const OPT_OUT_REPLY = "Pas de problème, je vous retire de la liste et ne vous recontacterai plus. Belle journée ! 🙏";
