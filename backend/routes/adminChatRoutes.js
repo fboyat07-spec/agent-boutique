@@ -129,10 +129,12 @@ router.post('/send', adminAuth, async (req, res) => {
     }
 
     // Mettre à jour le lead
-    lead.lastMessage = message;
-    lead.status = 'human_interacting';
-    lead.lastInteractionAt = new Date();
-    await lead.save();
+    if (lead) {
+      lead.lastMessage = message;
+      lead.status = 'human_interacting';
+      lead.lastInteractionAt = new Date();
+      await lead.save();
+    }
 
     res.json({
       success: true,
