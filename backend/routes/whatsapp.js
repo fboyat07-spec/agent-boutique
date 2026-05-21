@@ -53,7 +53,7 @@ async function sendTemplate(to, templateName, variables = []) {
     type: 'template',
     template: {
       name: templateName,
-      language: { code: 'fr_FR' },
+      language: { code: 'fr' },
       components: variables.length
         ? [{ type: 'body', parameters: variables }]
         : [],
