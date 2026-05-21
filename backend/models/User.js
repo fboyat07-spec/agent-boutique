@@ -30,6 +30,9 @@ const UserSchema = new mongoose.Schema({
   email_verified:      { type: Boolean, default: false },
 
   status:              { type: String, enum: ['active', 'inactive', 'suspended', 'deleted'], default: 'active' },
+
+  // Instructions dynamiques injectées dans le system prompt de l'orchestrateur
+  agent_instructions:  { type: String, default: '' },
 }, {
   timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
 });

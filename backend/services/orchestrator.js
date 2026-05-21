@@ -244,6 +244,11 @@ RÈGLES STRICTES cold outreach :
 
 Choisis l'outil le plus adapté au contexte. Ne fais qu'UNE seule action par message.`;
 
+  // Instructions dynamiques du jour (définies via la console)
+  if (user?.agent_instructions?.trim()) {
+    prompt += `\n\nINSTRUCTIONS SPÉCIALES DU JOUR :\n${user.agent_instructions.trim()}`;
+  }
+
   // Injection non-destructive du résumé de conversation (si disponible)
   if (running_summary) {
     prompt += `\n\nCONTEXTE CONVERSATION (résumé automatique — basé sur l'historique) :\n${running_summary}`;

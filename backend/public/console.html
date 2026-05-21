@@ -920,6 +920,18 @@
           </button>
           <div class="wa-result" id="waResult"></div>
         </div>
+
+        <div class="lead-info-section">
+          <div class="lead-info-title">📋 Instructions pour l'agent</div>
+          <textarea id="agentInstructions" class="wa-input"
+            rows="4"
+            placeholder="ex: Propose systématiquement le plan Pro aujourd'hui. Ne mentionne pas les concurrents."
+            style="resize:vertical; font-family:inherit; line-height:1.5;"></textarea>
+          <div style="display:flex; align-items:center; gap:10px; margin-top:6px;">
+            <button class="action-button primary" onclick="saveAgentInstructions()">Sauvegarder</button>
+            <span id="agentInstructionsStatus" style="font-size:13px; color:#065f46;"></span>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -967,6 +979,43 @@
         btn.disabled    = false;
         btn.textContent = 'Lancer la séquence J0→J3→J7';
       }
+    }
+
+    // ── Instructions agent ───────────────────────────────────────────────────
+    async function saveAgentInstructions() {
+      const textarea = document.getElementById('agentInstructions');
+      const status   = document.getElementById('agentInstructionsStatus');
+      const instructions = textarea.value.trim();
+      status.textContent = '⏳ Sauvegarde…';
+      try {
+        const res = await fetch('/api/agent/instructions', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ tenant_id: currentTenantId, instructions }),
+        });
+        const data = await res.json();
+        if (data.ok) {
+          status.style.color = '#065f46';
+          status.textContent = 'Sauvegardé ✅';
+        } else {
+          status.style.color = '#991b1b';
+          status.textContent = `Erreur ❌ ${data.error || ''}`;
+        }
+      } catch(e) {
+        status.style.color = '#991b1b';
+        status.textContent = `Erreur réseau ❌`;
+      }
+      setTimeout(() => { status.textContent = ''; }, 4000);
+    }
+
+    async function loadAgentInstructions() {
+      try {
+        const res  = await fetch(`/api/agent/instructions?tenant_id=${currentTenantId}`);
+        const data = await res.json();
+        if (data.ok && data.instructions) {
+          document.getElementById('agentInstructions').value = data.instructions;
+        }
+      } catch {}
     }
 
     // État global
@@ -1533,7 +1582,8 @@
     
     loadConversations();
     loadRuntimeStatus();
-    
+    loadAgentInstructions();
+
     // Auto-refresh toutes les 30 secondes
     setInterval(() => {
       console.log('[CONSOLE] AUTO-REFRESH TRIGGERED');

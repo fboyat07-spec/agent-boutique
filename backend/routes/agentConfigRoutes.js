@@ -5,6 +5,7 @@ const { updateTenantConfig, getTenant } = require('../services/tenantManager');
 const { getFullTenantConfig } = require('../services/tenantConfig');
 const BusinessLogger = require('./businessLogger');
 const { optionalAuthenticate, validateTenant } = require('../middleware/tenantAuth');
+const User = require('../models/User');
 
 const router = express.Router();
 
@@ -519,6 +520,45 @@ router.post('/config/validate', optionalAuthenticate, async (req, res) => {
       message: 'Failed to validate configuration',
       details: error.message
     });
+  }
+});
+
+// ─── POST /api/agent/instructions ────────────────────────────────────────────
+
+router.post('/instructions', async (req, res) => {
+  try {
+    const { tenant_id, instructions } = req.body;
+    if (!tenant_id) return res.status(400).json({ error: 'tenant_id requis' });
+
+    const user = await User.findOneAndUpdate(
+      { tenant_id },
+      { agent_instructions: (instructions || '').trim() },
+      { new: true }
+    );
+    if (!user) return res.status(404).json({ error: `Aucun utilisateur pour tenant_id: ${tenant_id}` });
+
+    console.log(`[AGENT INSTRUCTIONS] Sauvegardé pour tenant ${tenant_id} (${(instructions || '').length} chars)`);
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error('[AGENT INSTRUCTIONS POST ERROR]', err.message);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── GET /api/agent/instructions ─────────────────────────────────────────────
+
+router.get('/instructions', async (req, res) => {
+  try {
+    const { tenant_id } = req.query;
+    if (!tenant_id) return res.status(400).json({ error: 'tenant_id requis' });
+
+    const user = await User.findOne({ tenant_id }).select('agent_instructions').lean();
+    if (!user) return res.status(404).json({ error: `Aucun utilisateur pour tenant_id: ${tenant_id}` });
+
+    return res.json({ ok: true, instructions: user.agent_instructions || '' });
+  } catch (err) {
+    console.error('[AGENT INSTRUCTIONS GET ERROR]', err.message);
+    return res.status(500).json({ error: err.message });
   }
 });
 
