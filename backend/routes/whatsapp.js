@@ -247,4 +247,17 @@ router.post('/stop-sequence', async (req, res) => {
   }
 });
 
+router.get('/sequences-active', async (req, res) => {
+  try {
+    const sequences = await WhatsAppSequence.find({ status: 'active' })
+      .select('to prenom step j3_date j7_date startDate')
+      .sort({ startDate: -1 })
+      .lean();
+    return res.json({ ok: true, sequences });
+  } catch (err) {
+    console.error('[WA /sequences-active ERROR]', err.message);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

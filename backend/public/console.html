@@ -932,6 +932,15 @@
             <span id="agentInstructionsStatus" style="font-size:13px; color:#065f46;"></span>
           </div>
         </div>
+
+        <div class="lead-info-section">
+          <div class="lead-info-title">📊 Séquences WhatsApp actives</div>
+          <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+            <button class="action-button primary" onclick="loadActiveSequences()">Rafraîchir</button>
+            <span id="sequencesCount" style="font-size:13px; color:#6b7280;"></span>
+          </div>
+          <div id="sequencesTableWrapper"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -1016,6 +1025,62 @@
           document.getElementById('agentInstructions').value = data.instructions;
         }
       } catch {}
+    }
+
+    // ── Séquences actives ────────────────────────────────────────────────────
+    async function loadActiveSequences() {
+      const wrapper = document.getElementById('sequencesTableWrapper');
+      const count   = document.getElementById('sequencesCount');
+      try {
+        const res  = await fetch('/api/whatsapp/sequences-active');
+        const data = await res.json();
+        if (!data.ok) {
+          wrapper.innerHTML = '<p style="color:red;font-size:13px;">Erreur chargement</p>';
+          return;
+        }
+        const seqs = data.sequences;
+        const n = seqs.length;
+        count.textContent = `${n} séquence${n !== 1 ? 's' : ''} active${n !== 1 ? 's' : ''}`;
+        if (n === 0) {
+          wrapper.innerHTML = '<p style="color:#6b7280;font-size:13px;">Aucune séquence active</p>';
+          return;
+        }
+        const now = Date.now();
+        const daysUntil = date => {
+          const d = Math.ceil((new Date(date) - now) / 86400000);
+          return d <= 0 ? '<span style="color:#9ca3af">Passé</span>' : `${d}j`;
+        };
+        const stepColor = step =>
+          step === 'j0' ? '#3b82f6' : step === 'j3' ? '#f97316' : '#22c55e';
+        const rows = seqs.map(s => `
+          <tr style="border-bottom:1px solid #f3f4f6;">
+            <td style="padding:6px 8px;font-family:monospace;font-size:12px;">${s.to}</td>
+            <td style="padding:6px 8px;">${s.prenom || '—'}</td>
+            <td style="padding:6px 8px;">
+              <span style="background:${stepColor(s.step)};color:#fff;padding:2px 8px;
+                border-radius:12px;font-size:12px;font-weight:600;">
+                ${s.step.toUpperCase()}
+              </span>
+            </td>
+            <td style="padding:6px 8px;text-align:center;">${daysUntil(s.j3_date)}</td>
+            <td style="padding:6px 8px;text-align:center;">${daysUntil(s.j7_date)}</td>
+          </tr>`).join('');
+        wrapper.innerHTML = `
+          <table style="width:100%;border-collapse:collapse;font-size:13px;">
+            <thead>
+              <tr style="border-bottom:2px solid #e5e7eb;color:#374151;font-weight:600;">
+                <th style="text-align:left;padding:6px 8px;">Numéro</th>
+                <th style="text-align:left;padding:6px 8px;">Prénom</th>
+                <th style="text-align:left;padding:6px 8px;">Étape</th>
+                <th style="text-align:center;padding:6px 8px;">J3 dans</th>
+                <th style="text-align:center;padding:6px 8px;">J7 dans</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>`;
+      } catch (e) {
+        wrapper.innerHTML = `<p style="color:red;font-size:13px;">Erreur : ${e.message}</p>`;
+      }
     }
 
     // État global
@@ -1583,6 +1648,7 @@
     loadConversations();
     loadRuntimeStatus();
     loadAgentInstructions();
+    loadActiveSequences();
 
     // Auto-refresh toutes les 30 secondes
     setInterval(() => {
