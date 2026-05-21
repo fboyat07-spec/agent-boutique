@@ -741,6 +741,34 @@
       opacity: 0.5;
       cursor: not-allowed;
     }
+
+    /* ── WhatsApp Manuel ────────────────────────────────────────── */
+    .wa-input {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background: var(--bg-primary);
+      font-size: 13px;
+      font-family: inherit;
+      transition: var(--transition);
+      margin-bottom: 8px;
+    }
+    .wa-input:focus {
+      outline: none;
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(14,165,233,0.1);
+    }
+    .wa-result {
+      margin-top: 10px;
+      padding: 8px 12px;
+      border-radius: var(--radius-md);
+      font-size: 12px;
+      font-weight: 500;
+      display: none;
+    }
+    .wa-result.success { background:#d1fae5; color:#065f46; }
+    .wa-result.error   { background:#fee2e2; color:#991b1b; }
   </style>
 </head>
 <body>
@@ -881,6 +909,17 @@
             <button class="action-button" id="archiveBtn">Archiver</button>
           </div>
         </div>
+
+        <div class="lead-info-section">
+          <div class="lead-info-title">🚀 Envoyer une séquence WhatsApp</div>
+          <input id="waPhone"  class="wa-input" type="tel"  placeholder="336XXXXXXXX" />
+          <input id="waPrenom" class="wa-input" type="text" placeholder="Sophie" />
+          <button class="action-button primary" id="waLaunchBtn"
+                  onclick="launchWaSequence()">
+            Lancer la séquence J0→J3→J7
+          </button>
+          <div class="wa-result" id="waResult"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -894,7 +933,42 @@
       window.location.href = '/login-console.html';
     }
     const AUTH_TOKEN = sessionStorage.getItem('console_token') || '';
-    
+
+    // ── WhatsApp Manuel ─────────────────────────────────────────────────────
+    async function launchWaSequence() {
+      const btn    = document.getElementById('waLaunchBtn');
+      const result = document.getElementById('waResult');
+      const to     = document.getElementById('waPhone').value.trim();
+      const prenom = document.getElementById('waPrenom').value.trim() || 'vous';
+      result.style.display = 'none';
+      if (!to) { alert('Numéro requis (ex: 336XXXXXXXX)'); return; }
+      btn.disabled    = true;
+      btn.textContent = 'Envoi en cours…';
+      try {
+        const res = await fetch('/api/whatsapp/start-sequence', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ to, prenom }),
+        });
+        const data = await res.json();
+        if (data.ok) {
+          result.className   = 'wa-result success';
+          result.textContent = `✅ Séquence lancée — J0 envoyé, J3/J7 planifiés`;
+        } else {
+          const msg = data.error?.error?.message || JSON.stringify(data.error);
+          result.className   = 'wa-result error';
+          result.textContent = `❌ ${msg}`;
+        }
+      } catch(e) {
+        result.className   = 'wa-result error';
+        result.textContent = `❌ Erreur réseau : ${e.message}`;
+      } finally {
+        result.style.display = 'block';
+        btn.disabled    = false;
+        btn.textContent = 'Lancer la séquence J0→J3→J7';
+      }
+    }
+
     // État global
     let currentConversationId = null;
     let currentTenantId = 'DEFAULT'; // Tenant par défaut
