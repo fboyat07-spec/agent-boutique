@@ -242,6 +242,22 @@ Choisis l'outil le plus adapté au contexte. Ne fais qu'UNE seule action par mes
   return prompt;
 }
 
+// ─── DÉTECTION STOP / OPT-OUT ─────────────────────────────────────────────────
+
+const OPT_OUT_SIGNALS = [
+  'bloquer', 'stop', 'arrêter', 'pas intéressé', 'non merci',
+  'laissez-moi', 'ne plus', 'merde', 'nul',
+];
+
+const OPT_OUT_REPLY = "Pas de problème, je vous retire de la liste et ne vous recontacterai plus. Belle journée ! 🙏";
+
+function isOptOut(message) {
+  const norm = str => (str || '').toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '');
+  const text = norm(message);
+  return OPT_OUT_SIGNALS.some(signal => text.includes(norm(signal)));
+}
+
 // ─── NŒUDS DU GRAPH ───────────────────────────────────────────────────────────
 
 async function nodeLoadState(state) {
@@ -569,6 +585,35 @@ workflow.addEdge('persist_state', END);
 async function orchestrate(phone, message, tenant_id) {
   console.log('[ORCHESTRATOR START]', { phone, tenant_id, message: message.slice(0, 60) });
   try {
+    // ── Conversation déjà opt-out → silence total ─────────────────────────────
+    const existing = await Conversation.findOne({ phone, tenant_id }).select('status').lean();
+    if (existing?.status === 'opted_out') {
+      console.log('[ORCHESTRATOR] opted_out — message ignoré pour', phone);
+      return null;
+    }
+
+    // ── Stop signal détecté → opt-out immédiat ────────────────────────────────
+    if (isOptOut(message)) {
+      console.log('[ORCHESTRATOR] Stop signal → opt-out pour', phone);
+      await Conversation.findOneAndUpdate(
+        { phone, tenant_id },
+        {
+          $set: { status: 'opted_out', stage: 'opted_out', lastInteractionAt: new Date() },
+          $push: {
+            messages: {
+              $each: [
+                { content: message,       sender: phone,   timestamp: new Date(), type: 'text' },
+                { content: OPT_OUT_REPLY, sender: 'agent', timestamp: new Date(), type: 'text' },
+              ],
+            },
+          },
+        },
+        { upsert: true }
+      );
+      return OPT_OUT_REPLY;
+    }
+
+    // ── Flux normal ───────────────────────────────────────────────────────────
     const app      = await getCompiledApp();
     const threadId = getThreadId(phone, tenant_id);
     const config   = { configurable: { thread_id: threadId } };
