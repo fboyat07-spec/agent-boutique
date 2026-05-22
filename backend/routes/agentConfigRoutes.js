@@ -632,4 +632,43 @@ function validateConfigUpdates(updates) {
   };
 }
 
+// ─── POST /api/agent/calendly ─────────────────────────────────────────────────
+
+router.post('/calendly', async (req, res) => {
+  try {
+    const { tenant_id, calendly_link } = req.body;
+    if (!tenant_id) return res.status(400).json({ error: 'tenant_id requis' });
+
+    const user = await User.findOneAndUpdate(
+      { tenant_id },
+      { calendly_link: (calendly_link || '').trim() },
+      { new: true }
+    );
+    if (!user) return res.status(404).json({ error: `Aucun utilisateur pour tenant_id: ${tenant_id}` });
+
+    console.log(`[CALENDLY] Sauvegardé pour tenant ${tenant_id}`);
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error('[CALENDLY POST ERROR]', err.message);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── GET /api/agent/calendly ──────────────────────────────────────────────────
+
+router.get('/calendly', async (req, res) => {
+  try {
+    const { tenant_id } = req.query;
+    if (!tenant_id) return res.status(400).json({ error: 'tenant_id requis' });
+
+    const user = await User.findOne({ tenant_id }).select('calendly_link').lean();
+    if (!user) return res.status(404).json({ error: `Aucun utilisateur pour tenant_id: ${tenant_id}` });
+
+    return res.json({ ok: true, calendly_link: user.calendly_link || '' });
+  } catch (err) {
+    console.error('[CALENDLY GET ERROR]', err.message);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

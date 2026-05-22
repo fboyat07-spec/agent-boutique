@@ -33,6 +33,9 @@ const UserSchema = new mongoose.Schema({
 
   // Instructions dynamiques injectées dans le system prompt de l'orchestrateur
   agent_instructions:  { type: String, default: '' },
+
+  // Lien Calendly injecté dans le system prompt si renseigné
+  calendly_link:       { type: String, default: '' },
 }, {
   timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
 });
