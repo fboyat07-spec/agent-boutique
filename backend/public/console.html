@@ -541,7 +541,7 @@
     .mobile-tab-bar  { display: none; }
     .mobile-back-btn { display: none; }
 
-    @media (max-width: 768px) {
+    @media (max-width: 1024px) {
       /* Layout global */
       .app-container {
         display: flex;
@@ -1706,7 +1706,7 @@
     
     // ── Mobile navigation ──────────────────────────────────────────────────────
     function isMobile() {
-      return window.innerWidth <= 768 ||
+      return window.innerWidth <= 1024 ||
              ('ontouchstart' in window) ||
              (navigator.maxTouchPoints > 0);
     }
