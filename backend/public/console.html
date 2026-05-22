@@ -1302,13 +1302,14 @@
         
         // Mettre à jour le right panel
         updateRightPanel(conversation);
-        
+
+        // Sur mobile, afficher le chat en plein écran (seulement si succès)
+        showMobileChat();
+
       } catch (error) {
         console.error('[CONSOLE] Error loading conversation:', error);
         chatMessages.innerHTML = '<div class="error-state">Erreur de chargement des messages</div>';
       }
-      // Sur mobile, afficher le chat en plein écran
-      if (isMobile()) showMobileChat();
     }
 
     // Mettre à jour le header chat
@@ -1734,9 +1735,14 @@
     }
 
     function showMobileChat() {
-      document.querySelector('.sidebar').classList.remove('mobile-active');
-      document.querySelector('.right-panel').classList.remove('mobile-active');
-      document.querySelector('.chat-area').classList.add('mobile-active');
+      if (!isMobile()) return;
+      if (!currentConversationId) return;   // ne jamais afficher le chat vide
+      const sidebar    = document.querySelector('.sidebar');
+      const chat       = document.querySelector('.chat-area');
+      const rightPanel = document.querySelector('.right-panel');
+      sidebar.classList.remove('mobile-active');
+      rightPanel.classList.remove('mobile-active');
+      chat.classList.add('mobile-active');
       document.querySelectorAll('.mobile-tab').forEach(t => t.classList.remove('active'));
     }
 
