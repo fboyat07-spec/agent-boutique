@@ -1778,6 +1778,13 @@
         document.querySelector('.sidebar').classList.add('mobile-active');
         console.log('[MOBILE INIT] sidebar activated',
           document.querySelector('.sidebar').classList.toString());
+        const debugDiv = document.createElement('div');
+        debugDiv.style.cssText = 'position:fixed;top:0;left:0;right:0;background:blue;color:white;padding:8px;z-index:9999;font-size:11px;word-break:break-all;';
+        debugDiv.textContent =
+          'SB:' + document.querySelector('.sidebar').className +
+          ' | CA:' + document.querySelector('.chat-area').className +
+          ' | RP:' + document.querySelector('.right-panel').className;
+        document.body.appendChild(debugDiv);
       }, 100);
     }
 
