@@ -533,65 +533,99 @@
       }
     }
 
-    @media (max-width: 968px) {
+    /* Masqué sur desktop */
+    .mobile-tab-bar  { display: none; }
+    .mobile-back-btn { display: none; }
+
+    @media (max-width: 768px) {
+      /* Layout global */
       .app-container {
-        grid-template-columns: 1fr;
-        grid-template-rows: auto 1fr auto;
-      }
-
-      .sidebar {
-        border-right: none;
-        border-bottom: 1px solid var(--border);
-        height: auto;
-        max-height: 200px;
-      }
-
-      .right-panel {
-        border-left: none;
-        border-top: 1px solid var(--border);
-        height: auto;
-        max-height: 200px;
-      }
-    }
-
-    @media (max-width: 640px) {
-      .app-container {
-        grid-template-columns: 1fr;
-      }
-
-      .sidebar {
-        position: fixed;
-        top: 0;
-        left: -340px;
-        z-index: 100;
+        display: flex;
+        flex-direction: column;
         height: 100vh;
-        width: 340px;
-        transition: left 0.3s ease;
+        overflow: hidden;
+        padding-bottom: 64px;
       }
 
-      .sidebar.open {
-        left: 0;
-      }
-
-      .chat-area {
-        height: 100vh;
-      }
-
-      .right-panel {
+      /* Tous les panneaux masqués par défaut */
+      .sidebar, .chat-area, .right-panel {
         display: none;
+        width: 100%;
+        height: calc(100vh - 64px);
+        border: none !important;
       }
 
-      .chat-header {
-        padding: 16px;
+      /* Panneau actif */
+      .sidebar.mobile-active,
+      .chat-area.mobile-active,
+      .right-panel.mobile-active { display: flex; }
+
+      /* Supprimer les max-height qui bloquent le scroll */
+      .conversations-list  { max-height: none; }
+      .chat-messages       { max-height: none; padding: 12px !important; }
+      .right-panel-content { max-height: none; }
+
+      /* Tableau séquences scrollable horizontalement */
+      #sequencesTableWrapper {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
       }
 
-      .chat-messages {
-        padding: 16px;
+      /* Touch-friendly (min 44px) */
+      .action-button, .runtime-button { min-height: 44px; }
+      .send-button { min-height: 44px; min-width: 44px; }
+
+      /* font-size 16px évite le zoom auto iOS */
+      .wa-input, .message-input, .search-input { font-size: 16px; }
+
+      /* Back button dans le chat header */
+      .mobile-back-btn {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 0 10px 0 0;
+        background: none;
+        border: none;
+        color: #0ea5e9;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        min-height: 44px;
+        flex-shrink: 0;
       }
 
-      .chat-input {
-        padding: 16px;
+      /* Chat header compact */
+      .chat-header { padding: 10px 16px; }
+
+      /* Bottom tab bar */
+      .mobile-tab-bar {
+        display: flex;
+        position: fixed;
+        bottom: 0; left: 0; right: 0;
+        height: 64px;
+        background: #fff;
+        border-top: 1px solid #e2e8f0;
+        z-index: 200;
+        box-shadow: 0 -2px 8px rgba(0,0,0,0.06);
       }
+      .mobile-tab {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        border: none;
+        background: none;
+        font-size: 11px;
+        color: #94a3b8;
+        cursor: pointer;
+        padding: 8px 4px;
+        font-family: inherit;
+        transition: color 0.15s;
+      }
+      .mobile-tab .tab-icon { font-size: 20px; line-height: 1; }
+      .mobile-tab.active    { color: #0ea5e9; }
     }
 
     /* ── Animations & Effects ───────────────────────────────────── */
@@ -803,6 +837,7 @@
     <!-- ── Zone Chat Principal ───────────────────────────────────── -->
     <div class="chat-area">
       <div class="chat-header" id="chatHeader">
+        <button class="mobile-back-btn" onclick="mobileBackToList()">‹ Retour</button>
         <div class="chat-contact-info">
           <div class="chat-contact-avatar" id="chatContactAvatar">--</div>
           <div class="chat-contact-details">
@@ -942,6 +977,22 @@
           <div id="sequencesTableWrapper"></div>
         </div>
       </div>
+    </div>
+
+    <!-- ── Mobile bottom tab bar ────────────────────────────────────── -->
+    <div class="mobile-tab-bar">
+      <button class="mobile-tab active" data-tab="conversations" onclick="switchMobileTab('conversations')">
+        <span class="tab-icon">💬</span>
+        <span>Conversations</span>
+      </button>
+      <button class="mobile-tab" data-tab="stats" onclick="switchMobileTab('stats')">
+        <span class="tab-icon">📊</span>
+        <span>Stats</span>
+      </button>
+      <button class="mobile-tab" data-tab="actions" onclick="switchMobileTab('actions')">
+        <span class="tab-icon">⚙️</span>
+        <span>Actions</span>
+      </button>
     </div>
   </div>
 
@@ -1243,8 +1294,10 @@
         console.error('[CONSOLE] Error loading conversation:', error);
         chatMessages.innerHTML = '<div class="error-state">Erreur de chargement des messages</div>';
       }
+      // Sur mobile, afficher le chat en plein écran
+      if (isMobile()) showMobileChat();
     }
-    
+
     // Mettre à jour le header chat
     function updateChatHeader(conversation) {
       const initials = conversation.phone.substring(0, 2).toUpperCase();
@@ -1633,6 +1686,47 @@
       stopBtn.addEventListener('click', stopAgent);
     }
     
+    // ── Mobile navigation ──────────────────────────────────────────────────────
+    function isMobile() { return window.innerWidth <= 768; }
+
+    function switchMobileTab(tab) {
+      if (!isMobile()) return;
+      document.querySelectorAll('.mobile-tab').forEach(t =>
+        t.classList.toggle('active', t.dataset.tab === tab)
+      );
+      const sidebar    = document.querySelector('.sidebar');
+      const chat       = document.querySelector('.chat-area');
+      const rightPanel = document.querySelector('.right-panel');
+      sidebar.classList.remove('mobile-active');
+      chat.classList.remove('mobile-active');
+      rightPanel.classList.remove('mobile-active');
+
+      if (tab === 'conversations') {
+        sidebar.classList.add('mobile-active');
+      } else {
+        rightPanel.classList.add('mobile-active');
+        // Scroll vers bas (Actions) ou haut (Stats)
+        setTimeout(() => {
+          const content = document.querySelector('.right-panel-content');
+          if (!content) return;
+          content.scrollTo({ top: tab === 'actions' ? 9999 : 0, behavior: 'smooth' });
+        }, 50);
+      }
+    }
+
+    function mobileBackToList() {
+      if (!isMobile()) return;
+      document.querySelector('.chat-area').classList.remove('mobile-active');
+      switchMobileTab('conversations');
+    }
+
+    function showMobileChat() {
+      document.querySelector('.sidebar').classList.remove('mobile-active');
+      document.querySelector('.right-panel').classList.remove('mobile-active');
+      document.querySelector('.chat-area').classList.add('mobile-active');
+      document.querySelectorAll('.mobile-tab').forEach(t => t.classList.remove('active'));
+    }
+
     // Initialisation
     console.log('[CONSOLE] INITIALIZING CONSOLE');
     console.log('[CONSOLE] Routes configured:');
@@ -1649,6 +1743,11 @@
     loadRuntimeStatus();
     loadAgentInstructions();
     loadActiveSequences();
+
+    // État initial mobile : afficher la liste des conversations
+    if (isMobile()) {
+      document.querySelector('.sidebar').classList.add('mobile-active');
+    }
 
     // Auto-refresh toutes les 30 secondes
     setInterval(() => {
