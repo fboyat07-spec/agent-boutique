@@ -13,6 +13,7 @@
 
 const express = require('express');
 const router  = express.Router();
+const axios   = require('axios');
 const {
   createTenant,
   validateWhatsApp,
@@ -160,6 +161,34 @@ router.post('/request-setup', async (req, res) => {
     return res.status(400).json({ ok: false, error: 'Champs requis manquants.' });
   }
   console.log('[ONBOARDING] Setup request:', { phone, business_name, slot, tenant_id });
+
+  // ── Notification WhatsApp au propriétaire (non-bloquant) ──────────────────
+  const waToken   = process.env.WHATSAPP_TOKEN;
+  const waPhoneId = process.env.PHONE_NUMBER_ID || process.env.WHATSAPP_PHONE_NUMBER_ID;
+  if (waToken && waPhoneId) {
+    const notifBody =
+      `🔔 Nouvelle demande de setup Agent Boutique !\n` +
+      `Entreprise: ${business_name}\n` +
+      `Téléphone: ${phone}\n` +
+      `Créneau: ${slot}\n` +
+      `→ À configurer sous 24h`;
+    axios.post(
+      `https://graph.facebook.com/v20.0/${waPhoneId}/messages`,
+      {
+        messaging_product: 'whatsapp',
+        to:   '33788199089',
+        type: 'text',
+        text: { body: notifBody },
+      },
+      {
+        headers: { Authorization: `Bearer ${waToken}`, 'Content-Type': 'application/json' },
+        timeout: 8000,
+      }
+    )
+    .then(() => console.log('[ONBOARDING] ✅ Notif WA propriétaire envoyée'))
+    .catch(err  => console.error('[ONBOARDING] ⚠️ Notif WA échouée:', err.message));
+  }
+
   return res.json({ ok: true });
 });
 
