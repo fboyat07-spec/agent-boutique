@@ -1705,7 +1705,11 @@
     }
     
     // ── Mobile navigation ──────────────────────────────────────────────────────
-    function isMobile() { return window.innerWidth <= 768; }
+    function isMobile() {
+      return window.innerWidth <= 768 ||
+             ('ontouchstart' in window) ||
+             (navigator.maxTouchPoints > 0);
+    }
 
     function switchMobileTab(tab) {
       if (!isMobile()) return;
@@ -1752,6 +1756,7 @@
 
     // Initialisation
     console.log('[CONSOLE] INITIALIZING CONSOLE');
+    console.log('[MOBILE DEBUG]', isMobile(), window.innerWidth, navigator.maxTouchPoints);
     console.log('[CONSOLE] Routes configured:');
     console.log('  - Conversations:', `${API_BASE}/conversations`);
     console.log('  - Conversation detail:', `${API_BASE}/conversation/:id`);
