@@ -19,7 +19,7 @@ const crypto = require('crypto');
 const ConversationSummary = require('../models/ConversationSummary');
 
 // Déclencher le résumé tous les N messages utilisateur (configurable via env)
-const SUMMARY_EVERY_N = parseInt(process.env.SUMMARY_EVERY_N || '8', 10);
+const SUMMARY_EVERY_N = parseInt(process.env.SUMMARY_EVERY_N || '4', 10);
 
 // Délai minimum entre deux résumés (évite les rafales GPT inutiles)
 const SUMMARY_COOLDOWN_MS = parseInt(process.env.SUMMARY_COOLDOWN_MS || String(30 * 60 * 1000), 10); // 30 min
