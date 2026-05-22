@@ -1060,7 +1060,15 @@ app.use('/api/prospecting', require('./routes/prospecting.routes'));
 
 // ─── Static files serving ─────────────────────────────────────────────────────
 // Servir tous les fichiers du dossier public à la racine
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public'), {
+  etag: false,
+  lastModified: false,
+  setHeaders: (res) => {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+  }
+}));
 
 // ─── Route racine pour index.html ─────────────────────────────────────────────
 app.get('/', (req, res) => {
@@ -1102,7 +1110,16 @@ app.get('/api/runtime-proof', (req, res) => {
 
 // ─── Console statique ─────────────────────────────────────────────────────────
 // index: 'console.html' → /console et /console/ servent console.html directement
-app.use('/console', express.static(path.join(__dirname, 'public'), { index: 'console.html' }));
+app.use('/console', express.static(path.join(__dirname, 'public'), {
+  index: 'console.html',
+  etag: false,
+  lastModified: false,
+  setHeaders: (res) => {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+  }
+}));
 
 // ─── /api/console/* ──────────────────────────────────────────────────────────
 const { computeROI } = require('./services/roiCalculator');
