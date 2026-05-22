@@ -161,4 +161,14 @@ router.get('/whatsapp-callback', async (req, res) => {
   }
 });
 
+// ── POST /api/onboarding/request-setup ───────────────────────────────────────
+router.post('/request-setup', async (req, res) => {
+  const { phone, business_name, slot, tenant_id } = req.body || {};
+  if (!phone || !business_name || !slot) {
+    return res.status(400).json({ ok: false, error: 'Champs requis manquants.' });
+  }
+  console.log('[ONBOARDING] Setup request:', { phone, business_name, slot, tenant_id });
+  return res.json({ ok: true });
+});
+
 module.exports = router;

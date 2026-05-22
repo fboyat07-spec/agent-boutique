@@ -6,7 +6,6 @@
   <title>Onboarding — Agent Boutique</title>
   <meta name="description" content="Configurez votre assistant WhatsApp IA en quelques minutes.">
   <script src="/tracking.js" defer></script>
-  <script async defer src="https://connect.facebook.net/fr_FR/sdk.js"></script>
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -312,7 +311,7 @@
     </div>
     <div class="step-item" id="s3">
       <div class="step-dot">3</div>
-      <div class="step-label">Test</div>
+      <div class="step-label">Config</div>
     </div>
     <div class="step-item" id="s4">
       <div class="step-dot">4</div>
@@ -374,63 +373,51 @@
 
   <!-- ═══════════════════════════════════ ÉTAPE 2 ═══ -->
   <div class="card" id="step2" style="display:none">
-    <div class="card-title">Connecter WhatsApp</div>
-    <div class="card-sub">Autorisez l'accès à votre compte WhatsApp Business via la connexion sécurisée Meta.</div>
+    <div class="card-title">Votre numéro WhatsApp</div>
+    <div class="card-sub">Notre équipe configurera votre agent sous 24h</div>
 
-    <div class="info-box">
-      <div class="row">
-        <span class="lbl">Tenant ID</span>
-        <span class="val" id="show-tenant-id" title="Cliquer pour copier" onclick="copyText(this)">—</span>
+    <div class="field">
+      <label>Numéro de téléphone WhatsApp <span class="req">*</span></label>
+      <input id="f2-phone" type="tel" placeholder="+33 6 XX XX XX XX">
+    </div>
+
+    <div class="field">
+      <label>Nom de votre boutique <span class="req">*</span></label>
+      <input id="f2-biz" type="text" placeholder="Ma Boutique">
+    </div>
+
+    <div class="field">
+      <label>Créneau préféré pour l'appel de setup <span class="req">*</span></label>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:8px;">
+        <label style="display:flex;align-items:center;gap:10px;font-weight:400;cursor:pointer;">
+          <input type="radio" name="slot" value="matin"> Matin (9h-12h)
+        </label>
+        <label style="display:flex;align-items:center;gap:10px;font-weight:400;cursor:pointer;">
+          <input type="radio" name="slot" value="apres-midi"> Après-midi (14h-18h)
+        </label>
+        <label style="display:flex;align-items:center;gap:10px;font-weight:400;cursor:pointer;">
+          <input type="radio" name="slot" value="soir"> Soir (18h-20h)
+        </label>
       </div>
-      <p class="copy-hint">💡 Cliquer pour copier dans le presse-papiers</p>
-    </div>
-
-    <div class="note">
-      🔐 Une popup Meta s'ouvrira pour autoriser l'accès à votre WhatsApp Business. Votre token et votre numéro seront récupérés automatiquement — aucune saisie manuelle requise.
-    </div>
-
-    <!-- Warning affiché si META_APP_ID absent côté serveur -->
-    <div id="meta-config-missing" class="alert error" style="display:none">
-      ⚠️ Configuration Meta non disponible — contactez l'administrateur de la plateforme.
     </div>
 
     <div id="alert2" class="alert"></div>
 
-    <button class="btn-primary" id="btn2" onclick="step2Connect()" style="display:none">
+    <button class="btn-primary" id="btn2" onclick="step2Submit()">
       <div class="spinner"></div>
-      <span class="btn-text">🔗 Connecter mon WhatsApp</span>
+      <span class="btn-text">Confirmer ma demande →</span>
     </button>
     <button class="btn-secondary" onclick="backTo(1)">← Retour</button>
   </div>
 
   <!-- ═══════════════════════════════════ ÉTAPE 3 ═══ -->
   <div class="card" id="step3" style="display:none">
-    <div class="card-title">Tester la connexion</div>
-    <div class="card-sub">Envoyez un message de test pour confirmer que l'envoi fonctionne correctement.</div>
-
-    <div class="info-box">
-      <div class="row">
-        <span class="lbl">Statut WhatsApp</span>
-        <span style="color:#16a34a;font-weight:700;font-size:0.9rem;">✅ Validé</span>
-      </div>
-      <div class="row">
-        <span class="lbl">Tenant ID</span>
-        <span class="val" id="show-tenant-id-3" title="Cliquer pour copier" onclick="copyText(this)">—</span>
-      </div>
+    <div class="success-big">
+      <div class="icon">⚙️</div>
+      <h2>Configuration en cours ⚙️</h2>
+      <p>Votre agent WhatsApp sera opérationnel sous 24h.<br>Vous recevrez un SMS de confirmation.</p>
+      <a href="/console.html" class="btn-console">Accéder à mon tableau de bord →</a>
     </div>
-
-    <div class="note">
-      📱 Le message de test est envoyé au numéro associé à votre Phone Number ID. Il peut ne pas arriver selon la configuration Meta de votre numéro — l'activation reste possible même si ce test échoue.
-    </div>
-
-    <div id="alert3" class="alert"></div>
-
-    <button class="btn-primary" id="btn3" onclick="step3Submit()">
-      <div class="spinner"></div>
-      <span class="btn-text">Envoyer un message test →</span>
-    </button>
-    <button class="btn-secondary" id="btn3-skip" onclick="goTo(4)" style="display:none">Passer cette étape →</button>
-    <button class="btn-secondary" onclick="backTo(2)">← Retour</button>
   </div>
 
   <!-- ═══════════════════════════════════ ÉTAPE 4 ═══ -->
@@ -615,12 +602,11 @@ async function step1Submit() {
 
     // Stocker tenant_id, passer à l'étape 2
     tenantId = data.tenant_id;
-    document.getElementById('show-tenant-id').textContent   = tenantId;
-    document.getElementById('show-tenant-id-3').textContent = tenantId;
     document.getElementById('show-tenant-id-4').textContent = tenantId;
     document.getElementById('show-biz-name').textContent    = business_name;
     document.getElementById('show-webhook-url').textContent =
       window.location.origin + '/webhook/whatsapp';
+    document.getElementById('f2-biz').value = business_name;
 
     goTo(2);
   } catch (err) {
@@ -630,121 +616,35 @@ async function step1Submit() {
   }
 }
 
-// ── Config Meta — récupérée depuis /api/onboarding/config ────────────────────
-let metaAppId    = null;
-let metaConfigId = null;
+// ── ÉTAPE 2 — Demande de setup ────────────────────────────────────────────────
+async function step2Submit() {
+  hideAlert('alert2');
+  const phone = document.getElementById('f2-phone').value.trim();
+  const biz   = document.getElementById('f2-biz').value.trim();
+  const slot  = document.querySelector('input[name="slot"]:checked')?.value;
 
-async function initFacebookSDK() {
-  try {
-    const res  = await fetch('/api/onboarding/config');
-    const conf = await res.json();
-    metaAppId    = conf.meta_app_id;
-    metaConfigId = conf.meta_config_id;
-
-    if (!metaAppId) {
-      document.getElementById('meta-config-missing').style.display = '';
-      return;
-    }
-    // Afficher le bouton uniquement si META_APP_ID est configuré
-    document.getElementById('btn2').style.display = '';
-    // Initialiser le SDK Facebook (déjà chargé via <script> dans <head>)
-    if (window.FB) {
-      FB.init({ appId: metaAppId, version: 'v25.0', xfbml: false, cookie: false });
-    }
-  } catch (err) {
-    console.error('[ONBOARDING] initFacebookSDK error:', err.message);
-    document.getElementById('meta-config-missing').style.display = '';
-  }
-}
-
-// ── ÉTAPE 2 — Embedded Signup Meta ───────────────────────────────────────────
-function step2Connect() {
-  if (!tenantId) {
-    showAlert('alert2', 'error', 'Session perdue — recommencez depuis l\'étape 1.');
+  markFieldError('f2-phone', !phone);
+  markFieldError('f2-biz',   !biz);
+  if (!phone || !biz || !slot) {
+    showAlert('alert2', 'error', 'Veuillez renseigner tous les champs requis.');
     return;
   }
-  if (!metaAppId || !metaConfigId) {
-    showAlert('alert2', 'error', '⚠️ Configuration Meta manquante — impossible de continuer.');
-    return;
-  }
+
   setLoading('btn2', true);
-
-  FB.login(function(response) {
-    if (response.authResponse?.code) {
-      // Redirection vers le callback serveur — le serveur échange le code et redirige vers step 3
-      window.location.href =
-        '/api/onboarding/whatsapp-callback?code=' +
-        encodeURIComponent(response.authResponse.code) +
-        '&tenant_id=' + encodeURIComponent(tenantId);
-    } else {
-      setLoading('btn2', false);
-      showAlert('alert2', 'error', '❌ Connexion annulée ou échouée — réessayez.');
-    }
-  }, {
-    config_id:                      metaConfigId,
-    response_type:                  'code',
-    override_default_response_type: true,
-    extras: { setup: {}, featureType: '', sessionInfoVersion: '3' },
-  });
-}
-
-// ── Lecture URL params au chargement (retour depuis /whatsapp-callback) ───────
-(function parseUrlParams() {
-  const params    = new URLSearchParams(window.location.search);
-  const urlStep   = parseInt(params.get('step') || '0', 10);
-  const urlTenant = params.get('tenant_id');
-  const urlError  = params.get('error');
-
-  if (urlTenant) {
-    tenantId = urlTenant;
-    // Alimenter tous les affichages tenant_id
-    ['show-tenant-id','show-tenant-id-3','show-tenant-id-4'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.textContent = tenantId;
-    });
-  }
-
-  if (urlStep === 2) {
-    goTo(2);
-    if (urlError === 'oauth_failed') {
-      showAlert('alert2', 'error', '❌ Connexion WhatsApp échouée — réessayez ou revenez en arrière.');
-    }
-  } else if (urlStep === 3 && urlTenant) {
-    goTo(3);
-  }
-})();
-
-window.addEventListener('DOMContentLoaded', initFacebookSDK);
-
-// ── ÉTAPE 3 — Message test ────────────────────────────────────────────────────
-async function step3Submit() {
-  if (!tenantId) { showAlert('alert3', 'error', 'Session perdue — recommencez'); return; }
-  hideAlert('alert3');
-  setLoading('btn3', true);
-
   try {
-    const res = await fetch('/api/onboarding/test-connection', {
+    await fetch('/api/onboarding/request-setup', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tenant_id: tenantId }),
+      body: JSON.stringify({ phone, business_name: biz, slot, tenant_id: tenantId }),
     });
-    const data = await res.json();
-
-    if (data.success) {
-      showAlert('alert3', 'success', '✅ Message test envoyé avec succès ! Vérifiez votre WhatsApp.');
-      setTimeout(() => goTo(4), 1200);
-    } else {
-      const reason = data.reason || 'Erreur inconnue';
-      showAlert('alert3', 'error',
-        '⚠️ Le message n\'a pas pu être envoyé : ' + reason
-      );
-      document.getElementById('btn3-skip').style.display = '';
-    }
+    showAlert('alert2', 'success',
+      '✅ Demande reçue ! Notre équipe vous contacte sous 24h pour configurer votre agent.'
+    );
+    setTimeout(() => goTo(3), 1800);
   } catch (err) {
-    showAlert('alert3', 'error', '❌ Erreur réseau : ' + err.message);
-    document.getElementById('btn3-skip').style.display = '';
+    showAlert('alert2', 'error', '❌ Erreur réseau : ' + err.message);
   } finally {
-    setLoading('btn3', false);
+    setLoading('btn2', false);
   }
 }
 
