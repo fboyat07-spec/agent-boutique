@@ -31,11 +31,17 @@ const META_GRAPH_V25  = 'https://graph.facebook.com/v25.0';
 /**
  * Crée un nouveau SaaSTenant avec statut 'pending'.
  * L'agent n'est PAS activé (auto_reply_enabled = false).
+ * Les credentials WhatsApp sont des placeholders — configurés par l'équipe lors du setup.
  *
- * @param {{ name, whatsapp_token, phone_number_id, verify_token, business_name }} data
+ * @param {{ name, business_name, email, telephone }} data
  * @returns {{ tenant_id: string, status: 'pending' }}
  */
-async function createTenant({ name, whatsapp_token, phone_number_id, verify_token, business_name }) {
+async function createTenant({ name, business_name, email, telephone }) {
+  // Placeholders techniques — remplacés par l'équipe lors du setup WhatsApp
+  const whatsapp_token  = 'PENDING';
+  const phone_number_id = '0';
+  const verify_token    = uuidv4().replace(/-/g, ''); // 32 chars, généré auto
+
   try {
     const tenant_id = uuidv4();
 
@@ -49,8 +55,10 @@ async function createTenant({ name, whatsapp_token, phone_number_id, verify_toke
       plan: 'pending',                     // suivi onboarding via champ libre
       subscription_status: 'trial',
       settings: {
-        business_name: business_name || name,
+        business_name:      business_name || name,
         auto_reply_enabled: false,          // agent désactivé jusqu'à activateAgent()
+        email:              email || '',
+        telephone:          telephone || '',
       },
     });
 

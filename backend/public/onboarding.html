@@ -322,7 +322,7 @@
   <!-- ═══════════════════════════════════ ÉTAPE 1 ═══ -->
   <div class="card" id="step1">
     <div class="card-title">Créer votre compte</div>
-    <div class="card-sub">Renseignez vos informations et vos credentials WhatsApp Business pour configurer votre agent IA.</div>
+    <div class="card-sub">Renseignez vos coordonnées — notre équipe s'occupe de la configuration technique.</div>
 
     <div class="field">
       <label>Nom du responsable <span class="req">*</span></label>
@@ -335,32 +335,13 @@
     </div>
 
     <div class="field">
-      <label>
-        WhatsApp Token <span class="req">*</span>
-        <span class="hint">Commence par EAA… (Meta Business API)</span>
-      </label>
-      <input id="f-token" type="text" placeholder="EAA..." spellcheck="false" autocomplete="off">
+      <label>Email <span class="req">*</span></label>
+      <input id="f-email" type="email" placeholder="jean@maboutique.fr" autocomplete="email">
     </div>
 
     <div class="field">
-      <label>
-        Phone Number ID <span class="req">*</span>
-        <span class="hint">Numérique — trouvé dans Meta Business Manager</span>
-      </label>
-      <input id="f-phone" type="text" placeholder="123456789012345" spellcheck="false" autocomplete="off">
-    </div>
-
-    <div class="field">
-      <label>
-        Verify Token <span class="req">*</span>
-        <span class="hint">8 caractères min — vous le choisirez aussi dans Meta</span>
-      </label>
-      <div class="field-row">
-        <div class="field">
-          <input id="f-verify" type="text" placeholder="mon_token_secret" spellcheck="false" autocomplete="off">
-        </div>
-        <button class="btn-gen" onclick="genVerifyToken()">⚡ Générer</button>
-      </div>
+      <label>Téléphone <span class="req">*</span></label>
+      <input id="f-tel" type="tel" placeholder="+33 6 XX XX XX XX" autocomplete="tel">
     </div>
 
     <div id="alert1" class="alert"></div>
@@ -369,6 +350,9 @@
       <div class="spinner"></div>
       <span class="btn-text">Créer mon compte →</span>
     </button>
+    <p style="font-size:0.82rem;color:#64748b;text-align:center;margin-top:12px;">
+      🔒 La configuration technique sera effectuée par notre équipe lors de votre appel de setup.
+    </p>
   </div>
 
   <!-- ═══════════════════════════════════ ÉTAPE 2 ═══ -->
@@ -553,33 +537,22 @@ function goTo(n) {
 
 function backTo(n) { goTo(n); }
 
-// ── Générer un verify_token ───────────────────────────────────────────────────
-function genVerifyToken() {
-  const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
-  let token = '';
-  for (let i = 0; i < 16; i++) token += chars[Math.floor(Math.random() * chars.length)];
-  document.getElementById('f-verify').value = token;
-  markFieldError('f-verify', false);
-}
-
 // ── ÉTAPE 1 — Créer le tenant ─────────────────────────────────────────────────
 async function step1Submit() {
   hideAlert('alert1');
 
   const name          = document.getElementById('f-name').value.trim();
   const business_name = document.getElementById('f-biz').value.trim();
-  const whatsapp_token= document.getElementById('f-token').value.trim();
-  const phone_number_id = document.getElementById('f-phone').value.trim();
-  const verify_token  = document.getElementById('f-verify').value.trim();
+  const email         = document.getElementById('f-email').value.trim();
+  const telephone     = document.getElementById('f-tel').value.trim();
 
   // Validation client
   let ok = true;
   const checkField = (id, cond) => { markFieldError(id, !cond); if (!cond) ok = false; };
-  checkField('f-name',   name.length > 0);
-  checkField('f-biz',    business_name.length > 0);
-  checkField('f-token',  whatsapp_token.startsWith('EAA') && whatsapp_token.length > 5);
-  checkField('f-phone',  /^\d{10,20}$/.test(phone_number_id));
-  checkField('f-verify', verify_token.length >= 8);
+  checkField('f-name',  name.length > 0);
+  checkField('f-biz',   business_name.length > 0);
+  checkField('f-email', /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email));
+  checkField('f-tel',   telephone.length > 0);
 
   if (!ok) {
     showAlert('alert1', 'error', 'Veuillez corriger les champs en rouge avant de continuer.');
@@ -591,7 +564,7 @@ async function step1Submit() {
     const res = await fetch('/api/onboarding/create-tenant', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, business_name, whatsapp_token, phone_number_id, verify_token }),
+      body: JSON.stringify({ name, business_name, email, telephone }),
     });
     const data = await res.json();
 
