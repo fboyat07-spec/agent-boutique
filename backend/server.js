@@ -1318,6 +1318,8 @@ const PORT = process.env.PORT || 3000;
 
 async function startServer() {
   await connectDB(); // CRITIQUE
+  const { startEmailCron } = require('./services/emailSequenceService');
+  startEmailCron();
 
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`[SERVER START] Server listening on 0.0.0.0:${PORT}`);
