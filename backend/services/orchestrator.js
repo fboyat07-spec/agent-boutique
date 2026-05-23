@@ -17,6 +17,7 @@ if (typeof globalThis.crypto === 'undefined') {
 
 const { Annotation, StateGraph, START, END } = require('@langchain/langgraph');
 const OpenAI = require('openai');
+const axios  = require('axios');
 
 const { updateScore } = require('./scoringService');
 
@@ -190,6 +191,29 @@ const AGENT_TOOLS = [
 ];
 
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
+
+// ── Hot lead notification ─────────────────────────────────────────────────────
+function notifyHotLead({ phone, score, lastMessage, reason }) {
+  const waToken   = process.env.WHATSAPP_TOKEN;
+  const waPhoneId = process.env.PHONE_NUMBER_ID || process.env.WHATSAPP_PHONE_NUMBER_ID;
+  if (!waToken || !waPhoneId) return;
+
+  const header = reason === 'intent'
+    ? '🎯 Intention d\'achat détectée'
+    : '🔥 Lead chaud détecté !';
+  const body =
+    `${header}\nNuméro: ${phone}\nScore: ${score}/100\n` +
+    `Dernière réponse: ${lastMessage}\n` +
+    `→ Ouvrir la console: api.agentboutique.fr/console.html`;
+
+  axios.post(
+    `https://graph.facebook.com/v20.0/${waPhoneId}/messages`,
+    { messaging_product: 'whatsapp', to: '33788199089', type: 'text', text: { body } },
+    { headers: { Authorization: `Bearer ${waToken}`, 'Content-Type': 'application/json' }, timeout: 8000 }
+  )
+  .then(() => console.log(`[HOT LEAD] ✅ Notif envoyée | phone: ${phone} | reason: ${reason}`))
+  .catch(err  => console.warn('[HOT LEAD] ⚠️ Notif échouée:', err.message));
+}
 
 function buildSystemPrompt(user, running_summary) {
   const storeName = user?.store_name || 'Agent Boutique';
@@ -554,6 +578,32 @@ async function nodePersistState(state) {
     await updateScore(phone, message, tenant_id).catch(err =>
       console.warn('[ORCHESTRATOR] updateScore error:', err.message)
     );
+
+    // ── Hot lead notification (fire-and-forget) ───────────────────────────────
+    (async () => {
+      try {
+        const prevScore = state.context?.score || 0;
+        const fresh     = await Conversation.findOne({ phone, tenant_id }).select('score').lean();
+        const newScore  = fresh?.score || 0;
+
+        // Seuil score : franchissement 0→30 (notif unique au crossing)
+        if (prevScore < 30 && newScore >= 30) {
+          notifyHotLead({ phone, score: newScore, lastMessage: message, reason: 'score' });
+          return;
+        }
+
+        // Intention d'achat explicite dans le message du prospect
+        const normalize     = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+        const INTENT_KEYWORDS = ['intéressé', 'je veux', 'comment on fait', 'combien', 'tarif', 'prix', 'abonnement'];
+        const msgNorm       = normalize(message);
+        if (INTENT_KEYWORDS.some(kw => msgNorm.includes(normalize(kw)))) {
+          notifyHotLead({ phone, score: newScore, lastMessage: message, reason: 'intent' });
+        }
+      } catch (e) {
+        console.warn('[HOT LEAD] check error (non-bloquant):', e.message);
+      }
+    })();
+
   } catch (err) {
     console.error('[ORCHESTRATOR] persist_state error:', err.message);
   }
