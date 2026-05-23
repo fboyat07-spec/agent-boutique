@@ -165,6 +165,11 @@ router.post('/request-setup', async (req, res) => {
   // ── Notification WhatsApp au propriétaire (non-bloquant) ──────────────────
   const waToken   = process.env.WHATSAPP_TOKEN;
   const waPhoneId = process.env.PHONE_NUMBER_ID || process.env.WHATSAPP_PHONE_NUMBER_ID;
+  console.log('[ONBOARDING] WA credentials:', {
+    hasToken: !!waToken,
+    tokenLen: waToken?.length || 0,
+    phoneId:  waPhoneId || '(missing)',
+  });
   if (waToken && waPhoneId) {
     const notifBody =
       `🔔 Nouvelle demande de setup Agent Boutique !\n` +
@@ -185,8 +190,26 @@ router.post('/request-setup', async (req, res) => {
         timeout: 8000,
       }
     )
-    .then(() => console.log('[ONBOARDING] ✅ Notif WA propriétaire envoyée'))
-    .catch(err  => console.error('[ONBOARDING] ⚠️ Notif WA échouée:', err.message));
+    .then(r   => console.log('[ONBOARDING] ✅ Notif WA propriétaire envoyée', { status: r.status, msgId: r.data?.messages?.[0]?.id }))
+    .catch(err => console.error('[ONBOARDING] ⚠️ Notif WA échouée:', err.message, err.response?.data));
+
+    // ── Confirmation WhatsApp au client (non-bloquant) ────────────────────
+    const clientPhone = phone.replace(/\D/g, '').replace(/^0/, '33');
+    if (clientPhone.length >= 10) {
+      const confirmBody =
+        `🎉 Bonjour ${business_name} !\n` +
+        `Votre demande a bien été reçue.\n` +
+        `Notre équipe vous contacte sous 24h au ${phone} ` +
+        `pour configurer votre agent WhatsApp.\n` +
+        `— Agent Boutique`;
+      axios.post(
+        `https://graph.facebook.com/v20.0/${waPhoneId}/messages`,
+        { messaging_product: 'whatsapp', to: clientPhone, type: 'text', text: { body: confirmBody } },
+        { headers: { Authorization: `Bearer ${waToken}`, 'Content-Type': 'application/json' }, timeout: 8000 }
+      )
+      .then(r   => console.log('[ONBOARDING] ✅ Confirmation WA client envoyée', { to: clientPhone, status: r.status }))
+      .catch(err => console.error('[ONBOARDING] ⚠️ Confirmation WA client échouée:', err.message, err.response?.data));
+    }
   }
 
   return res.json({ ok: true });
