@@ -145,32 +145,68 @@
     
     /* Demo Section */
     .demo { background: #f8fafc; padding: 80px 0; }
-    .demo h2 { 
-      font-size: 2.5rem; 
-      margin-bottom: 48px; 
-      text-align: center; 
-      color: #1e293b;
+    .demo h2 { font-size: 2.5rem; margin-bottom: 12px; text-align: center; color: #1e293b; }
+    .demo-sub { text-align: center; color: #64748b; margin-bottom: 48px; font-size: 1.05rem; }
+    .demo-visual-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: start; }
+    .device-label { text-align: center; font-size: 0.8rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px; }
+
+    /* Console mockup */
+    .console-mock { background: #1e293b; border-radius: 12px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.2); display: flex; height: 380px; }
+    .console-sidebar { width: 155px; background: #0f172a; border-right: 1px solid #334155; flex-shrink: 0; padding: 8px 0; }
+    .sidebar-header-mock { font-size: 9px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.1em; padding: 8px 12px 10px; font-weight: 700; }
+    .conv-item-mock { padding: 9px 12px; border-left: 3px solid transparent; }
+    .conv-item-mock.active { background: #1e293b; border-left-color: #0ea5e9; }
+    .conv-name { font-size: 10px; font-weight: 600; color: #e2e8f0; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .conv-preview { font-size: 9px; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 3px; }
+    .conv-score-badge { display: inline-block; font-size: 8px; font-weight: 700; padding: 1px 5px; border-radius: 3px; }
+    .score-high { background: #dcfce7; color: #166534; }
+    .score-mid  { background: #fef9c3; color: #854d0e; }
+    .score-low  { background: #fee2e2; color: #991b1b; }
+    .console-chat-mock { flex: 1; display: flex; flex-direction: column; }
+    .chat-header-mock { padding: 10px 12px; border-bottom: 1px solid #334155; display: flex; align-items: center; gap: 8px; }
+    .chat-avatar-mock { width: 26px; height: 26px; background: #0ea5e9; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: white; flex-shrink: 0; }
+    .chat-name-mock { font-size: 11px; font-weight: 600; color: #e2e8f0; }
+    .chat-msgs-mock { flex: 1; padding: 10px; display: flex; flex-direction: column; gap: 6px; overflow: hidden; }
+    .msg-mock { max-width: 82%; padding: 6px 9px; font-size: 9.5px; line-height: 1.4; border-radius: 8px; }
+    .msg-mock.prospect { background: #334155; color: #e2e8f0; align-self: flex-start; border-radius: 2px 8px 8px 8px; }
+    .msg-mock.agent { background: #0ea5e9; color: white; align-self: flex-end; border-radius: 8px 2px 8px 8px; }
+    .console-right-mock { width: 130px; background: #0f172a; border-left: 1px solid #334155; flex-shrink: 0; padding: 12px 10px; }
+    .rp-title { font-size: 8px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 10px; }
+    .rp-row { margin-bottom: 8px; }
+    .rp-label { font-size: 8px; color: #64748b; margin-bottom: 1px; }
+    .rp-val { font-size: 10px; font-weight: 600; color: #e2e8f0; }
+    .score-big { font-size: 22px; font-weight: 700; color: #0ea5e9; line-height: 1; margin: 4px 0; }
+    .score-bar-bg { height: 4px; background: #1e293b; border-radius: 2px; margin-top: 4px; }
+    .score-bar-fill { height: 4px; background: #0ea5e9; border-radius: 2px; width: 89%; }
+
+    /* Phone mockup */
+    .phone-wrap { display: flex; justify-content: center; }
+    .phone-mock { width: 230px; border-radius: 34px; box-shadow: 0 0 0 8px #1e293b, 0 0 0 9px #334155, 0 24px 60px rgba(0,0,0,0.3); overflow: hidden; display: flex; flex-direction: column; height: 420px; background: white; }
+    .phone-status { background: #075e54; padding: 5px 16px 0; display: flex; justify-content: space-between; font-size: 8px; color: white; font-weight: 600; }
+    .wa-header { background: #075e54; padding: 8px 12px 10px; display: flex; align-items: center; gap: 8px; }
+    .wa-av { width: 30px; height: 30px; background: #25d366; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+    .wa-contact-name { font-size: 11px; font-weight: 600; color: white; }
+    .wa-contact-status { font-size: 8px; color: rgba(255,255,255,0.75); }
+    .wa-msgs { flex: 1; background: #ece5dd; padding: 8px 7px; display: flex; flex-direction: column; gap: 5px; overflow: hidden; }
+    .wa-bubble { max-width: 78%; padding: 6px 9px; border-radius: 8px; font-size: 9.5px; line-height: 1.45; opacity: 0; transform: translateY(6px); transition: opacity 0.35s ease, transform 0.35s ease; }
+    .wa-bubble.visible { opacity: 1; transform: translateY(0); }
+    .wa-bubble.in { background: white; color: #111; align-self: flex-start; border-radius: 0 8px 8px 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+    .wa-bubble.out { background: #d9fdd3; color: #111; align-self: flex-end; border-radius: 8px 0 8px 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+    .wa-time { font-size: 7.5px; color: #999; margin-top: 2px; text-align: right; }
+    .typing-ind { display: none; align-self: flex-start; background: white; padding: 7px 10px; border-radius: 0 8px 8px 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+    .typing-ind.show { display: flex; gap: 3px; align-items: center; }
+    .td { width: 5px; height: 5px; background: #bbb; border-radius: 50%; animation: tdBounce 1.2s infinite; }
+    .td:nth-child(2) { animation-delay: 0.2s; }
+    .td:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes tdBounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-4px)} }
+    .wa-input-bar { background: #f0f0f0; padding: 6px 8px; display: flex; align-items: center; gap: 6px; border-top: 1px solid #ddd; }
+    .wa-input-fake { flex: 1; background: white; border-radius: 20px; padding: 5px 10px; font-size: 9px; color: #aaa; }
+
+    @media (max-width: 900px) {
+      .demo-visual-grid { grid-template-columns: 1fr; }
+      .console-mock { display: none; }
+      .phone-wrap { margin-top: 0; }
     }
-    .demo-grid { 
-      display: grid; 
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
-      gap: 32px; 
-      margin: 48px 0; 
-    }
-    .demo-card { 
-      background: white; 
-      padding: 32px; 
-      border-radius: 12px; 
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); 
-      border: 1px solid #e2e8f0;
-    }
-    .demo-card h4 { 
-      color: #1e293b; 
-      margin-bottom: 16px; 
-      font-size: 1.25rem; 
-      font-weight: 600;
-    }
-    .demo-card p { color: #64748b; font-size: 0.95rem; line-height: 1.6; }
     
     /* ROI Section */
     .roi { 
@@ -412,19 +448,122 @@
 
     <!-- Demo Section -->
     <div class="demo">
-      <h2>Voir l'Assistant en Action</h2>
-      <div class="demo-grid">
-        <div class="demo-card">
-          <h4>Conversation WhatsApp</h4>
-          <p>Vos prospects discutent naturellement avec l'IA qui qualifie et engage chaque conversation.</p>
-        </div>
-        <div class="demo-card">
-          <h4>Tableau de Bord Admin</h4>
-          <p>Suivez en temps réel les conversations, les scores et les performances de votre assistant.</p>
-        </div>
-        <div class="demo-card">
-          <h4>Analytics & ROI</h4>
-          <p>Mesurez précisément votre retour sur investissement et optimisez vos conversions.</p>
+      <div class="container">
+        <h2>Voir l'Assistant en Action</h2>
+        <p class="demo-sub">La même conversation, vue des deux côtés</p>
+        <div class="demo-visual-grid">
+
+          <!-- LEFT : Console Admin -->
+          <div>
+            <div class="device-label">🖥️ Console Admin</div>
+            <div class="console-mock">
+              <!-- Sidebar -->
+              <div class="console-sidebar">
+                <div class="sidebar-header-mock">Conversations</div>
+                <div class="conv-item-mock active">
+                  <div class="conv-name">Flor Factory</div>
+                  <div class="conv-preview">Oui pourquoi pas !</div>
+                  <span class="conv-score-badge score-high">89</span>
+                </div>
+                <div class="conv-item-mock">
+                  <div class="conv-name">Eluxia Store</div>
+                  <div class="conv-preview">Je vais réfléchir...</div>
+                  <span class="conv-score-badge score-mid">46</span>
+                </div>
+                <div class="conv-item-mock">
+                  <div class="conv-name">Nitah Paris</div>
+                  <div class="conv-preview">C'est quoi exactement?</div>
+                  <span class="conv-score-badge score-low">30</span>
+                </div>
+              </div>
+              <!-- Chat -->
+              <div class="console-chat-mock">
+                <div class="chat-header-mock">
+                  <div class="chat-avatar-mock">F</div>
+                  <div class="chat-name-mock">Flor Factory</div>
+                </div>
+                <div class="chat-msgs-mock">
+                  <div class="msg-mock prospect">Bonjour, j'ai vu que vous automatisez WhatsApp ?</div>
+                  <div class="msg-mock agent">Bonjour ! Oui. Vous gérez combien de messages par jour ?</div>
+                  <div class="msg-mock prospect">Une vingtaine, c'est chronophage...</div>
+                  <div class="msg-mock agent">Exactement ce qu'on résout 👌 Un appel de 15min ?</div>
+                  <div class="msg-mock prospect">Oui pourquoi pas !</div>
+                </div>
+              </div>
+              <!-- Right panel -->
+              <div class="console-right-mock">
+                <div class="rp-title">Lead Info</div>
+                <div class="rp-row">
+                  <div class="rp-label">Entreprise</div>
+                  <div class="rp-val">Flor Factory</div>
+                </div>
+                <div class="rp-row">
+                  <div class="rp-label">Statut</div>
+                  <div class="rp-val" style="color:#22c55e">● Actif</div>
+                </div>
+                <div class="rp-row">
+                  <div class="rp-label">Stage</div>
+                  <div class="rp-val">Intéressé</div>
+                </div>
+                <div class="rp-row">
+                  <div class="rp-label">Score</div>
+                  <div class="score-big">89</div>
+                  <div class="score-bar-bg"><div class="score-bar-fill"></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- RIGHT : Téléphone WhatsApp -->
+          <div class="phone-wrap">
+            <div>
+              <div class="device-label">📱 WhatsApp Prospect</div>
+              <div class="phone-mock" id="phoneMock">
+                <div class="phone-status"><span>9:41</span><span>●●●</span></div>
+                <div class="wa-header">
+                  <div class="wa-av">🤖</div>
+                  <div>
+                    <div class="wa-contact-name">Agent Boutique</div>
+                    <div class="wa-contact-status">en ligne</div>
+                  </div>
+                </div>
+                <div class="wa-msgs" id="waMessages">
+                  <div class="wa-bubble in" id="wm1">
+                    Bonjour, j'ai vu que vous automatisez WhatsApp ?
+                    <div class="wa-time">09:41</div>
+                  </div>
+                  <div class="typing-ind" id="waTyping1">
+                    <div class="td"></div><div class="td"></div><div class="td"></div>
+                  </div>
+                  <div class="wa-bubble out" id="wm2">
+                    Bonjour ! Oui, je peux vous expliquer. Vous gérez combien de messages clients par jour ?
+                    <div class="wa-time">09:41</div>
+                  </div>
+                  <div class="wa-bubble in" id="wm3">
+                    Une vingtaine, c'est chronophage...
+                    <div class="wa-time">09:42</div>
+                  </div>
+                  <div class="typing-ind" id="waTyping2">
+                    <div class="td"></div><div class="td"></div><div class="td"></div>
+                  </div>
+                  <div class="wa-bubble out" id="wm4">
+                    Exactement ce qu'on résout 👌 Un appel de 15min pour voir comment ça peut vous aider ?
+                    <div class="wa-time">09:42</div>
+                  </div>
+                  <div class="wa-bubble in" id="wm5">
+                    Oui pourquoi pas !
+                    <div class="wa-time">09:43</div>
+                  </div>
+                </div>
+                <div class="wa-input-bar">
+                  <div class="wa-input-fake">Message...</div>
+                  <span style="font-size:15px">📎</span>
+                  <span style="font-size:15px">🎤</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
     </div>
@@ -518,5 +657,46 @@
       <p>Assistant WhatsApp IA pour commerces et PME</p>
     </div>
   </div>
+  <script>
+    // WhatsApp demo animation — triggers once on scroll into view
+    (function() {
+      var animated = false;
+      var steps = [
+        { type: 'msg',    id: 'wm1',       delay: 400  },
+        { type: 'typing', id: 'waTyping1', delay: 1000, hide: 1800 },
+        { type: 'msg',    id: 'wm2',       delay: 1800 },
+        { type: 'msg',    id: 'wm3',       delay: 3200 },
+        { type: 'typing', id: 'waTyping2', delay: 3900, hide: 4900 },
+        { type: 'msg',    id: 'wm4',       delay: 4900 },
+        { type: 'msg',    id: 'wm5',       delay: 6500 },
+      ];
+      function run() {
+        if (animated) return;
+        animated = true;
+        steps.forEach(function(s) {
+          setTimeout(function() {
+            var el = document.getElementById(s.id);
+            if (!el) return;
+            if (s.type === 'typing') {
+              el.classList.add('show');
+              setTimeout(function() { el.classList.remove('show'); }, s.hide - s.delay);
+            } else {
+              el.classList.add('visible');
+              // scroll wa-msgs to bottom
+              var msgs = document.getElementById('waMessages');
+              if (msgs) msgs.scrollTop = msgs.scrollHeight;
+            }
+          }, s.delay);
+        });
+      }
+      var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(e) { if (e.isIntersecting) run(); });
+      }, { threshold: 0.3 });
+      document.addEventListener('DOMContentLoaded', function() {
+        var t = document.getElementById('phoneMock');
+        if (t) observer.observe(t);
+      });
+    })();
+  </script>
 </body>
 </html>
