@@ -1098,7 +1098,9 @@
 
     async function loadAgentInstructions() {
       try {
-        const res  = await fetch(`/api/agent/instructions?tenant_id=${currentTenantId}`);
+        const effectiveTenantId = (currentTenantId && currentTenantId !== 'DEFAULT')
+          ? currentTenantId : 'store_demo';
+        const res  = await fetch(`/api/agent/instructions?tenant_id=${effectiveTenantId}`);
         const data = await res.json();
         if (data.ok && data.instructions) {
           document.getElementById('agentInstructions').value = data.instructions;
@@ -1131,7 +1133,9 @@
 
     async function loadCalendlyLink() {
       try {
-        const res  = await fetch(`/api/agent/calendly?tenant_id=${currentTenantId}`);
+        const effectiveTenantId = (currentTenantId && currentTenantId !== 'DEFAULT')
+          ? currentTenantId : 'store_demo';
+        const res  = await fetch(`/api/agent/calendly?tenant_id=${effectiveTenantId}`);
         const data = await res.json();
         if (data.ok && data.calendly_link) {
           document.getElementById('calendlyLink').value = data.calendly_link;
