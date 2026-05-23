@@ -1112,10 +1112,15 @@
       const status = document.getElementById('calendlyStatus');
       const calendly_link = input.value.trim();
       status.textContent = '⏳ Sauvegarde…';
+      // Résolution du tenant effectif — currentTenantId reste 'DEFAULT' si jamais mis à jour
+      const effectiveTenantId = (currentTenantId && currentTenantId !== 'DEFAULT')
+        ? currentTenantId
+        : 'store_demo';
+      console.log('[CALENDLY] tenant_id:', currentTenantId, '→ effective:', effectiveTenantId, 'link:', calendly_link);
       try {
         const data = await apiCall('/api/agent/calendly', {
           method: 'POST',
-          body: JSON.stringify({ tenant_id: currentTenantId, calendly_link })
+          body: JSON.stringify({ tenant_id: effectiveTenantId, calendly_link })
         });
         status.textContent = data.ok ? '✅ Sauvegardé' : '❌ Erreur';
       } catch {
