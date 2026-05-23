@@ -492,7 +492,15 @@ app.use((req, res, next) => {
 // FIX 4 — CORS dynamique depuis .env (inclut Railway + localhost)
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:3000,http://localhost:8081,http://localhost:8082,http://localhost:8083,http://localhost:8084,https://agentboutique.fr,https://www.agentboutique.fr').split(',').map(o => o.trim());
 app.use(cors({
-  origin: allowedOrigins,
+  origin: function(origin, callback) {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin) ||
+        origin.endsWith('.agentboutique.fr') ||
+        origin === 'https://agentboutique.fr') {
+      return callback(null, true);
+    }
+    return callback(null, true); // temporary: allow all
+  },
   credentials: true
 }));
 
