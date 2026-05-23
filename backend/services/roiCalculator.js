@@ -13,12 +13,18 @@ const PLAN_PRICES = { starter: 49, pro: 149, elite: 399 };
 async function computeROI() {
   const costOfService = Number(process.env.MONTHLY_SERVICE_COST) || 0;
 
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+
   const [
     allProspects,
     totalConversations,
     totalMessagesSent,
     avgResponseTimeAgg,
     oldestProspect,
+    activeLeads,
+    hotLeads,
+    messagesToday,
   ] = await Promise.all([
     Prospect.find({}, 'status plan revenue convertedAt').lean(),
     Conversation.countDocuments({}),
@@ -28,6 +34,9 @@ async function computeROI() {
       { $group: { _id: null, avg: { $avg: '$avgResponseTime' } } }
     ]),
     Prospect.findOne({}).sort({ createdAt: 1 }).select('createdAt').lean(),
+    Conversation.countDocuments({ status: 'active' }),
+    Conversation.countDocuments({ score: { $gte: 30 } }),
+    ProcessedMessage.countDocuments({ createdAt: { $gte: startOfToday } }),
   ]);
 
   // ── Ventes ──────────────────────────────────────────────────────────────────
@@ -78,6 +87,11 @@ async function computeROI() {
 
     // ROI estimé
     estimatedROI,
+
+    // Dashboard métriques
+    activeLeads,
+    hotLeads,
+    messagesToday,
 
     // Période
     since: oldestProspect?.createdAt ?? null,

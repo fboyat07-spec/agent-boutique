@@ -425,6 +425,16 @@
       margin-bottom: 24px;
     }
 
+    /* ROI Dashboard grid */
+    .roi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 4px; }
+    .roi-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 10px; text-align: center; }
+    .roi-card.blue  { border-top: 3px solid #0ea5e9; }
+    .roi-card.green { border-top: 3px solid #22c55e; }
+    .roi-num { font-size: 1.5rem; font-weight: 700; line-height: 1; }
+    .roi-card.blue  .roi-num { color: #0ea5e9; }
+    .roi-card.green .roi-num { color: #16a34a; }
+    .roi-label { font-size: 0.68rem; color: #6b7280; margin-top: 5px; font-weight: 500; }
+
     .lead-info-title {
       font-size: 12px;
       font-weight: 600;
@@ -1004,6 +1014,41 @@
           </div>
           <div id="sequencesTableWrapper"></div>
         </div>
+
+        <!-- ROI Dashboard -->
+        <div class="lead-info-section">
+          <div class="lead-info-title">📈 ROI & Performance</div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+            <button class="action-button primary" onclick="loadROIDashboard()">Rafraîchir</button>
+          </div>
+          <div class="roi-grid">
+            <div class="roi-card blue">
+              <div class="roi-num" id="roi-convs">--</div>
+              <div class="roi-label">Conversations</div>
+            </div>
+            <div class="roi-card blue">
+              <div class="roi-num" id="roi-msgs">--</div>
+              <div class="roi-label">Messages aujourd'hui</div>
+            </div>
+            <div class="roi-card green">
+              <div class="roi-num" id="roi-active">--</div>
+              <div class="roi-label">Leads actifs</div>
+            </div>
+            <div class="roi-card green">
+              <div class="roi-num" id="roi-hot">--</div>
+              <div class="roi-label">Leads chauds 🔥</div>
+            </div>
+            <div class="roi-card green">
+              <div class="roi-num" id="roi-conv-rate">--</div>
+              <div class="roi-label">Taux conversion</div>
+            </div>
+            <div class="roi-card green">
+              <div class="roi-num" id="roi-rev">--</div>
+              <div class="roi-label">Revenus estimés</div>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
 
@@ -1815,11 +1860,29 @@
     console.log('  - Runtime power:', `${CONSOLE_API_BASE}/power`);
     console.log('  - ROI:', `${CONSOLE_API_BASE}/roi`);
     
+    // ── ROI Dashboard ─────────────────────────────────────────────────────────
+    async function loadROIDashboard() {
+      try {
+        const data = await apiCall(`${CONSOLE_API_BASE}/roi`);
+        document.getElementById('roi-convs').textContent     = data.totalConversations ?? '--';
+        document.getElementById('roi-msgs').textContent      = data.messagesToday      ?? '--';
+        document.getElementById('roi-active').textContent    = data.activeLeads        ?? '--';
+        document.getElementById('roi-hot').textContent       = data.hotLeads           ?? '--';
+        document.getElementById('roi-conv-rate').textContent = data.conversionRate != null
+          ? data.conversionRate + '%' : '--';
+        document.getElementById('roi-rev').textContent       = data.totalConverted != null
+          ? (data.totalConverted * 79) + '€' : '--';
+      } catch (e) {
+        console.warn('[ROI DASHBOARD] load error:', e.message);
+      }
+    }
+
     loadConversations();
     loadRuntimeStatus();
     loadAgentInstructions();
     loadCalendlyLink();
     loadActiveSequences();
+    loadROIDashboard();
 
     // État initial mobile : afficher la liste des conversations
     if (isMobile()) {
