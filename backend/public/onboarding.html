@@ -605,6 +605,7 @@ async function step2Submit() {
 
   setLoading('btn2', true);
   try {
+    console.log('[STEP2] Submitting:', { phone, biz, slot, tenant_id: tenantId });
     await fetch('/api/onboarding/request-setup', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
