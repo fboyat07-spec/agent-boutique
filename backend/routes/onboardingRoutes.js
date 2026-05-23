@@ -165,6 +165,11 @@ router.post('/request-setup', async (req, res) => {
   // ── Notification WhatsApp au propriétaire (non-bloquant) ──────────────────
   const waToken   = process.env.WHATSAPP_TOKEN;
   const waPhoneId = process.env.PHONE_NUMBER_ID || process.env.WHATSAPP_PHONE_NUMBER_ID;
+  console.log('[ONBOARDING DEBUG]', {
+    hasToken:   !!process.env.WHATSAPP_TOKEN,
+    tokenStart: process.env.WHATSAPP_TOKEN?.substring(0, 10),
+    phoneId:    process.env.PHONE_NUMBER_ID || process.env.WHATSAPP_PHONE_NUMBER_ID,
+  });
   console.log('[ONBOARDING] WA credentials:', {
     hasToken: !!waToken,
     tokenLen: waToken?.length || 0,
