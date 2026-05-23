@@ -561,7 +561,7 @@ async function step1Submit() {
 
   setLoading('btn1', true);
   try {
-    const res = await fetch('/api/onboarding/create-tenant', {
+    const res = await fetch('https://api.agentboutique.fr/api/onboarding/create-tenant', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, business_name, email, telephone }),
@@ -606,7 +606,7 @@ async function step2Submit() {
   setLoading('btn2', true);
   try {
     console.log('[STEP2] Submitting:', { phone, biz, slot, tenant_id: tenantId });
-    await fetch('/api/onboarding/request-setup', {
+    await fetch('https://api.agentboutique.fr/api/onboarding/request-setup', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ phone, business_name: biz, slot, tenant_id: tenantId }),
