@@ -3,7 +3,6 @@
 const express = require('express');
 const { updateTenantConfig, getTenant } = require('../services/tenantManager');
 const { getFullTenantConfig } = require('../services/tenantConfig');
-const BusinessLogger = require('./businessLogger');
 const { optionalAuthenticate, validateTenant } = require('../middleware/tenantAuth');
 const User = require('../models/User');
 
@@ -98,11 +97,6 @@ router.post('/config', optionalAuthenticate, validateTenant, async (req, res) =>
       tenant_id,
       updates: Object.keys(filteredUpdates),
       warnings: validation.warnings.length
-    });
-    
-    BusinessLogger.logTenantEvent('agent_config_updated', tenant_id, {
-      updated_fields: Object.keys(filteredUpdates),
-      warnings: validation.warnings
     });
     
     res.json({
@@ -261,11 +255,6 @@ router.post('/config/quick-toggle', optionalAuthenticate, validateTenant, async 
       enabled
     });
     
-    BusinessLogger.logTenantEvent('feature_toggled', tenant_id, {
-      feature,
-      enabled
-    });
-    
     res.json({
       success: true,
       message: `Feature ${feature} ${enabled ? 'enabled' : 'disabled'} successfully`,
@@ -363,11 +352,6 @@ router.post('/config/reset', optionalAuthenticate, validateTenant, async (req, r
     
     console.log('[AGENT_CONFIG_RESET]', {
       tenant_id,
-      category,
-      fields_reset: Object.keys(resetConfig)
-    });
-    
-    BusinessLogger.logTenantEvent('config_reset', tenant_id, {
       category,
       fields_reset: Object.keys(resetConfig)
     });
