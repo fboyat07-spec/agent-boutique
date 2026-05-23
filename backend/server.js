@@ -538,6 +538,9 @@ try {
   });
 }
 
+// Agent config — instructions, Calendly
+app.use('/api/agent', require('./routes/agentConfigRoutes'));
+
 // Modules incomplets explicitement desactives
 app.use('/api/progress', (req, res) => {
   res.status(410).json({
