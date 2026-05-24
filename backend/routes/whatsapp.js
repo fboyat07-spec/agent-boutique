@@ -91,6 +91,17 @@ async function runSequenceCron() {
   const now = new Date();
   console.log('[WA CRON] Vérification séquences dues…', now.toISOString());
 
+  // DEBUG: comptages pour diagnostiquer pourquoi aucune séquence n'est trouvée
+  const totalSequences = await WhatsAppSequence.countDocuments({});
+  const activeSequences = await WhatsAppSequence.countDocuments({ status: 'active' });
+  const j0Sequences = await WhatsAppSequence.countDocuments({ status: 'active', step: 'j0' });
+  const pastJ3 = await WhatsAppSequence.countDocuments({
+    status: 'active',
+    step: 'j0',
+    j3_date: { $lte: new Date() }
+  });
+  console.log('[WA CRON DEBUG]', { totalSequences, activeSequences, j0Sequences, pastJ3, now: new Date() });
+
   try {
     // ── J3 dues ────────────────────────────────────────────────────────────
     const j3Due = await WhatsAppSequence.find({
