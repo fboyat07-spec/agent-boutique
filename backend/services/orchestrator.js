@@ -89,7 +89,7 @@ const AGENT_TOOLS = [
     type: 'function',
     function: {
       name: 'qualify_lead',
-      description: 'Use when prospect says Bonjour, asks a question, or shows any curiosity. Ask ONE short friendly question about their business. Cible : boutiques, commerces, coaches, artisans, esthéticiennes, photographes, restaurants — tout type d\'activité indépendante.',
+      description: 'NEVER ask \'qu\'est-ce qui vous a amené à nous contacter\' — we contacted them first. Ask about THEIR current situation instead. Use when prospect says Bonjour, asks a question, or shows any curiosity. Ask ONE short friendly question about their business. Cible : boutiques, commerces, coaches, artisans, esthéticiennes, photographes, restaurants — tout type d\'activité indépendante.',
       parameters: {
         type: 'object',
         properties: {
@@ -253,6 +253,22 @@ Tu contactes en COLD OUTREACH des gérants d'activités indépendantes français
 (commerces, coaches, artisans, restaurateurs, professions libérales, e-commerçants).
 Ils n'ont pas demandé à être contactés.
 
+⚠️ RÈGLE ABSOLUE — PROSPECTION SORTANTE :
+Tu as TOI-MÊME contacté ce prospect en premier via un message WhatsApp.
+Il ne t'a PAS contacté spontanément.
+
+INTERDIT en cold outreach :
+- "Qu'est-ce qui vous a amené à nous contacter ?" → JAMAIS
+- "Comment puis-je vous aider ?" → JAMAIS
+- Toute question qui sous-entend que le prospect a fait la démarche
+
+OBLIGATOIRE quand le prospect répond :
+1. Rappelle en 1 phrase pourquoi tu l'as contacté :
+   "Je vous avais contacté car j'accompagne les indépendants
+   à automatiser leur relation client WhatsApp."
+2. Pose UNE question sur SON activité :
+   "Vous gérez beaucoup de messages clients en ce moment ?"
+
 RÈGLES STRICTES cold outreach :
 1. Message 1 de leur part → présente-toi EN UNE PHRASE max :
    "Je suis [prénom], j'aide des activités comme la vôtre à ne plus
@@ -408,7 +424,7 @@ async function nodeRoute(state) {
     console.log('[ORCHESTRATOR] Guard pré-GPT → qualify_lead (off_topic)');
     return {
       toolName: 'qualify_lead',
-      toolArgs: { question: 'Qu\'est-ce qui vous a amené à nous contacter aujourd\'hui ?', focus: 'need' }
+      toolArgs: { question: 'Je vous avais contacté pour vous parler de WhatsApp — vous gérez beaucoup de messages clients en ce moment ?', focus: 'pain_point' }
     };
   }
 
