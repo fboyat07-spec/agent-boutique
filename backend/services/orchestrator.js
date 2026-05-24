@@ -311,6 +311,8 @@ const AUTO_REPLY_SIGNALS = [
   'je reviens vers vous', 'message automatique', 'absent',
   'répondeur', 'hors de', 'actuellement indisponible',
   'je vous réponds', 'bot', 'automated', 'auto-reply',
+  '7j/7', '24h/24', 'entre 8h', 'entre 9h', 'nous contacter au',
+  'notre équipe', 'votre demande a bien été', 'pris en compte',
 ];
 
 function isAutoReply(message) {
