@@ -305,6 +305,21 @@ function isOptOut(message) {
   return OPT_OUT_SIGNALS.some(signal => text.includes(norm(signal)));
 }
 
+// ─── DÉTECTION AUTO-REPLY / RÉPONDEUR ─────────────────────────────────────────
+
+const AUTO_REPLY_SIGNALS = [
+  'je reviens vers vous', 'message automatique', 'absent',
+  'répondeur', 'hors de', 'actuellement indisponible',
+  'je vous réponds', 'bot', 'automated', 'auto-reply',
+];
+
+function isAutoReply(message) {
+  const norm = str => (str || '').toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '');
+  const text = norm(message);
+  return AUTO_REPLY_SIGNALS.some(signal => text.includes(norm(signal)));
+}
+
 // ─── NŒUDS DU GRAPH ───────────────────────────────────────────────────────────
 
 async function nodeLoadState(state) {
@@ -662,6 +677,12 @@ async function orchestrate(phone, message, tenant_id) {
     const existing = await Conversation.findOne({ phone, tenant_id }).select('status').lean();
     if (existing?.status === 'opted_out') {
       console.log('[ORCHESTRATOR] opted_out — message ignoré pour', phone);
+      return null;
+    }
+
+    // ── Auto-reply / répondeur → silence total (pas d'opt-out, juste skip) ─────
+    if (isAutoReply(message)) {
+      console.log('[ORCHESTRATOR] Auto-reply détecté → message ignoré silencieusement pour', phone);
       return null;
     }
 
