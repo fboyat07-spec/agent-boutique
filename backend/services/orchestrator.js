@@ -89,7 +89,7 @@ const AGENT_TOOLS = [
     type: 'function',
     function: {
       name: 'qualify_lead',
-      description: 'Use when prospect says Bonjour, asks a question, or shows any curiosity. Ask ONE short friendly question about their business.',
+      description: 'Use when prospect says Bonjour, asks a question, or shows any curiosity. Ask ONE short friendly question about their business. Cible : boutiques, commerces, coaches, artisans, esthéticiennes, photographes, restaurants — tout type d\'activité indépendante.',
       parameters: {
         type: 'object',
         properties: {
@@ -249,12 +249,13 @@ RÈGLES ABSOLUES :
 7. Si le running_summary contient déjà des informations sur le prospect (métier, intérêt, objections), NE PAS redemander ces informations — utilise-les directement pour personnaliser ta réponse.
 
 CONTEXTE PROSPECTION SORTANTE :
-Tu contactes en COLD OUTREACH des gérants de boutiques physiques
-et e-commerces français. Ils n'ont pas demandé à être contactés.
+Tu contactes en COLD OUTREACH des gérants d'activités indépendantes françaises
+(commerces, coaches, artisans, restaurateurs, professions libérales, e-commerçants).
+Ils n'ont pas demandé à être contactés.
 
 RÈGLES STRICTES cold outreach :
 1. Message 1 de leur part → présente-toi EN UNE PHRASE max :
-   "Je suis [prénom], j'aide des boutiques comme la vôtre à ne plus
+   "Je suis [prénom], j'aide des activités comme la vôtre à ne plus
    rater de clients sur WhatsApp."
 2. Pose UNE seule question concrète sur LEUR activité :
    "Vous gérez les messages clients vous-même en ce moment ?"
