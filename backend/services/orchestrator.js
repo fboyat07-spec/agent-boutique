@@ -122,7 +122,7 @@ const AGENT_TOOLS = [
     type: 'function',
     function: {
       name: 'handle_objection',
-      description: 'Répondre à une objection (prix, besoin, timing, concurrence). If prospect says no twice OR says they are not interested → use end_conversation instead, NEVER handle_objection.',
+      description: "NEVER use when prospect says just 'Non' or 'Non merci' as a standalone reply — use end_conversation instead. Répondre à une objection (prix, besoin, timing, concurrence). If prospect says no twice OR says they are not interested → use end_conversation instead, NEVER handle_objection.",
       parameters: {
         type: 'object',
         properties: {
@@ -178,7 +178,7 @@ const AGENT_TOOLS = [
     type: 'function',
     function: {
       name: 'end_conversation',
-      description: 'Use ONLY when prospect explicitly refuses: no/not interested/stop/bloquer/occupé/pas mon secteur, OR after 2 clearly negative responses, OR prospect says they have no shop, are closing their business, or their activity doesn\'t match the offer. NEVER use on neutral greetings like Bonjour, or questions about the offer.',
+      description: "Use when prospect replies with just 'Non', 'Non.', 'Non merci', 'Pas intéressé' as standalone short replies. Use ONLY when prospect explicitly refuses: no/not interested/stop/bloquer/occupé/pas mon secteur, OR after 2 clearly negative responses, OR prospect says they have no shop, are closing their business, or their activity doesn't match the offer. NEVER use on neutral greetings like Bonjour, or questions about the offer.",
       parameters: {
         type: 'object',
         properties: {
@@ -319,6 +319,7 @@ function isOptOut(message) {
   const norm = str => (str || '').toLowerCase()
     .normalize('NFD').replace(/[̀-ͯ]/g, '');
   const text = norm(message);
+  if (text.trim() === 'non') return true;
   return OPT_OUT_SIGNALS.some(signal => text.includes(norm(signal)));
 }
 
