@@ -759,4 +759,27 @@ async function orchestrate(phone, message, tenant_id) {
   }
 }
 
-module.exports = { orchestrate };
+// ─── TTS ElevenLabs (optionnel — désactivé si ELEVENLABS_API_KEY absent) ──────
+
+async function synthesizeVoice(text) {
+  const apiKey = process.env.ELEVENLABS_API_KEY;
+  if (!apiKey) return null;
+  const voiceId = process.env.ELEVENLABS_VOICE_ID || 'pNInz6obpgDQGcFmaJgB';
+  try {
+    const res = await axios.post(
+      `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
+      { text, model_id: 'eleven_multilingual_v2' },
+      {
+        headers: { 'xi-api-key': apiKey, 'Content-Type': 'application/json', Accept: 'audio/mpeg' },
+        responseType: 'arraybuffer',
+        timeout: 15000,
+      }
+    );
+    return Buffer.from(res.data);
+  } catch (err) {
+    console.warn('[TTS] ElevenLabs error:', err.message);
+    return null;
+  }
+}
+
+module.exports = { orchestrate, synthesizeVoice };

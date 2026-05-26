@@ -142,7 +142,7 @@ app.use((req, res, next) => {
 
 
 // ── ORCHESTRATEUR AGENTIQUE (Classify → Decide → Act) ──
-const { orchestrate } = require('./services/orchestrator');
+const { orchestrate, synthesizeVoice } = require('./services/orchestrator');
 const { sendWhatsAppMessage } = require('./services/messageSender');
 const { processLead } = require('./services/closingService');
 const { updateScore } = require('./services/scoringService');
@@ -942,9 +942,43 @@ async function processSingleMessage(message, tenant_id) {
 
         console.log('[DIAGNOSTIC] ORCHESTRATOR REPLY RECEIVED - STEP 32', reply.slice(0, 80));
 
-        // Envoi WhatsApp — l'orchestrateur retourne la réponse, server.js l'envoie
-        await sendWhatsAppMessage(senderPhone, reply, tenant_id);
-        console.log('[WHATSAPP SENT] STEP 33', { messageId, to: senderPhone, preview: reply.slice(0, 60) });
+        // Envoi WhatsApp — TTS si ELEVENLABS_API_KEY configuré, sinon texte
+        let voiceSent = false;
+        if (process.env.ELEVENLABS_API_KEY) {
+          try {
+            const audioBuffer = await synthesizeVoice(reply);
+            if (audioBuffer) {
+              const waToken   = process.env.WHATSAPP_TOKEN;
+              const waPhoneId = process.env.PHONE_NUMBER_ID || process.env.WHATSAPP_PHONE_NUMBER_ID;
+              const FormData  = require('form-data');
+              const form      = new FormData();
+              form.append('file', audioBuffer, { filename: 'reply.mp3', contentType: 'audio/mpeg' });
+              form.append('type', 'audio/mpeg');
+              form.append('messaging_product', 'whatsapp');
+              const uploadRes = await axios.post(
+                `https://graph.facebook.com/v20.0/${waPhoneId}/media`,
+                form,
+                { headers: { ...form.getHeaders(), Authorization: `Bearer ${waToken}` }, timeout: 15000 }
+              );
+              const mediaId = uploadRes.data?.id;
+              if (mediaId) {
+                await axios.post(
+                  `https://graph.facebook.com/v20.0/${waPhoneId}/messages`,
+                  { messaging_product: 'whatsapp', to: senderPhone, type: 'audio', audio: { id: mediaId } },
+                  { headers: { Authorization: `Bearer ${waToken}`, 'Content-Type': 'application/json' }, timeout: 10000 }
+                );
+                console.log('[TTS] ✅ Audio envoyé | to:', senderPhone);
+                voiceSent = true;
+              }
+            }
+          } catch (ttsErr) {
+            console.warn('[TTS] Fallback texte — erreur:', ttsErr.message);
+          }
+        }
+        if (!voiceSent) {
+          await sendWhatsAppMessage(senderPhone, reply, tenant_id);
+          console.log('[WHATSAPP SENT] STEP 33', { messageId, to: senderPhone, preview: reply.slice(0, 60) });
+        }
 
       } catch (orchError) {
         console.log('[DIAGNOSTIC] ORCHESTRATOR ERROR - STEP 32 ERROR', {
