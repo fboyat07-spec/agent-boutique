@@ -226,6 +226,24 @@
       font-size: 0.95rem;
     }
     
+    /* Add-on */
+    .addon-section {
+      background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+      border: 2px solid #0ea5e9;
+      border-radius: 16px;
+      padding: 48px 40px;
+      margin: 48px 0;
+      text-align: center;
+    }
+    .addon-section h3 { font-size: 1.75rem; font-weight: 700; color: #1e293b; margin-bottom: 12px; }
+    .addon-price { font-size: 2rem; font-weight: 700; color: #0ea5e9; margin: 8px 0 16px; }
+    .addon-section > p { color: #64748b; margin-bottom: 24px; }
+    .addon-section ul { list-style: none; display: inline-block; text-align: left; margin: 0 auto 32px; }
+    .addon-section li { padding: 8px 0; color: #1e293b; font-size: 1rem; }
+    .addon-note { color: #94a3b8; font-size: 0.875rem; margin-top: 16px; }
+    .btn { display: inline-block; background: #0ea5e9; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 1rem; transition: all 0.2s ease; }
+    .btn:hover { background: #0284c7; transform: translateY(-1px); }
+
     /* Footer */
     .footer { 
       text-align: center; 
@@ -338,6 +356,20 @@
       </div>
     </div>
 
+    <div class="addon-section">
+      <h3>🎤 Option Réponses Vocales</h3>
+      <p class="addon-price">+50€/mois</p>
+      <p>Compatible avec les plans Pro et Elite</p>
+      <ul>
+        <li>✅ L'agent répond en message vocal WhatsApp</li>
+        <li>✅ Voix naturelle française (IA)</li>
+        <li>✅ Idéal pour artisans, coaches, esthéticiennes</li>
+        <li>✅ Taux d'engagement supérieur</li>
+      </ul>
+      <a href="/onboarding.html" class="btn">Ajouter à mon plan</a>
+      <p class="addon-note">⏳ Disponible sur demande — contactez-nous après souscription</p>
+    </div>
+
     <div class="comparison">
       <h3>Comparaison Détaillée</h3>
       <table class="comparison">
@@ -426,6 +458,15 @@
         </div>
         <div class="faq-answer" style="display: none;">
           Nous acceptons toutes les cartes bancaires européennes, PayPal et virement bancaire. Les paiements sont sécurisés via Stripe.
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">
+          Puis-je activer les réponses vocales ?
+        </div>
+        <div class="faq-answer" style="display: none;">
+          Oui, l'option Réponses Vocales (+50€/mois) est disponible sur les plans Pro et Elite. L'agent répondra en message vocal WhatsApp avec une voix naturelle française générée par IA.
         </div>
       </div>
     </div>
