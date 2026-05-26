@@ -102,6 +102,9 @@ async function runSequenceCron() {
   });
   console.log(`[WA CRON DEBUG] total=${totalSequences} active=${activeSequences} j0=${j0Sequences} pastJ3=${pastJ3} now=${new Date().toISOString()}`);
 
+  const sampleSeq = await WhatsAppSequence.findOne({ status: 'active', step: 'j0' }).select('j3_date j7_date startDate').lean();
+  console.log('[WA CRON SAMPLE]', JSON.stringify(sampleSeq));
+
   try {
     // ── J3 dues ────────────────────────────────────────────────────────────
     const j3Due = await WhatsAppSequence.find({
