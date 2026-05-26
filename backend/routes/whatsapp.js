@@ -100,7 +100,7 @@ async function runSequenceCron() {
     step: 'j0',
     j3_date: { $lte: new Date() }
   });
-  console.log('[WA CRON DEBUG]', { totalSequences, activeSequences, j0Sequences, pastJ3, now: new Date() });
+  console.log(`[WA CRON DEBUG] total=${totalSequences} active=${activeSequences} j0=${j0Sequences} pastJ3=${pastJ3} now=${new Date().toISOString()}`);
 
   try {
     // ── J3 dues ────────────────────────────────────────────────────────────
