@@ -655,4 +655,24 @@ router.get('/calendly', async (req, res) => {
   }
 });
 
+// ─── GET /api/agent/admin/tenants ─────────────────────────────────────────────
+
+router.get('/admin/tenants', async (req, res) => {
+  try {
+    const users = await User.find({})
+      .select('tenant_id store_name email')
+      .sort({ store_name: 1 })
+      .lean();
+    const tenants = users.map(u => ({
+      tenant_id: u.tenant_id,
+      business_name: u.store_name || '(sans nom)',
+      email: u.email,
+    }));
+    return res.json({ ok: true, tenants });
+  } catch (err) {
+    console.error('[ADMIN TENANTS GET ERROR]', err.message);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;
