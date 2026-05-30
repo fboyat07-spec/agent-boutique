@@ -984,6 +984,24 @@
         </div>
 
         <div class="lead-info-section">
+          <div class="lead-info-title">⚙️ Configuration Client</div>
+          <select id="sectorPreset" class="wa-input" style="margin-bottom:8px;">
+            <option value="">-- Choisir un secteur --</option>
+            <option value="beaute">💅 Beauté / Esthétique / Coiffure</option>
+            <option value="coach">🏋️ Coach / Formateur</option>
+            <option value="photo">📸 Photographe / Vidéaste</option>
+            <option value="immo">🏠 Immobilier</option>
+            <option value="artisan">🔧 Artisan / Dépannage</option>
+            <option value="restaurant">🍽️ Restaurant / Traiteur</option>
+            <option value="ecommerce">🛒 E-commerce / Boutique</option>
+          </select>
+          <button class="action-button primary" onclick="applyPreset()">
+            Appliquer le preset
+          </button>
+          <span id="presetStatus" style="font-size:13px;color:#065f46;margin-left:8px;"></span>
+        </div>
+
+        <div class="lead-info-section">
           <div class="lead-info-title">📋 Instructions pour l'agent</div>
           <textarea id="agentInstructions" class="wa-input"
             rows="4"
@@ -1112,6 +1130,76 @@
         btn.disabled    = false;
         btn.textContent = 'Lancer la séquence J0→J3→J7';
       }
+    }
+
+    // ── Presets secteur ──────────────────────────────────────────────────────
+    const PRESETS = {
+      beaute: `Tu es l'assistant WhatsApp de {boutique}, spécialisé beauté/esthétique/coiffure.
+Quand un client contacte :
+1. Demande quelle prestation il recherche
+2. Propose un créneau via le lien Calendly
+3. Rappelle les horaires si demandé
+Ton : chaleureux, bienveillant, professionnel.
+Ne donne jamais de prix sans avoir qualifié la prestation.`,
+
+      coach: `Tu es l'assistant WhatsApp de {boutique}, coach/formateur.
+Quand un prospect contacte :
+1. Demande son objectif principal
+2. Valide son besoin en 1-2 questions
+3. Propose un appel découverte gratuit via Calendly
+Ton : motivant, empathique, direct.
+Ne parle des tarifs qu'après l'appel découverte.`,
+
+      photo: `Tu es l'assistant WhatsApp de {boutique}, photographe/vidéaste.
+Quand un prospect contacte :
+1. Demande le type de prestation (mariage, corporate, portrait...)
+2. Demande la date approximative
+3. Propose un appel pour discuter du projet via Calendly
+Ton : créatif, professionnel, à l'écoute.
+Ne donne pas de devis sans avoir qualifié le projet.`,
+
+      immo: `Tu es l'assistant WhatsApp de {boutique}, agence immobilière.
+Pour les vendeurs : qualifie le bien (type, surface, ville, prix souhaité)
+Pour les acheteurs : qualifie le projet (budget, secteur, délai)
+Propose toujours un RDV d'estimation gratuit via Calendly.
+Ton : professionnel, rassurant, expert.
+Ne donne jamais d'estimation de prix par message.`,
+
+      artisan: `Tu es l'assistant WhatsApp de {boutique}, artisan/dépannage.
+Quand un client contacte :
+1. Demande la nature du problème
+2. Demande l'adresse et la disponibilité
+3. Confirme qu'un technicien rappelle sous 30 min
+Pour les urgences : transmets immédiatement.
+Ton : efficace, rassurant, professionnel.`,
+
+      restaurant: `Tu es l'assistant WhatsApp de {boutique}, restaurant/traiteur.
+Quand un client contacte :
+1. Demande s'il veut réserver une table ou commander
+2. Pour réservation : nombre de personnes + date/heure
+3. Pour commande : oriente vers le menu ou lien de commande
+Ton : chaleureux, accueillant, gourmand.`,
+
+      ecommerce: `Tu es l'assistant WhatsApp de {boutique}, boutique e-commerce.
+Quand un client contacte :
+1. Demande ce qu'il recherche
+2. Aide à trouver le bon produit
+3. Pour les commandes : redirige vers le site
+4. Pour le SAV : qualifie le problème et rassure
+Ton : serviable, dynamique, orienté solution.`
+    };
+
+    function applyPreset() {
+      const sector = document.getElementById('sectorPreset').value;
+      const status = document.getElementById('presetStatus');
+      if (!sector) { status.textContent = '⚠️ Choisissez un secteur'; return; }
+
+      const storeName = 'Agent Boutique'; // remplacé par nom client si dispo
+      const instructions = PRESETS[sector].replace(/{boutique}/g, storeName);
+
+      document.getElementById('agentInstructions').value = instructions;
+      status.textContent = '✅ Preset chargé — pensez à sauvegarder !';
+      setTimeout(() => { status.textContent = ''; }, 5000);
     }
 
     // ── Instructions agent ───────────────────────────────────────────────────
