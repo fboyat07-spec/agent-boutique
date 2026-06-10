@@ -47,7 +47,9 @@ export default function AITutorScreen() {
         demo: res.data.demo,
       };
       setMessages(prev => [...prev, aiMsg]);
-    } catch {
+    } catch (e) {
+      // Trace de debug : ne plus avoir un echec aveugle (URL appelee + cause)
+      console.warn('[AITutor] Echec appel /ai/chat:', e?.message, '| baseURL:', e?.config?.baseURL);
       setMessages(prev => [...prev, {
         id: (Date.now() + 1).toString(),
         role: 'assistant',

@@ -1,7 +1,13 @@
 ﻿import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const rawBaseUrl = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:3000';
+// Fallback de securite : si EXPO_PUBLIC_API_BASE_URL manque a un build EAS,
+// on pointe sur le backend Render public (jamais localhost, sinon l'APK
+// appelle le telephone lui-meme et aucune requete n'atteint le serveur).
+// NB: EXPO_PUBLIC_API_BASE_URL_WEB n'est volontairement pas branche ici
+// (web et natif partagent la meme URL Render) - ne pas ajouter de logique
+// Platform.OS sans la tester sur les deux plateformes.
+const rawBaseUrl = process.env.EXPO_PUBLIC_API_BASE_URL || 'https://kidai-learning-api.onrender.com';
 const normalizedBaseUrl = rawBaseUrl.endsWith('/') ? rawBaseUrl.slice(0, -1) : rawBaseUrl;
 const BASE_URL = `${normalizedBaseUrl}/api`;
 
