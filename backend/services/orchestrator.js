@@ -550,14 +550,18 @@ async function nodeCloseSale(state) {
   const { toolArgs, phone, tenant_id } = state;
   const planKey  = (toolArgs.plan || 'starter').toLowerCase();
   const plan     = paymentLinks[planKey] || paymentLinks.starter;
-  const link     = plan.link || '[LIEN_PAIEMENT]';
-  console.log('[CLOSE SALE] Plan sélectionné:', planKey, '| Link:', link);
+  const link     = plan.link || '';
+  console.log('[CLOSE SALE] Plan sélectionné:', planKey, '| Link:', link || '(manquant)');
   await Conversation.findOneAndUpdate(
     { phone, tenant_id },
     { $set: { stage: 'closing' }, $inc: { score: 25 } },
     { upsert: true }
   );
-  return { reply: toolArgs.closing_message };
+  let reply = toolArgs.closing_message;
+  if (link && !reply.includes(link)) {
+    reply += `\n\n👉 ${link}`;
+  }
+  return { reply };
 }
 
 async function nodeScheduleFollowup(state) {
