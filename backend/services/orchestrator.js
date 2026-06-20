@@ -218,6 +218,7 @@ function notifyHotLead({ phone, score, lastMessage, reason }) {
 function buildSystemPrompt(user, running_summary) {
   const storeName = user?.store_name || 'Agent Boutique';
   const { starter, pro, elite } = paymentLinks;
+  const hasCustomInstructions = !!(user?.agent_instructions?.trim());
   let prompt = `Tu es un agent commercial IA expert en closing pour ${storeName}.
 Tu aides des entrepreneurs et commerçants français à automatiser leurs ventes via WhatsApp avec de l'IA.
 
@@ -248,6 +249,12 @@ RÈGLES ABSOLUES :
 6. Maximum 2-3 phrases par message WhatsApp
 7. Si le running_summary contient déjà des informations sur le prospect (métier, intérêt, objections), NE PAS redemander ces informations — utilise-les directement pour personnaliser ta réponse.
 8. Si le prospect demande "qui êtes-vous" ou "c'est quoi ce numéro" ou "vous êtes qui" → réponds TOUJOURS d'abord à cette question : "Je suis un assistant WhatsApp IA pour ${storeName}. J'accompagne les indépendants à automatiser leur relation client." PUIS pose une question sur leur activité.
+`;
+
+  // Bloc prospection cold-outreach — injecté UNIQUEMENT si le tenant n'a PAS
+  // d'instructions personnalisées (sinon GPT recopie ces phrases prospection).
+  if (!hasCustomInstructions) {
+    prompt += `
 
 CONTEXTE PROSPECTION SORTANTE :
 Tu contactes en COLD OUTREACH des gérants d'activités indépendantes françaises
@@ -283,7 +290,10 @@ RÈGLES STRICTES cold outreach :
 6. Ne pose JAMAIS deux questions à la suite.
 7. Si le prospect semble confus → explique en 1 phrase qui tu es
    et pourquoi tu l'as contacté.
-8. Ton : humain, direct, bienveillant — PAS commercial, PAS robotique.
+8. Ton : humain, direct, bienveillant — PAS commercial, PAS robotique.`;
+  }
+
+  prompt += `
 
 Choisis l'outil le plus adapté au contexte. Ne fais qu'UNE seule action par message.`;
 
