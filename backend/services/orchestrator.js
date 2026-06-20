@@ -287,11 +287,6 @@ RÈGLES STRICTES cold outreach :
 
 Choisis l'outil le plus adapté au contexte. Ne fais qu'UNE seule action par message.`;
 
-  // Instructions dynamiques du jour (définies via la console)
-  if (user?.agent_instructions?.trim()) {
-    prompt += `\n\nINSTRUCTIONS SPÉCIALES DU JOUR :\n${user.agent_instructions.trim()}`;
-  }
-
   // Lien Calendly pour prise de RDV
   if (user?.calendly_link?.trim()) {
     prompt += `\n\nLIEN DE PRISE DE RDV :\nSi le prospect montre de l'intérêt pour une démo ou un appel, envoie ce lien Calendly : ${user.calendly_link.trim()}\nEnvoie-le naturellement dans la conversation, ex: 'Voici mon lien pour réserver un créneau : ${user.calendly_link.trim()}'`;
@@ -300,6 +295,14 @@ Choisis l'outil le plus adapté au contexte. Ne fais qu'UNE seule action par mes
   // Injection non-destructive du résumé de conversation (si disponible)
   if (running_summary) {
     prompt += `\n\nCONTEXTE CONVERSATION (résumé automatique — basé sur l'historique) :\n${running_summary}`;
+  }
+
+  // Instructions client — DERNIÈRE position = priorité maximale sur tout le prompt
+  if (user?.agent_instructions?.trim()) {
+    prompt += `\n\n═══ INSTRUCTIONS SPÉCIFIQUES DU CLIENT (PRIORITÉ MAXIMALE) ═══\n`;
+    prompt += `Les instructions ci-dessous sont PRIORITAIRES sur tout ce qui précède.\n`;
+    prompt += `En cas de contradiction, TOUJOURS suivre ces instructions :\n\n`;
+    prompt += user.agent_instructions.trim();
   }
 
   return prompt;
