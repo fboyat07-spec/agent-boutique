@@ -1215,11 +1215,13 @@ Ton : serviable, dynamique, orienté solution.`
       const status   = document.getElementById('agentInstructionsStatus');
       const instructions = textarea.value.trim();
       status.textContent = '⏳ Sauvegarde…';
+      const effectiveTenantId = (currentTenantId && currentTenantId !== 'DEFAULT')
+        ? currentTenantId : 'store_demo';
       try {
         const res = await fetch('/api/agent/instructions', {
           method:  'POST',
           headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify({ tenant_id: currentTenantId, instructions }),
+          body:    JSON.stringify({ tenant_id: effectiveTenantId, instructions }),
         });
         const data = await res.json();
         if (data.ok) {
@@ -1986,6 +1988,7 @@ Ton : serviable, dynamique, orienté solution.`
           `<option value="${t.tenant_id}">${t.business_name} (${t.tenant_id})</option>`
         ).join('');
         if (currentTenantId && currentTenantId !== 'DEFAULT') sel.value = currentTenantId;
+        if (sel.value) switchTenant();
       } catch (e) {
         console.warn('[TENANTS] load error:', e.message);
       }
