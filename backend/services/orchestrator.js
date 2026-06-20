@@ -419,13 +419,17 @@ async function nodeClassifyIntent(state) {
 async function nodeRoute(state) {
   const { message, context, intent } = state;
 
+  // Si le client a des instructions personnalisées (console), on désactive les
+  // gardes prospection codées en dur et on laisse GPT + buildSystemPrompt gérer.
+  const hasCustomInstructions = !!(context?.user?.agent_instructions?.trim());
+
   // ── GARDE PRÉ-GPT : routing déterministe ───────────────────────────────────
   const intentType = intent?.intent;
   const score      = context?.score || 0;
   const stage      = context?.stage || 'new';
 
   // off_topic → toujours qualifier d'abord
-  if (intentType === 'off_topic') {
+  if (!hasCustomInstructions && intentType === 'off_topic') {
     console.log('[ORCHESTRATOR] Guard pré-GPT → qualify_lead (off_topic)');
     return {
       toolName: 'qualify_lead',
@@ -434,7 +438,7 @@ async function nodeRoute(state) {
   }
 
   // greeting sur un nouveau prospect → qualifier
-  if (intentType === 'greeting' && stage === 'new') {
+  if (!hasCustomInstructions && intentType === 'greeting' && stage === 'new') {
     console.log('[ORCHESTRATOR] Guard pré-GPT → qualify_lead (greeting+new)');
     return {
       toolName: 'qualify_lead',
@@ -444,6 +448,7 @@ async function nodeRoute(state) {
 
   // sentiment négatif → handle_objection (sauf si le prospect veut acheter, a un pb de prix ou n'est pas intéressé)
   if (
+    !hasCustomInstructions &&
     intent?.sentiment === 'negative' &&
     intentType !== 'ready_to_buy' &&
     intentType !== 'objection_price' &&
@@ -485,6 +490,7 @@ async function nodeRoute(state) {
 
       // ── GARDE POST-GPT : bloquer close_sale prématuré ──────────────────────
       if (
+        !hasCustomInstructions &&
         toolName === 'close_sale' &&
         score < 30 &&
         !['ready_to_buy', 'interest'].includes(intentType)
