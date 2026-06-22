@@ -1790,9 +1790,7 @@ Ton : serviable, dynamique, orienté solution.`
       const uptimeValue = document.getElementById('uptimeValue');
       
       // N'afficher que les vraies données backend, pas d'invention
-      if (roiValue) roiValue.textContent = data.roi ? `${data.roi}%` : '--';
-      if (conversionRate) conversionRate.textContent = data.conversion_rate ? `${data.conversion_rate}%` : '--';
-      if (totalConversations) totalConversations.textContent = data.total_conversations || '--';
+      // ROI / Taux Conversion / Conversations sont peuplés par updateROIKPIs (/api/console/roi)
       if (messagesToday) messagesToday.textContent = data.messages_today || '--';
       if (errorsToday) errorsToday.textContent = data.errors_today || '--';
       if (uptimeValue) uptimeValue.textContent = data.uptime ? `${Math.floor(data.uptime / 3600)}h` : '--';
@@ -1810,14 +1808,18 @@ Ton : serviable, dynamique, orienté solution.`
     // Mettre à jour les KPIs ROI (uniquement vraies données)
     function updateROIKPIs(data) {
       console.log('[KPI] Updating ROI KPIs with data:', Object.keys(data));
-      
-      const roiValue = document.getElementById('roiValue');
-      if (roiValue && data.roi_percentage !== undefined) {
-        roiValue.textContent = `${data.roi_percentage}%`;
-        console.log('[KPI] ROI updated:', data.roi_percentage);
-      } else {
-        console.log('[KPI] No ROI data available');
-      }
+
+      const roiValue           = document.getElementById('roiValue');
+      const conversionRate     = document.getElementById('conversionRate');
+      const totalConversations = document.getElementById('totalConversations');
+
+      // Aligné sur les vrais champs de computeROI() (déjà utilisés par le dashboard du bas)
+      if (roiValue)
+        roiValue.textContent = (data.estimatedROI != null) ? `${data.estimatedROI}%` : '--';
+      if (conversionRate)
+        conversionRate.textContent = (data.conversionRate != null) ? `${data.conversionRate}%` : '--';
+      if (totalConversations)
+        totalConversations.textContent = (data.totalConversations != null) ? data.totalConversations : '--';
     }
     
     // Mettre à jour l'UI runtime
