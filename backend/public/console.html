@@ -900,10 +900,6 @@
         <div class="lead-info-section">
           <div class="lead-info-title">Business KPIs</div>
           <div class="lead-info-item">
-            <span class="lead-info-label">ROI</span>
-            <span class="lead-info-value" id="roiValue">--</span>
-          </div>
-          <div class="lead-info-item">
             <span class="lead-info-label">Taux Conversion</span>
             <span class="lead-info-value" id="conversionRate">--</span>
           </div>
@@ -1782,7 +1778,6 @@ Ton : serviable, dynamique, orienté solution.`
     function updateBusinessKPIs(data) {
       console.log('[KPI] Updating business KPIs with data:', Object.keys(data));
       
-      const roiValue = document.getElementById('roiValue');
       const conversionRate = document.getElementById('conversionRate');
       const totalConversations = document.getElementById('totalConversations');
       const messagesToday = document.getElementById('messagesToday');
@@ -1809,13 +1804,10 @@ Ton : serviable, dynamique, orienté solution.`
     function updateROIKPIs(data) {
       console.log('[KPI] Updating ROI KPIs with data:', Object.keys(data));
 
-      const roiValue           = document.getElementById('roiValue');
       const conversionRate     = document.getElementById('conversionRate');
       const totalConversations = document.getElementById('totalConversations');
 
       // Aligné sur les vrais champs de computeROI() (déjà utilisés par le dashboard du bas)
-      if (roiValue)
-        roiValue.textContent = (data.estimatedROI != null) ? `${data.estimatedROI}%` : '--';
       if (conversionRate)
         conversionRate.textContent = (data.conversionRate != null) ? `${data.conversionRate}%` : '--';
       if (totalConversations)
