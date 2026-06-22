@@ -1186,7 +1186,9 @@ Ton : serviable, dynamique, orienté solution.`
       const status = document.getElementById('presetStatus');
       if (!sector) { status.textContent = '⚠️ Choisissez un secteur'; return; }
 
-      const storeName = 'Agent Boutique'; // remplacé par nom client si dispo
+      // Nom du client sélectionné dans le dropdown "Client actif", fallback générique
+      const sel = document.getElementById('tenantSelector');
+      const storeName = sel.selectedOptions[0]?.dataset.name || 'votre boutique';
       const instructions = PRESETS[sector].replace(/{boutique}/g, storeName);
 
       document.getElementById('agentInstructions').value = instructions;
@@ -1946,8 +1948,9 @@ Ton : serviable, dynamique, orienté solution.`
         document.getElementById('roi-hot').textContent       = data.hotLeads           ?? '--';
         document.getElementById('roi-conv-rate').textContent = data.conversionRate != null
           ? data.conversionRate + '%' : '--';
-        document.getElementById('roi-rev').textContent       = data.totalConverted != null
-          ? (data.totalConverted * 79) + '€' : '--';
+        // Revenu réel calculé côté backend (computeROI → PLAN_PRICES + revenus manuels)
+        document.getElementById('roi-rev').textContent       = data.totalRevenue != null
+          ? data.totalRevenue + '€' : '--';
       } catch (e) {
         console.warn('[ROI DASHBOARD] load error:', e.message);
       }
@@ -1964,7 +1967,7 @@ Ton : serviable, dynamique, orienté solution.`
           return;
         }
         sel.innerHTML = data.tenants.map(t =>
-          `<option value="${t.tenant_id}">${t.business_name} (${t.tenant_id})</option>`
+          `<option value="${t.tenant_id}" data-name="${t.business_name}">${t.business_name} (${t.tenant_id})</option>`
         ).join('');
         if (currentTenantId && currentTenantId !== 'DEFAULT') sel.value = currentTenantId;
         if (sel.value) switchTenant();
