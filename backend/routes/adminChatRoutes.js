@@ -48,7 +48,7 @@ router.get('/conversation/:id', adminAuth, async (req, res) => {
   try {
     const conversationId = req.params.id;
     const conversation = await Conversation.findById(conversationId)
-      .select('messages phone tenant_id lastInteractionAt')
+      .select('messages phone tenant_id lastInteractionAt score')
       .lean();
 
     if (!conversation) {
@@ -62,6 +62,7 @@ router.get('/conversation/:id', adminAuth, async (req, res) => {
         phone: conversation.phone,
         tenant_id: conversation.tenant_id,
         lastInteraction: conversation.lastInteractionAt,
+        score: conversation.score,
         messages: conversation.messages || []
       }
     });

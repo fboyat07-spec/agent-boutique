@@ -940,16 +940,8 @@
         <div class="lead-info-section">
           <div class="lead-info-title">Informations</div>
           <div class="lead-info-item">
-            <span class="lead-info-label">Nom</span>
-            <span class="lead-info-value" id="leadName">--</span>
-          </div>
-          <div class="lead-info-item">
             <span class="lead-info-label">Téléphone</span>
             <span class="lead-info-value" id="leadPhone">--</span>
-          </div>
-          <div class="lead-info-item">
-            <span class="lead-info-label">Business</span>
-            <span class="lead-info-value" id="leadBusiness">--</span>
           </div>
           <div class="lead-info-item">
             <span class="lead-info-label">Messages</span>
@@ -1357,9 +1349,7 @@ Ton : serviable, dynamique, orienté solution.`
     // Right panel elements
     const currentModeBadge = document.getElementById('currentModeBadge');
     const leadScore = document.getElementById('leadScore');
-    const leadName = document.getElementById('leadName');
     const leadPhone = document.getElementById('leadPhone');
-    const leadBusiness = document.getElementById('leadBusiness');
     const leadMessages = document.getElementById('leadMessages');
     
     // Action buttons
@@ -1552,11 +1542,9 @@ Ton : serviable, dynamique, orienté solution.`
       takeoverBtn.style.display = mode === 'IA' ? 'block' : 'none';
       releaseBtn.style.display = mode === 'HUMAN' ? 'block' : 'none';
       
-      // Mettre à jour les infos (pour l'instant basiques)
-      leadScore.textContent = '--';
-      leadName.textContent = 'Non configuré';
+      // Mettre à jour les infos
+      leadScore.textContent = (conversation.score != null) ? conversation.score : '--';
       leadPhone.textContent = conversation.phone;
-      leadBusiness.textContent = 'Non configuré';
       leadMessages.textContent = conversation.messages?.length || 0;
     }
     
