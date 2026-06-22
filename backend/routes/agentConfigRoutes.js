@@ -5,6 +5,8 @@ const { updateTenantConfig, getTenant } = require('../services/tenantManager');
 const { getFullTenantConfig } = require('../services/tenantConfig');
 const { optionalAuthenticate, validateTenant } = require('../middleware/tenantAuth');
 const User = require('../models/User');
+const csvParser = require('csv-parser');
+const { Readable } = require('stream');
 
 const router = express.Router();
 
@@ -671,6 +673,83 @@ router.get('/admin/tenants', async (req, res) => {
     return res.json({ ok: true, tenants });
   } catch (err) {
     console.error('[ADMIN TENANTS GET ERROR]', err.message);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── POST /api/agent/catalog/import ───────────────────────────────────────────
+// Reçoit { tenant_id, csv } (texte CSV brut). REMPLACE le catalogue du tenant.
+router.post('/catalog/import', async (req, res) => {
+  try {
+    const { tenant_id, csv } = req.body;
+    if (!tenant_id) return res.status(400).json({ error: 'tenant_id requis' });
+    if (!csv || typeof csv !== 'string') return res.status(400).json({ error: 'csv (texte) requis' });
+
+    // Parsing robuste via csv-parser (gère les champs entre guillemets type "S,M,L")
+    const rows = await new Promise((resolve, reject) => {
+      const out = [];
+      Readable.from(csv)
+        .pipe(csvParser({ mapHeaders: ({ header }) => header.trim().toLowerCase() }))
+        .on('data', r => out.push(r))
+        .on('end', () => resolve(out))
+        .on('error', reject);
+    });
+
+    const splitList = v => String(v || '').split(',').map(s => s.trim()).filter(Boolean);
+    const products = [];
+    const errors = [];
+    let skipped = 0;
+
+    rows.forEach((row, i) => {
+      const reference = String(row.reference || '').trim();
+      const nom       = String(row.nom || '').trim();
+      if (!reference && !nom) { skipped++; return; }            // ligne vide
+      if (!nom) { skipped++; errors.push(`Ligne ${i + 2}: nom manquant`); return; }
+
+      const prix  = parseFloat(String(row.prix || '').replace(',', '.'));
+      const stock = parseInt(row.stock, 10);
+      products.push({
+        reference,
+        nom,
+        categorie:   String(row.categorie || '').trim(),
+        genre:       String(row.genre || '').trim().toLowerCase(),
+        saison:      String(row.saison || '').trim(),
+        tailles:     splitList(row.tailles),
+        couleurs:    splitList(row.couleurs),
+        prix:        Number.isFinite(prix)  ? prix  : 0,
+        stock:       Number.isFinite(stock) ? stock : 0,
+        description: String(row.description || '').trim(),
+      });
+    });
+
+    const user = await User.findOneAndUpdate(
+      { tenant_id },
+      { catalog: products },
+      { new: true }
+    );
+    if (!user) return res.status(404).json({ error: `Aucun utilisateur pour tenant_id: ${tenant_id}` });
+
+    console.log(`[CATALOG] ${products.length} produits importés pour tenant ${tenant_id} (${skipped} ignorés)`);
+    return res.json({ ok: true, imported_count: products.length, skipped_count: skipped, errors });
+  } catch (err) {
+    console.error('[CATALOG IMPORT ERROR]', err.message);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── GET /api/agent/catalog?tenant_id=xxx ─────────────────────────────────────
+router.get('/catalog', async (req, res) => {
+  try {
+    const { tenant_id } = req.query;
+    if (!tenant_id) return res.status(400).json({ error: 'tenant_id requis' });
+
+    const user = await User.findOne({ tenant_id }).select('catalog').lean();
+    if (!user) return res.status(404).json({ error: `Aucun utilisateur pour tenant_id: ${tenant_id}` });
+
+    const catalog = user.catalog || [];
+    return res.json({ ok: true, catalog, count: catalog.length });
+  } catch (err) {
+    console.error('[CATALOG GET ERROR]', err.message);
     return res.status(500).json({ error: err.message });
   }
 });

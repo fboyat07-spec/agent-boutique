@@ -994,6 +994,18 @@
         </div>
 
         <div class="lead-info-section">
+          <div class="lead-info-title">📦 Catalogue produits</div>
+          <div style="font-size:13px;color:#64748b;margin-bottom:8px;">
+            Produits chargés : <strong id="catalogCount">--</strong>
+          </div>
+          <input type="file" id="catalogFile" accept=".csv" class="wa-input" style="margin-bottom:8px;" />
+          <div style="display:flex; align-items:center; gap:10px;">
+            <button class="action-button primary" onclick="importCatalog()">Importer le catalogue</button>
+            <span id="catalogStatus" style="font-size:13px;"></span>
+          </div>
+        </div>
+
+        <div class="lead-info-section">
           <div class="lead-info-title">📋 Instructions pour l'agent</div>
           <textarea id="agentInstructions" class="wa-input"
             rows="4"
@@ -1194,6 +1206,51 @@ Ton : serviable, dynamique, orienté solution.`
       document.getElementById('agentInstructions').value = instructions;
       status.textContent = '✅ Preset chargé — pensez à sauvegarder !';
       setTimeout(() => { status.textContent = ''; }, 5000);
+    }
+
+    // ── Catalogue produits ────────────────────────────────────────────────────
+    function effectiveTenant() {
+      return (currentTenantId && currentTenantId !== 'DEFAULT') ? currentTenantId : 'store_demo';
+    }
+
+    async function loadCatalogCount() {
+      const el = document.getElementById('catalogCount');
+      if (!el) return;
+      try {
+        const res  = await fetch(`/api/agent/catalog?tenant_id=${effectiveTenant()}`);
+        const data = await res.json();
+        el.textContent = data.ok ? (data.count ?? 0) : '--';
+      } catch { el.textContent = '--'; }
+    }
+
+    async function importCatalog() {
+      const fileInput = document.getElementById('catalogFile');
+      const status    = document.getElementById('catalogStatus');
+      const file      = fileInput.files?.[0];
+      if (!file) { status.style.color = '#991b1b'; status.textContent = '⚠️ Choisissez un fichier .csv'; return; }
+      status.style.color = '#475569';
+      status.textContent = '⏳ Import…';
+      try {
+        const csv = await file.text();
+        const res = await fetch('/api/agent/catalog/import', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ tenant_id: effectiveTenant(), csv }),
+        });
+        const data = await res.json();
+        if (data.ok) {
+          status.style.color = '#065f46';
+          status.textContent = `✅ ${data.imported_count} produits importés` +
+            (data.skipped_count ? ` (${data.skipped_count} ignorés)` : '');
+          loadCatalogCount();
+        } else {
+          status.style.color = '#991b1b';
+          status.textContent = `❌ ${data.error || 'Erreur'}`;
+        }
+      } catch (e) {
+        status.style.color = '#991b1b';
+        status.textContent = '❌ Erreur réseau';
+      }
     }
 
     // ── Instructions agent ───────────────────────────────────────────────────
@@ -1983,6 +2040,7 @@ Ton : serviable, dynamique, orienté solution.`
       console.log('[TENANT] switched to', currentTenantId);
       loadAgentInstructions();
       loadCalendlyLink();
+      loadCatalogCount();
     }
 
     loadConversations();
@@ -1992,6 +2050,7 @@ Ton : serviable, dynamique, orienté solution.`
     loadCalendlyLink();
     loadActiveSequences();
     loadROIDashboard();
+    loadCatalogCount();
 
     // État initial mobile : afficher la liste des conversations
     if (isMobile()) {

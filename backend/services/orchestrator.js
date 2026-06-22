@@ -307,6 +307,29 @@ Choisis l'outil le plus adapté au contexte. Ne fais qu'UNE seule action par mes
     prompt += `\n\nCONTEXTE CONVERSATION (résumé automatique — basé sur l'historique) :\n${running_summary}`;
   }
 
+  // Catalogue produits — injecté UNIQUEMENT si non vide. Petits catalogues : injection complète.
+  // NOTE: pour de gros catalogues, prévoir une recherche/retrieval au lieu de tout injecter.
+  if (Array.isArray(user?.catalog) && user.catalog.length > 0) {
+    prompt += `\n\n═══ CATALOGUE PRODUITS DISPONIBLES ═══\n`;
+    prompt += `Réponds sur les produits UNIQUEMENT à partir de ce catalogue. `;
+    prompt += `N'invente jamais un produit, un prix ou un stock absent du catalogue.\n\n`;
+    for (const p of user.catalog) {
+      const parts = [];
+      if (p.reference) parts.push(`Réf ${p.reference}`);
+      parts.push(p.nom || '(sans nom)');
+      if (p.categorie)        parts.push(p.categorie);
+      if (p.genre)            parts.push(p.genre);
+      if (p.saison)           parts.push(p.saison);
+      if (p.tailles?.length)  parts.push(`tailles: ${p.tailles.join('/')}`);
+      if (p.couleurs?.length) parts.push(`couleurs: ${p.couleurs.join('/')}`);
+      parts.push(`prix: ${p.prix}€`);
+      parts.push(`stock: ${p.stock}`);
+      let line = `- ${parts.join(' | ')}`;
+      if (p.description) line += `\n    ${p.description}`;
+      prompt += line + '\n';
+    }
+  }
+
   // Instructions client — DERNIÈRE position = priorité maximale sur tout le prompt
   if (user?.agent_instructions?.trim()) {
     prompt += `\n\n═══ INSTRUCTIONS SPÉCIFIQUES DU CLIENT (PRIORITÉ MAXIMALE) ═══\n`;

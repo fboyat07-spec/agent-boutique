@@ -4,6 +4,20 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const { v4: uuidv4 } = require('uuid');
 
+// Produit du catalogue (importé via CSV depuis la console). Sous-doc, pas d'_id.
+const ProductSchema = new mongoose.Schema({
+  reference:   { type: String, default: '' },
+  nom:         { type: String, default: '' },
+  categorie:   { type: String, default: '' },
+  genre:       { type: String, default: '' },   // homme/femme/enfant/mixte
+  saison:      { type: String, default: '' },   // été/hiver/mi-saison/toute-saison (texte libre)
+  tailles:     { type: [String], default: [] },
+  couleurs:    { type: [String], default: [] },
+  prix:        { type: Number, default: 0 },
+  stock:       { type: Number, default: 0 },
+  description: { type: String, default: '' },
+}, { _id: false });
+
 const UserSchema = new mongoose.Schema({
   user_id:             { type: String, default: () => uuidv4(), unique: true, index: true },
   tenant_id:           { type: String, required: true, index: true },
@@ -36,6 +50,9 @@ const UserSchema = new mongoose.Schema({
 
   // Lien Calendly injecté dans le system prompt si renseigné
   calendly_link:       { type: String, default: '' },
+
+  // Catalogue produits du tenant (importé CSV). Injecté dans le system prompt si non vide.
+  catalog:             { type: [ProductSchema], default: [] },
 }, {
   timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
 });
