@@ -22,6 +22,11 @@ const conversationSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  // Pause IA par conversation : true quand un humain a pris la main (takeover)
+  ai_paused: {
+    type: Boolean,
+    default: false
+  },
   lastInteractionAt: {
     type: Date,
     default: Date.now

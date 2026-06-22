@@ -170,10 +170,8 @@ router.post('/takeover', adminAuth, async (req, res) => {
       return res.status(404).json({ error: 'Conversation not found' });
     }
 
-    // Marquer la conversation comme prise en charge par un humain
-    conversation.mode = 'HUMAN';
-    conversation.takenOverAt = new Date();
-    conversation.takenOverBy = 'admin';
+    // Pause l'IA pour cette conversation (lu par le webhook avant orchestrate)
+    conversation.ai_paused = true;
     await conversation.save();
 
     // Mettre à jour le lead correspondant
@@ -210,10 +208,8 @@ router.post('/release', adminAuth, async (req, res) => {
       return res.status(404).json({ error: 'Conversation not found' });
     }
 
-    // Marquer la conversation comme retournée à l'IA
-    conversation.mode = 'IA';
-    conversation.releasedAt = new Date();
-    conversation.releasedBy = 'admin';
+    // Réactive l'IA pour cette conversation
+    conversation.ai_paused = false;
     await conversation.save();
 
     // Mettre à jour le lead correspondant

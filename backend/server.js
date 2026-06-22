@@ -930,8 +930,29 @@ async function processSingleMessage(message, tenant_id) {
         }
 
         console.log('[DIAGNOSTIC] AGENT ENABLED - STEP 31');
+
+        // ── TAKEOVER : pause IA par conversation ─────────────────────────────
+        // Si un humain a pris la main (ai_paused=true), on NE déclenche PAS l'IA.
+        // On persiste quand même le message client pour qu'il reste visible console.
+        const pausedConvo = await Conversation
+          .findOne({ phone: senderPhone, tenant_id })
+          .select('ai_paused')
+          .lean();
+        if (pausedConvo?.ai_paused) {
+          await Conversation.findOneAndUpdate(
+            { phone: senderPhone, tenant_id },
+            {
+              $push: { messages: { content: messageText, sender: senderPhone, timestamp: new Date(), type: 'text' } },
+              $set:  { lastInteractionAt: new Date() }
+            },
+            { upsert: true }
+          );
+          console.log(`[TAKEOVER] AI paused for ${senderPhone}, skipping orchestrator`);
+          return;
+        }
+
         console.log('[DIAGNOSTIC] CALLING ORCHESTRATE - STEP 32');
-        
+
         // L'orchestrateur gère : contexte + intent + décision + persistance + score
         const reply = await orchestrate(senderPhone, messageText, tenant_id);
 
