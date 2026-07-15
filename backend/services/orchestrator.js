@@ -455,6 +455,12 @@ async function nodeClassifyIntent(state) {
 async function nodeRoute(state) {
   const { message, context, intent } = state;
 
+  function alreadySaid(text) {
+    return (context.history || []).some(
+      m => m.role === 'assistant' && m.content === text
+    );
+  }
+
   // Si le client a des instructions personnalisées (console), on désactive les
   // gardes prospection codées en dur et on laisse GPT + buildSystemPrompt gérer.
   const hasCustomInstructions = !!(context?.user?.agent_instructions?.trim());
@@ -465,7 +471,7 @@ async function nodeRoute(state) {
   const stage      = context?.stage || 'new';
 
   // off_topic → toujours qualifier d'abord
-  if (!hasCustomInstructions && intentType === 'off_topic') {
+  if (!hasCustomInstructions && intentType === 'off_topic' && !alreadySaid('Je vous avais contacté pour vous parler de WhatsApp — vous gérez beaucoup de messages clients en ce moment ?')) {
     console.log('[ORCHESTRATOR] Guard pré-GPT → qualify_lead (off_topic)');
     return {
       toolName: 'qualify_lead',
@@ -474,7 +480,7 @@ async function nodeRoute(state) {
   }
 
   // greeting sur un nouveau prospect → qualifier
-  if (!hasCustomInstructions && intentType === 'greeting' && stage === 'new') {
+  if (!hasCustomInstructions && intentType === 'greeting' && stage === 'new' && !alreadySaid('Bonjour ! Dites-moi, vous faites quoi comme activité ?')) {
     console.log('[ORCHESTRATOR] Guard pré-GPT → qualify_lead (greeting+new)');
     return {
       toolName: 'qualify_lead',
@@ -489,7 +495,8 @@ async function nodeRoute(state) {
     intentType !== 'ready_to_buy' &&
     intentType !== 'objection_price' &&
     intentType !== 'not_interested' &&
-    intentType !== 'off_topic'
+    intentType !== 'off_topic' &&
+    !alreadySaid('Je comprends votre hésitation. Qu\'est-ce qui vous freine ?')
   ) {
     console.log('[ORCHESTRATOR] Guard pré-GPT → handle_objection (sentiment négatif)');
     return {
@@ -500,7 +507,8 @@ async function nodeRoute(state) {
 
   if (
     !hasCustomInstructions &&
-    intentType === 'off_topic'
+    intentType === 'off_topic' &&
+    !alreadySaid('Je me présente : je suis l\'assistant qui vous contacte au sujet de WhatsApp pour votre activité. Je peux vous expliquer en une phrase si vous voulez !')
   ) {
     return {
       toolName: 'handle_objection',
