@@ -348,6 +348,9 @@ const OPT_OUT_SIGNALS = [
   'laissez-moi', 'ne plus', 'merde', 'nul',
   'j arrête', 'j arrete', 'je ferme', 'je cesse',
   'plus d activité', 'pas de boutique', 'pas boutique', 'coach', 'je ne suis pas',
+  'arnaqueur', 'arnaque', 'scam', 'escroc', 'foutez', 'fous',
+  'chiant', 'harcèlement', 'harcelement', 'signalement', 'signaler',
+  'porte plainte', 'plainte',
 ];
 
 const OPT_OUT_REPLY = "Pas de problème, je vous retire de la liste et ne vous recontacterai plus. Belle journée ! 🙏";
@@ -485,12 +488,26 @@ async function nodeRoute(state) {
     intent?.sentiment === 'negative' &&
     intentType !== 'ready_to_buy' &&
     intentType !== 'objection_price' &&
-    intentType !== 'not_interested'
+    intentType !== 'not_interested' &&
+    intentType !== 'off_topic'
   ) {
     console.log('[ORCHESTRATOR] Guard pré-GPT → handle_objection (sentiment négatif)');
     return {
       toolName: 'handle_objection',
       toolArgs: { objection_type: 'other', response: 'Je comprends votre hésitation. Qu\'est-ce qui vous freine ?' }
+    };
+  }
+
+  if (
+    !hasCustomInstructions &&
+    intentType === 'off_topic'
+  ) {
+    return {
+      toolName: 'handle_objection',
+      toolArgs: {
+        objection_type: 'other',
+        response: 'Je me présente : je suis l\'assistant qui vous contacte au sujet de WhatsApp pour votre activité. Je peux vous expliquer en une phrase si vous voulez !'
+      }
     };
   }
   // ── FIN GARDE PRÉ-GPT ──────────────────────────────────────────────────────
