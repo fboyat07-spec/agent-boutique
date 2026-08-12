@@ -8,6 +8,7 @@ const emailSequenceSchema = new mongoose.Schema({
   businessName: { type: String, default: '' },
   phone:        { type: String, default: '' },
   sector:       { type: String, default: '' },
+  campaign:     { type: String, default: 'agent_boutique', index: true },
   step:         { type: String, enum: ['J3', 'J7'], required: true },
   scheduledAt:  { type: Date,   required: true },
   sentAt:       { type: Date },

@@ -20,6 +20,11 @@ const outboundLeadSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
+  campaign: {
+    type: String,
+    default: 'agent_boutique',
+    index: true
+  },
   status: {
     type: String,
     enum: ['NEW', 'CONTACTED', 'INTERESTED', 'CLOSING', 'WON'],

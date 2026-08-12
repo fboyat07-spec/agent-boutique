@@ -8,9 +8,10 @@
 const mongoose = require('mongoose');
 
 const whatsAppSequenceSchema = new mongoose.Schema({
-  to:        { type: String, required: true, unique: true },
+  to:        { type: String, required: true },
   prenom:    { type: String, required: true },
   tenant_id: { type: String, default: 'default' },
+  campaign:  { type: String, default: 'agent_boutique', index: true },
   status:    { type: String, enum: ['active', 'stopped', 'completed'], default: 'active' },
   step:      { type: String, enum: ['j0', 'j3', 'j7'], default: 'j0' },
   startDate: { type: Date,   default: Date.now },
@@ -21,5 +22,7 @@ const whatsAppSequenceSchema = new mongoose.Schema({
 // Index pour les requêtes du cron
 whatsAppSequenceSchema.index({ status: 1, j3_date: 1 });
 whatsAppSequenceSchema.index({ status: 1, j7_date: 1 });
+// Unicité par campagne — remplace l'ancien index unique simple sur "to"
+whatsAppSequenceSchema.index({ to: 1, campaign: 1 }, { unique: true });
 
 module.exports = mongoose.model('WhatsAppSequence', whatsAppSequenceSchema);
