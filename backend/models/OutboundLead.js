@@ -25,6 +25,41 @@ const outboundLeadSchema = new mongoose.Schema({
     default: 'agent_boutique',
     index: true
   },
+  secteur: {
+    type: String,
+    required: false,
+    trim: true
+  },
+  email: {
+    type: String,
+    required: false,
+    trim: true
+  },
+  adresse: {
+    type: String,
+    required: false,
+    trim: true
+  },
+  codePostal: {
+    type: String,
+    required: false,
+    trim: true
+  },
+  siteWeb: {
+    type: String,
+    required: false,
+    trim: true
+  },
+  siret: {
+    type: String,
+    required: false,
+    trim: true
+  },
+  naf: {
+    type: String,
+    required: false,
+    trim: true
+  },
   status: {
     type: String,
     enum: ['NEW', 'CONTACTED', 'INTERESTED', 'CLOSING', 'WON'],
@@ -60,5 +95,7 @@ outboundLeadSchema.index({ phone: 1, createdAt: -1 });
 outboundLeadSchema.index({ status: 1, nextFollowUpAt: 1 });
 outboundLeadSchema.index({ business: 1 });
 outboundLeadSchema.index({ city: 1 });
+// Unicité par campagne — même pattern que WhatsAppSequence/Prospect
+outboundLeadSchema.index({ phone: 1, campaign: 1 }, { unique: true });
 
 module.exports = mongoose.model('OutboundLead', outboundLeadSchema);

@@ -110,4 +110,4 @@ async function searchProspects({ query, location, radius = 5000, maxResults = 20
   }
 }
 
-module.exports = { searchProspects };
+module.exports = { searchProspects, normalizePhone };
