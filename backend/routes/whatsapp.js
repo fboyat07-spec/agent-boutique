@@ -32,6 +32,35 @@ const PHONE_ID          = process.env.PHONE_NUMBER_ID || process.env.WHATSAPP_PH
 const MS_3_DAYS = 3 * 24 * 60 * 60 * 1000;
 const MS_7_DAYS = 7 * 24 * 60 * 60 * 1000;
 
+// ─── Templates par campagne ───────────────────────────────────────────────────
+// Noms des templates Meta approuvés, sélectionnés selon WhatsAppSequence.campaign.
+const DEFAULT_CAMPAIGN = 'agent_boutique';
+
+const WHATSAPP_TEMPLATES = {
+  agent_boutique: {
+    j0: 'agent_boutique_prise_de_contact',
+    j3: 'agent_boutique_relance_j3',
+    j7: 'agent_boutique_closing_j7',
+  },
+  adele: {
+    j0: 'adele_prise_de_contact',
+    j3: 'adele_relance_j3',
+    j7: 'adele_closing_j7',
+  },
+};
+
+/**
+ * Retourne le nom de template à utiliser pour une campagne + étape donnée.
+ * Fallback sur agent_boutique si la campagne est inconnue (sécurité non-régression).
+ */
+function getTemplateName(campaign, step) {
+  const set = WHATSAPP_TEMPLATES[campaign] || WHATSAPP_TEMPLATES[DEFAULT_CAMPAIGN];
+  if (!WHATSAPP_TEMPLATES[campaign]) {
+    console.warn(`[WA TEMPLATE] Campagne inconnue "${campaign}" — fallback sur "${DEFAULT_CAMPAIGN}"`);
+  }
+  return set[step];
+}
+
 // ─── Helper : appel Meta Graph API ───────────────────────────────────────────
 
 /**
@@ -106,7 +135,7 @@ async function runSequenceCron() {
         continue;
       }
       try {
-        await sendTemplate(seq.to, 'agent_boutique_relance_j3', [
+        await sendTemplate(seq.to, getTemplateName(seq.campaign, 'j3'), [
           { type: 'text', text: seq.prenom },
         ]);
         await WhatsAppSequence.updateOne({ _id: seq._id }, { step: 'j3' });
@@ -130,7 +159,7 @@ async function runSequenceCron() {
         continue;
       }
       try {
-        await sendTemplate(seq.to, 'agent_boutique_closing_j7', [
+        await sendTemplate(seq.to, getTemplateName(seq.campaign, 'j7'), [
           { type: 'text', text: seq.prenom },
         ]);
         await WhatsAppSequence.updateOne({ _id: seq._id }, { step: 'j7', status: 'completed' });
@@ -192,7 +221,7 @@ router.post('/start-sequence', async (req, res) => {
     console.log(`[WA SEQUENCE] Séquence créée/réinitialisée → ${to} | J3: ${j3_date.toISOString()} | J7: ${j7_date.toISOString()}`);
 
     // J0 — envoi immédiat
-    await sendTemplate(to, 'agent_boutique_prise_de_contact', [
+    await sendTemplate(to, getTemplateName(sequence.campaign, 'j0'), [
       { type: 'text', text: prenom },
     ]);
     console.log(`[WA SEQUENCE] J0 envoyé → ${to}`);

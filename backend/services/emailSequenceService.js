@@ -6,7 +6,18 @@ const EmailSequence = require('../models/EmailSequence');
 // ─── Config SMTP Zoho ─────────────────────────────────────────────────────────
 
 const FROM_EMAIL = 'contact@agentboutique.fr';
-const FROM_NAME  = 'Agent Boutique';
+
+// ─── FROM_NAME par campagne ───────────────────────────────────────────────────
+// Décision Florian : reste "Agent Boutique" pour les deux campagnes (Adèle est
+// présentée comme un produit recommandé par Agent Boutique, pas comme l'expéditeur).
+const DEFAULT_CAMPAIGN = 'agent_boutique';
+const FROM_NAMES = {
+  agent_boutique: 'Agent Boutique',
+  adele:          'Agent Boutique',
+};
+function getFromName(campaign) {
+  return FROM_NAMES[campaign] || FROM_NAMES[DEFAULT_CAMPAIGN];
+}
 
 function createTransporter() {
   // nodemailer installé dans backend/node_modules (npm install nodemailer)
@@ -65,9 +76,9 @@ function getSectorCtx(sector) {
   return { accroche: 'votre activité' };
 }
 
-// ─── Templates J3 et J7 ───────────────────────────────────────────────────────
+// ─── Templates J3 et J7 — campagne agent_boutique (inchangé) ─────────────────
 
-function buildJ3(seq) {
+function buildJ3AgentBoutique(seq) {
   const { accroche } = getSectorCtx(seq.sector);
   return {
     subject: `Toujours là si vous avez 10 min 😊`,
@@ -85,7 +96,7 @@ function buildJ3(seq) {
 <p>Un créneau qui vous convient ?</p>
 
 <p>Belle journée,<br>
-<strong>${FROM_NAME}</strong><br>
+<strong>${getFromName(seq.campaign)}</strong><br>
 <a href="mailto:${FROM_EMAIL}">${FROM_EMAIL}</a></p>
 
 <p style="color:#999;font-size:12px;">
@@ -95,7 +106,7 @@ function buildJ3(seq) {
   };
 }
 
-function buildJ7(seq) {
+function buildJ7AgentBoutique(seq) {
   const { accroche } = getSectorCtx(seq.sector);
   return {
     subject: `Mon dernier message — bonne continuation 🙏`,
@@ -111,7 +122,7 @@ function buildJ7(seq) {
 <p>Je vous souhaite une belle continuation, et surtout… beaucoup de nouveaux clients !</p>
 
 <p>Avec plaisir,<br>
-<strong>${FROM_NAME}</strong><br>
+<strong>${getFromName(seq.campaign)}</strong><br>
 <a href="mailto:${FROM_EMAIL}">${FROM_EMAIL}</a></p>
 
 <p style="color:#999;font-size:12px;">
@@ -119,6 +130,68 @@ function buildJ7(seq) {
 </p>
 `.trim(),
   };
+}
+
+// ─── Templates J3 et J7 — campagne adele ──────────────────────────────────────
+
+function buildJ3Adele(seq) {
+  const { accroche } = getSectorCtx(seq.sector);
+  return {
+    subject: `Un appel raté peut vous coûter un client 📞`,
+    html: `
+<p>Bonjour,</p>
+
+<p>Un constat qui revient souvent chez les indépendants : quand un appel ou un message reste sans réponse, le client ne rappelle généralement pas — il prend rendez-vous ailleurs.</p>
+
+<p>C'est exactement le problème qu'Adèle résout : elle répond à votre place sur WhatsApp/SMS pendant que vous gérez ${accroche}, prend les rendez-vous et qualifie les demandes — configurée sur vos propres motifs de rendez-vous et leurs vraies durées, pas un modèle générique.</p>
+
+<p>Si ça peut avoir un intérêt concret pour <strong>${seq.businessName}</strong>, je peux vous montrer ça en quelques minutes.</p>
+
+<p>Si ce n'est pas le bon moment, dites-le-moi et je ne vous relance pas.</p>
+
+<p>Belle journée,<br>
+<strong>${getFromName(seq.campaign)}</strong><br>
+<a href="mailto:${FROM_EMAIL}">${FROM_EMAIL}</a></p>
+
+<p style="color:#999;font-size:12px;">
+<a href="mailto:${FROM_EMAIL}?subject=Désinscription">Se désinscrire</a>
+</p>
+`.trim(),
+  };
+}
+
+function buildJ7Adele(seq) {
+  const { accroche } = getSectorCtx(seq.sector);
+  return {
+    subject: `Adèle pour ${seq.businessName} — 49€/mois, sans engagement`,
+    html: `
+<p>Bonjour,</p>
+
+<p>Dernier message de ma part, promis.</p>
+
+<p>Pour être concret : Adèle démarre à <strong>49€/mois, sans engagement</strong>, et la configuration (vos motifs de rendez-vous, leurs vraies durées, vos disponibilités) prend <strong>moins de 10 minutes</strong>.</p>
+
+<p>Si un appel raté pendant que vous gérez ${accroche} vous coûte un client de trop, la porte reste ouverte pour <strong>${seq.businessName}</strong> — il vous suffira de répondre à cet email.</p>
+
+<p>Belle continuation,<br>
+<strong>${getFromName(seq.campaign)}</strong><br>
+<a href="mailto:${FROM_EMAIL}">${FROM_EMAIL}</a></p>
+
+<p style="color:#999;font-size:12px;">
+Vous ne souhaitez plus recevoir de message ? <a href="mailto:${FROM_EMAIL}?subject=STOP">Répondez STOP</a> ou <a href="mailto:${FROM_EMAIL}?subject=Désinscription">désinscrivez-vous ici</a>.
+</p>
+`.trim(),
+  };
+}
+
+// ─── Dispatchers par campagne ──────────────────────────────────────────────────
+
+function buildJ3(seq) {
+  return seq.campaign === 'adele' ? buildJ3Adele(seq) : buildJ3AgentBoutique(seq);
+}
+
+function buildJ7(seq) {
+  return seq.campaign === 'adele' ? buildJ7Adele(seq) : buildJ7AgentBoutique(seq);
 }
 
 // ─── scheduleEmailSequence ────────────────────────────────────────────────────
@@ -171,7 +244,7 @@ function startEmailCron() {
         try {
           const { subject, html } = seq.step === 'J3' ? buildJ3(seq) : buildJ7(seq);
           await transporter.sendMail({
-            from:    `"${FROM_NAME}" <${FROM_EMAIL}>`,
+            from:    `"${getFromName(seq.campaign)}" <${FROM_EMAIL}>`,
             to:      seq.contactEmail,
             subject,
             html,
