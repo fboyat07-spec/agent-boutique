@@ -43,9 +43,9 @@ const WHATSAPP_TEMPLATES = {
     j7: 'agent_boutique_closing_j7',
   },
   adele: {
-    j0: 'adele_prise_de_contact',
-    j3: 'adele_relance_j3',
-    j7: 'adele_closing_j7',
+    j0: 'produit_prise_de_contact',
+    j3: 'produit_relance_j3',
+    j7: 'produit_closing_j7',
   },
 };
 
