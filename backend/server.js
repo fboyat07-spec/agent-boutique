@@ -1299,6 +1299,43 @@ app.post('/api/console/power', consoleAuth, (req, res) => {
   res.json({ ok: true, status: agentEnabled ? 'running' : 'stopped' });
 });
 
+// ─── /api/campaigns/adele/* — contrôle du batch scheduler (pause persistée) ──────
+const { getControlDoc: getAdeleControlDoc } = require('./services/adeleBatchScheduler');
+
+app.post('/api/campaigns/adele/start', consoleAuth, async (req, res) => {
+  try {
+    const Campaign = require('./models/Campaign');
+    await getAdeleControlDoc(); // garantit l'existence du document avant update
+    const doc = await Campaign.findOneAndUpdate(
+      { name: 'adele' },
+      { paused: false },
+      { new: true }
+    );
+    console.log('[ADELE BATCH] Activé via /api/campaigns/adele/start — paused: false');
+    res.json({ ok: true, name: doc.name, paused: doc.paused });
+  } catch (err) {
+    console.error('[ADELE BATCH /start ERROR]', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/campaigns/adele/pause', consoleAuth, async (req, res) => {
+  try {
+    const Campaign = require('./models/Campaign');
+    await getAdeleControlDoc();
+    const doc = await Campaign.findOneAndUpdate(
+      { name: 'adele' },
+      { paused: true },
+      { new: true }
+    );
+    console.log('[ADELE BATCH] Mis en pause via /api/campaigns/adele/pause — paused: true');
+    res.json({ ok: true, name: doc.name, paused: doc.paused });
+  } catch (err) {
+    console.error('[ADELE BATCH /pause ERROR]', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.get('/api/console/roi', consoleAuth, async (req, res) => {
   try {
     const roi = await computeROI();
@@ -1375,6 +1412,9 @@ async function startServer() {
   await connectDB(); // CRITIQUE
   const { startEmailCron } = require('./services/emailSequenceService');
   startEmailCron();
+
+  const { startAdeleBatchScheduler } = require('./services/adeleBatchScheduler');
+  startAdeleBatchScheduler(); // démarre en pause (Campaign{name:'adele'}.paused=true par défaut)
 
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`[SERVER START] Server listening on 0.0.0.0:${PORT}`);

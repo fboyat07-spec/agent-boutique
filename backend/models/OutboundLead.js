@@ -62,7 +62,7 @@ const outboundLeadSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['NEW', 'CONTACTED', 'INTERESTED', 'CLOSING', 'WON'],
+    enum: ['NEW', 'CONTACTED', 'INTERESTED', 'CLOSING', 'WON', 'OPTED_OUT'],
     default: 'NEW',
     index: true
   },

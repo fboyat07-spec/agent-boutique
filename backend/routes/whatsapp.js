@@ -41,11 +41,13 @@ const WHATSAPP_TEMPLATES = {
     j0: 'agent_boutique_prise_de_contact',
     j3: 'agent_boutique_relance_j3',
     j7: 'agent_boutique_closing_j7',
+    usesVariables: true,   // templates rédigés avec {{1}} (prénom)
   },
   adele: {
     j0: 'produit_prise_de_contact',
     j3: 'produit_relance_j3',
     j7: 'produit_closing_j7',
+    usesVariables: false,  // templates confirmés sans variable — aucun component à envoyer
   },
 };
 
@@ -59,6 +61,16 @@ function getTemplateName(campaign, step) {
     console.warn(`[WA TEMPLATE] Campagne inconnue "${campaign}" — fallback sur "${DEFAULT_CAMPAIGN}"`);
   }
   return set[step];
+}
+
+/**
+ * Retourne le tableau de variables à passer à sendTemplate() pour une campagne donnée.
+ * Source de vérité unique (WHATSAPP_TEMPLATES[campaign].usesVariables) — évite de dupliquer
+ * un if/else par point d'appel. Fallback sur agent_boutique (avec variable) si campagne inconnue.
+ */
+function buildTemplateVariables(campaign, prenom) {
+  const set = WHATSAPP_TEMPLATES[campaign] || WHATSAPP_TEMPLATES[DEFAULT_CAMPAIGN];
+  return set.usesVariables ? [{ type: 'text', text: prenom }] : [];
 }
 
 // ─── Helper : appel Meta Graph API ───────────────────────────────────────────
@@ -135,9 +147,11 @@ async function runSequenceCron() {
         continue;
       }
       try {
-        await sendTemplate(seq.to, getTemplateName(seq.campaign, 'j3'), [
-          { type: 'text', text: seq.prenom },
-        ]);
+        await sendTemplate(
+          seq.to,
+          getTemplateName(seq.campaign, 'j3'),
+          buildTemplateVariables(seq.campaign, seq.prenom)
+        );
         await WhatsAppSequence.updateOne({ _id: seq._id }, { step: 'j3' });
         console.log(`[WA CRON] J3 envoyé → ${seq.to}`);
       } catch (err) {
@@ -159,9 +173,11 @@ async function runSequenceCron() {
         continue;
       }
       try {
-        await sendTemplate(seq.to, getTemplateName(seq.campaign, 'j7'), [
-          { type: 'text', text: seq.prenom },
-        ]);
+        await sendTemplate(
+          seq.to,
+          getTemplateName(seq.campaign, 'j7'),
+          buildTemplateVariables(seq.campaign, seq.prenom)
+        );
         await WhatsAppSequence.updateOne({ _id: seq._id }, { step: 'j7', status: 'completed' });
         console.log(`[WA CRON] J7 envoyé → ${seq.to} | séquence terminée`);
       } catch (err) {
@@ -288,5 +304,12 @@ router.get('/sequences-active', async (req, res) => {
     return res.status(500).json({ error: err.message });
   }
 });
+
+// ─── Exports additionnels (réutilisation par d'autres modules, ex: adeleBatchScheduler) ──
+// Le router Express est une fonction — on peut lui attacher des propriétés sans changer
+// la façon dont server.js le monte (app.use('/api/whatsapp', require('./routes/whatsapp'))).
+router.isOptedOut      = isOptedOut;
+router.getTemplateName = getTemplateName;
+router.sendTemplate    = sendTemplate;
 
 module.exports = router;

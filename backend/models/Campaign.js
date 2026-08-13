@@ -25,6 +25,13 @@ const campaignSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  // Flag de pause pour les campagnes utilisées comme document de contrôle
+  // d'un batch scheduler (ex: name:'adele' piloté par services/adeleBatchScheduler.js).
+  // Démarre à true — aucun envoi automatique tant qu'il n'est pas explicitement désactivé.
+  paused: {
+    type: Boolean,
+    default: true
+  },
   description: {
     type: String,
     trim: true
