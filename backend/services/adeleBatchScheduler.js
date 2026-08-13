@@ -30,8 +30,10 @@ const { isOptedOut, getTemplateName, sendTemplate } = require('../routes/whatsap
 
 const CAMPAIGN = 'adele';
 
-const DEFAULT_BATCH_SIZE  = 10;
-const DEFAULT_INTERVAL_MIN = 20;
+// Palier Meta confirmé (WhatsApp Manager) : 250 conversations lancées par l'entreprise / 24h.
+// 5 x 48 ticks/jour = 240 msg/24h max, sous le palier avec marge de sécurité.
+const DEFAULT_BATCH_SIZE   = 5;
+const DEFAULT_INTERVAL_MIN = 30;
 
 const BATCH_SIZE = parseInt(process.env.ADELE_BATCH_SIZE, 10) || DEFAULT_BATCH_SIZE;
 
