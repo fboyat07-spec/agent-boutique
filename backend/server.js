@@ -433,22 +433,29 @@ async function processFollowUps() {
     if (convo.stage === 'won') continue;
 
     let message;
-    const stageFollowUps = {
-      new: ["Tu fais quoi comme business ?"],
-      qualified: ["Tu fais combien de CA par mois ?"],
-      interested: ["Tu veux plus de clients chaque semaine ?"],
-      closing: ["Je t'active ça maintenant 👉 " + process.env.SALES_PAYMENT_LINK]
-    };
+    // Priorité au contenu réellement programmé par GPT (schedule_followup) —
+    // sinon, fallback générique par stage (comportement historique inchangé).
+    if (convo.pendingFollowUpMessage) {
+      message = convo.pendingFollowUpMessage;
+    } else {
+      const stageFollowUps = {
+        new: ["Tu fais quoi comme business ?"],
+        qualified: ["Tu fais combien de CA par mois ?"],
+        interested: ["Tu veux plus de clients chaque semaine ?"],
+        closing: ["Je t'active ça maintenant 👉 " + process.env.SALES_PAYMENT_LINK]
+      };
 
-    const stageOptions = stageFollowUps[convo.stage] || stageFollowUps.new;
-    message = stageOptions[Math.floor(Math.random() * stageOptions.length)];
+      const stageOptions = stageFollowUps[convo.stage] || stageFollowUps.new;
+      message = stageOptions[Math.floor(Math.random() * stageOptions.length)];
+    }
 
     await Conversation.updateOne(
       { _id: convo._id },
       {
         $set: {
           nextFollowUpAt: new Date(Date.now() + 3600000), // +1h
-          followUpType: 'recovery'
+          followUpType: 'recovery',
+          pendingFollowUpMessage: null // consommé — ne pas le renvoyer aux cycles suivants
         }
       }
     );

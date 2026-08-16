@@ -73,6 +73,28 @@ const conversationSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Campaign',
     default: null
+  },
+  // ── Relance différée (schedule_followup) ──────────────────────────────────
+  // Date à partir de laquelle processFollowUps() (server.js) doit traiter cette
+  // conversation. Absent du schéma auparavant → silencieusement supprimé par
+  // Mongoose (mode strict) à chaque écriture, donc jamais réellement persisté.
+  nextFollowUpAt: {
+    type: Date,
+    default: null
+  },
+  // Origine de la relance programmée : 'orchestrated' (déclenchée par un tool
+  // call GPT via schedule_followup) ou 'recovery' (relance générique par stage).
+  followUpType: {
+    type: String,
+    default: null
+  },
+  // Contenu exact rédigé par GPT pour la relance différée (schedule_followup).
+  // Lu et vidé par processFollowUps() au moment de l'envoi — sans ce champ,
+  // processFollowUps() n'avait accès qu'à des messages génériques par stage,
+  // différents de ce qui a été implicitement annoncé au prospect.
+  pendingFollowUpMessage: {
+    type: String,
+    default: null
   }
 }, {
   timestamps: true

@@ -163,14 +163,17 @@ const AGENT_TOOLS = [
     type: 'function',
     function: {
       name: 'schedule_followup',
-      description: 'Programmer un suivi automatique dans le futur.',
+      description: 'Programmer un suivi DIFFÉRÉ. Le prospect ne reçoit PAS "message" maintenant — ' +
+        'seulement dans delay_hours. Utilise ceci quand le prospect a explicitement besoin de temps ' +
+        '(ex: "je vais réfléchir") : accuse réception maintenant sans relancer, le suivi partira plus tard.',
       parameters: {
         type: 'object',
         properties: {
-          message:     { type: 'string', description: 'Message à envoyer lors du suivi' },
-          delay_hours: { type: 'number', description: 'Délai en heures avant le suivi' }
+          immediate_ack: { type: 'string', description: 'Accusé de réception court et naturel envoyé MAINTENANT — ne redemande rien, ne relance pas, respecte juste le besoin de temps exprimé.' },
+          message:       { type: 'string', description: 'Message de relance à envoyer PLUS TARD, dans delay_hours (pas maintenant)' },
+          delay_hours:   { type: 'number', description: 'Délai en heures avant l\'envoi de "message"' }
         },
-        required: ['message', 'delay_hours']
+        required: ['immediate_ack', 'message', 'delay_hours']
       }
     }
   },
@@ -286,11 +289,16 @@ RÈGLES STRICTES cold outreach :
 3. Si la réponse est négative (Non / Pas intéressé / Occupé) →
    remercie et souhaite bonne continuation. Ne relance JAMAIS.
 4. Si hésitation → UNE seule relance max, puis exit poli.
-5. Ne mentionne JAMAIS les prix avant le 3ème échange minimum.
-6. Ne pose JAMAIS deux questions à la suite.
-7. Si le prospect semble confus → explique en 1 phrase qui tu es
+5. Si le prospect exprime un DÉLAI explicite ("je vais réfléchir", "laissez-moi du temps",
+   "je reviens vers vous") → ce n'est PAS la même chose que la règle 4. Ne relance PAS tout
+   de suite. Accuse réception en une phrase courte, sans poser de question, et attends qu'il
+   revienne de lui-même (utilise schedule_followup avec un immediate_ack neutre si l'outil
+   est disponible — le contenu de la relance part alors plus tard, pas maintenant).
+6. Ne mentionne JAMAIS les prix avant le 3ème échange minimum.
+7. Ne pose JAMAIS deux questions à la suite.
+8. Si le prospect semble confus → explique en 1 phrase qui tu es
    et pourquoi tu l'as contacté.
-8. Ton : humain, direct, bienveillant — PAS commercial, PAS robotique.`;
+9. Ton : humain, direct, bienveillant — PAS commercial, PAS robotique.`;
   }
 
   prompt += `
@@ -638,13 +646,18 @@ async function nodeScheduleFollowup(state) {
     {
       $set: {
         nextFollowUpAt: new Date(Date.now() + toolArgs.delay_hours * 3600000),
-        followUpType: 'orchestrated'
+        followUpType: 'orchestrated',
+        // Contenu réel de la relance, consommé plus tard par processFollowUps()
+        // (server.js) au moment où nextFollowUpAt arrive — PAS envoyé maintenant.
+        pendingFollowUpMessage: toolArgs.message
       },
       $inc: { score: 5 }
     },
     { upsert: true }
   );
-  return { reply: toolArgs.message };
+  // Réponse IMMÉDIATE de ce tour = accusé de réception uniquement.
+  // toolArgs.message est le contenu DIFFÉRÉ (delay_hours) — il ne part jamais ici.
+  return { reply: toolArgs.immediate_ack || "D'accord, je vous laisse le temps qu'il faut !" };
 }
 
 async function nodeEndConversation(state) {
