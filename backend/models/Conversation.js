@@ -50,7 +50,7 @@ const conversationSchema = new mongoose.Schema({
     },
     type: {
       type: String,
-      enum: ['text', 'image', 'document'],
+      enum: ['text', 'image', 'document', 'interactive'],
       default: 'text'
     }
   }],

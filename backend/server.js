@@ -647,6 +647,16 @@ app.post('/webhook/whatsapp', async (req, res) => {
   console.log('[DIAGNOSTIC] ASYNC PROCESSING STARTED - STEP 12');
 });
 
+// Extrait le texte utile d'un message WhatsApp entrant, quel que soit son type :
+// message texte classique, OU clic sur un bouton Quick Reply / une liste interactive.
+// Réutilisée par processWebhook() et processSingleMessage() pour ne pas dupliquer
+// (et risquer de faire diverger) la logique d'extraction.
+function extractIncomingText(message) {
+  return message?.text?.body
+    || message?.interactive?.button_reply?.title
+    || message?.interactive?.list_reply?.title;
+}
+
 // Separate async function for webhook processing
 async function processWebhook(webhookBody) {
   try {
@@ -716,7 +726,8 @@ async function processWebhook(webhookBody) {
           console.log('[DIAGNOSTIC] PROCESSING MESSAGE - STEP 20', {
             id: message.id,
             from: message.from,
-            text: message.text?.body
+            type: message.type,
+            text: extractIncomingText(message)
           });
 
           if (!message?.id || !message?.from) {
@@ -739,11 +750,13 @@ async function processWebhook(webhookBody) {
             throw e;
           }
 
-          const userText = message.text?.body;
+          // Gère à la fois les messages texte classiques et les clics interactifs
+          // (bouton Quick Reply / liste) — voir extractIncomingText().
+          const userText = extractIncomingText(message);
 
           if (!userText && message.type !== 'audio') continue;
 
-          const contentKey = (message.from + '_' + (message.text?.body || '').trim().toLowerCase().slice(0, 50));
+          const contentKey = (message.from + '_' + (userText || '').trim().toLowerCase().slice(0, 50));
           try {
             await ProcessedMessage.create({
               messageId: 'content_' + contentKey + '_' + Math.floor(Date.now()/60000),
@@ -805,7 +818,9 @@ async function processSingleMessage(message, tenant_id) {
     // Validation structure message
     const senderPhone = message.from;
     const messageType = message?.type;
-    let messageText = message?.text?.body;
+    // Gère à la fois les messages texte classiques et les clics interactifs
+    // (bouton Quick Reply / liste) — voir extractIncomingText().
+    let messageText = extractIncomingText(message);
     
     // Debug logs for extracted message
     console.log('[EXTRACTED]', {
@@ -897,7 +912,7 @@ async function processSingleMessage(message, tenant_id) {
       }
     }
 
-    if ((messageType === 'text' || messageType === 'audio') && messageText) {
+    if ((messageType === 'text' || messageType === 'audio' || messageType === 'interactive') && messageText) {
       console.log('[DIAGNOSTIC] CHECKING RATE LIMIT - STEP 28');
       // Rate limiting inchangé
       const canSend = await rateLimiter.canSendMessage(senderPhone, 50, 3600);
@@ -942,7 +957,10 @@ async function processSingleMessage(message, tenant_id) {
           await Conversation.findOneAndUpdate(
             { phone: senderPhone, tenant_id },
             {
-              $push: { messages: { content: messageText, sender: senderPhone, timestamp: new Date(), type: 'text' } },
+              // Persiste le vrai type du message entrant : 'interactive' pour un clic
+              // Quick Reply/liste, 'text' sinon (y compris audio — messageText contient
+              // alors déjà la transcription Whisper, donc du texte réel).
+              $push: { messages: { content: messageText, sender: senderPhone, timestamp: new Date(), type: messageType === 'interactive' ? 'interactive' : 'text' } },
               $set:  { lastInteractionAt: new Date() }
             },
             { upsert: true }
@@ -1023,7 +1041,7 @@ async function processSingleMessage(message, tenant_id) {
       console.log('[DIAGNOSTIC] PIPELINE BLOCKED - STEP 28 ERROR', { 
         messageId,
         reason: !messageType ? 'no_type' :
-                (messageType !== 'text' && messageType !== 'audio') ? 'not_text' :
+                (messageType !== 'text' && messageType !== 'audio' && messageType !== 'interactive') ? 'not_text' :
                 !messageText?.trim() ? 'empty_text' : 'unknown',
         messageType,
         hasText: !!messageText
