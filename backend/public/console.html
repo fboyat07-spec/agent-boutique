@@ -1304,7 +1304,7 @@ Ton : serviable, dynamique, orienté solution.`
         const csv = await file.text();
         const res = await fetch('/api/agent/catalog/import', {
           method:  'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${AUTH_TOKEN}` },
           body:    JSON.stringify({ tenant_id: effectiveTenant(), csv }),
         });
         const data = await res.json();
@@ -1349,7 +1349,9 @@ Ton : serviable, dynamique, orienté solution.`
     async function loadInvoices() {
       const countEl = document.getElementById('invListCount');
       try {
-        const res  = await fetch(`/api/invoices?tenant_id=${effectiveTenant()}`);
+        const res  = await fetch(`/api/invoices?tenant_id=${effectiveTenant()}`, {
+          headers: { 'Authorization': `Bearer ${AUTH_TOKEN}` },
+        });
         const data = await res.json();
         if (!data.ok) {
           document.getElementById('invoiceTableWrapper').innerHTML = '<p style="color:red;font-size:13px;">Erreur chargement</p>';
@@ -1453,7 +1455,7 @@ Ton : serviable, dynamique, orienté solution.`
       try {
         const res = await fetch('/api/invoices', {
           method:  'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${AUTH_TOKEN}` },
           body:    JSON.stringify({ tenant_id: effectiveTenant(), clientName, clientPhone, invoiceNumber, amount, dueDate }),
         });
         const data = await res.json();
@@ -1487,7 +1489,7 @@ Ton : serviable, dynamique, orienté solution.`
         const csv = await file.text();
         const res = await fetch('/api/invoices/import', {
           method:  'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${AUTH_TOKEN}` },
           body:    JSON.stringify({ tenant_id: effectiveTenant(), csv }),
         });
         const data = await res.json();
@@ -1522,7 +1524,7 @@ Ton : serviable, dynamique, orienté solution.`
       try {
         const res = await fetch('/api/agent/instructions', {
           method:  'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${AUTH_TOKEN}` },
           body:    JSON.stringify({ tenant_id: effectiveTenantId, instructions }),
         });
         const data = await res.json();
@@ -1544,7 +1546,9 @@ Ton : serviable, dynamique, orienté solution.`
       try {
         const effectiveTenantId = (currentTenantId && currentTenantId !== 'DEFAULT')
           ? currentTenantId : 'store_demo';
-        const res  = await fetch(`/api/agent/instructions?tenant_id=${effectiveTenantId}`);
+        const res  = await fetch(`/api/agent/instructions?tenant_id=${effectiveTenantId}`, {
+          headers: { 'Authorization': `Bearer ${AUTH_TOKEN}` },
+        });
         const data = await res.json();
         if (data.ok && data.instructions) {
           document.getElementById('agentInstructions').value = data.instructions;
@@ -1579,7 +1583,9 @@ Ton : serviable, dynamique, orienté solution.`
       try {
         const effectiveTenantId = (currentTenantId && currentTenantId !== 'DEFAULT')
           ? currentTenantId : 'store_demo';
-        const res  = await fetch(`/api/agent/calendly?tenant_id=${effectiveTenantId}`);
+        const res  = await fetch(`/api/agent/calendly?tenant_id=${effectiveTenantId}`, {
+          headers: { 'Authorization': `Bearer ${AUTH_TOKEN}` },
+        });
         const data = await res.json();
         if (data.ok && data.calendly_link) {
           document.getElementById('calendlyLink').value = data.calendly_link;

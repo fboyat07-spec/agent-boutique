@@ -7,9 +7,9 @@
  * POST /api/invoices/import   → import CSV en masse
  * GET  /api/invoices          → liste des factures d'un tenant (triée par échéance)
  *
- * Même style que routes/agentConfigRoutes.js (catalog/import) : tenant_id
- * scoping simple, pas de middleware d'auth dédié (cohérent avec les autres
- * routes console existantes — instructions, calendly, catalog).
+ * Protégé par consoleAuth (jeton console partagé — même mécanisme que
+ * /api/console/*, /api/agent/instructions, /api/agent/calendly et
+ * /api/agent/catalog/import).
  */
 
 const express   = require('express');
@@ -17,12 +17,13 @@ const csvParser = require('csv-parser');
 const { Readable } = require('stream');
 
 const Invoice = require('../models/Invoice');
+const consoleAuth = require('../middleware/consoleAuth');
 const { isValidE164, parseAmount, parseDueDate, validateInvoiceRows } = require('../services/invoiceCsvService');
 
 const router = express.Router();
 
 // ─── POST /api/invoices — saisie manuelle ─────────────────────────────────────
-router.post('/', async (req, res) => {
+router.post('/', consoleAuth, async (req, res) => {
   try {
     const { tenant_id, clientName, clientPhone, invoiceNumber, amount, dueDate } = req.body;
     if (!tenant_id) return res.status(400).json({ error: 'tenant_id requis' });
@@ -67,7 +68,7 @@ router.post('/', async (req, res) => {
 // ─── POST /api/invoices/import — import CSV en masse ──────────────────────────
 // Colonnes attendues : client_name, client_phone, invoice_number, amount, due_date
 // Reçoit { tenant_id, csv } (texte CSV brut) — même contrat que /api/agent/catalog/import.
-router.post('/import', async (req, res) => {
+router.post('/import', consoleAuth, async (req, res) => {
   try {
     const { tenant_id, csv } = req.body;
     if (!tenant_id) return res.status(400).json({ error: 'tenant_id requis' });
@@ -111,7 +112,7 @@ router.post('/import', async (req, res) => {
 });
 
 // ─── GET /api/invoices?tenant_id=xxx — liste triée par échéance ──────────────
-router.get('/', async (req, res) => {
+router.get('/', consoleAuth, async (req, res) => {
   try {
     const { tenant_id } = req.query;
     if (!tenant_id) return res.status(400).json({ error: 'tenant_id requis' });

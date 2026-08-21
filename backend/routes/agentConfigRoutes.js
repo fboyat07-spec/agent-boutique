@@ -4,6 +4,7 @@ const express = require('express');
 const { updateTenantConfig, getTenant } = require('../services/tenantManager');
 const { getFullTenantConfig } = require('../services/tenantConfig');
 const { optionalAuthenticate, validateTenant } = require('../middleware/tenantAuth');
+const consoleAuth = require('../middleware/consoleAuth');
 const User = require('../models/User');
 const csvParser = require('csv-parser');
 const { Readable } = require('stream');
@@ -511,7 +512,7 @@ router.post('/config/validate', optionalAuthenticate, async (req, res) => {
 
 // ─── POST /api/agent/instructions ────────────────────────────────────────────
 
-router.post('/instructions', async (req, res) => {
+router.post('/instructions', consoleAuth, async (req, res) => {
   try {
     const { tenant_id, instructions } = req.body;
     if (!tenant_id) return res.status(400).json({ error: 'tenant_id requis' });
@@ -533,7 +534,7 @@ router.post('/instructions', async (req, res) => {
 
 // ─── GET /api/agent/instructions ─────────────────────────────────────────────
 
-router.get('/instructions', async (req, res) => {
+router.get('/instructions', consoleAuth, async (req, res) => {
   try {
     const { tenant_id } = req.query;
     if (!tenant_id) return res.status(400).json({ error: 'tenant_id requis' });
@@ -620,7 +621,7 @@ function validateConfigUpdates(updates) {
 
 // ─── POST /api/agent/calendly ─────────────────────────────────────────────────
 
-router.post('/calendly', async (req, res) => {
+router.post('/calendly', consoleAuth, async (req, res) => {
   try {
     const { tenant_id, calendly_link } = req.body;
     if (!tenant_id) return res.status(400).json({ error: 'tenant_id requis' });
@@ -642,7 +643,7 @@ router.post('/calendly', async (req, res) => {
 
 // ─── GET /api/agent/calendly ──────────────────────────────────────────────────
 
-router.get('/calendly', async (req, res) => {
+router.get('/calendly', consoleAuth, async (req, res) => {
   try {
     const { tenant_id } = req.query;
     if (!tenant_id) return res.status(400).json({ error: 'tenant_id requis' });
@@ -679,7 +680,7 @@ router.get('/admin/tenants', async (req, res) => {
 
 // ─── POST /api/agent/catalog/import ───────────────────────────────────────────
 // Reçoit { tenant_id, csv } (texte CSV brut). REMPLACE le catalogue du tenant.
-router.post('/catalog/import', async (req, res) => {
+router.post('/catalog/import', consoleAuth, async (req, res) => {
   try {
     const { tenant_id, csv } = req.body;
     if (!tenant_id) return res.status(400).json({ error: 'tenant_id requis' });

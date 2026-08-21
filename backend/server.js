@@ -387,7 +387,6 @@ const AgentInstruction = require('./models/AgentInstruction');
 
 // ─── Console API — state & helpers ───────────────────────────────────────────
 let agentEnabled = true;
-const CONSOLE_TOKEN = process.env.CONSOLE_TOKEN || 'console_admin_2024';
 if (!global._consoleSseClients) global._consoleSseClients = new Set();
 
 // Error counter (auto-reset chaque jour)
@@ -1218,14 +1217,9 @@ app.use('/console', express.static(path.join(__dirname, 'public'), {
 // ─── /api/console/* ──────────────────────────────────────────────────────────
 const { computeROI } = require('./services/roiCalculator');
 
-function consoleAuth(req, res, next) {
-  // Accepte Bearer header OU ?token= (EventSource ne supporte pas les headers)
-  const headerToken = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
-  const queryToken  = req.query.token || '';
-  const token = headerToken || queryToken;
-  if (token !== CONSOLE_TOKEN) return res.status(401).json({ error: 'Unauthorized' });
-  next();
-}
+// Centralisé dans middleware/consoleAuth.js — require()-able par les autres
+// routeurs (agentConfigRoutes, invoiceRoutes) sans dupliquer la vérification.
+const consoleAuth = require('./middleware/consoleAuth');
 
 app.get('/api/console/stats', consoleAuth, async (req, res) => {
   try {
