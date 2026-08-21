@@ -218,7 +218,7 @@ function notifyHotLead({ phone, score, lastMessage, reason }) {
   .catch(err  => console.warn('[HOT LEAD] ⚠️ Notif échouée:', err.message));
 }
 
-function buildSystemPrompt(user, running_summary) {
+function buildSystemPrompt(user, running_summary, campaignProductInfo) {
   const storeName = user?.store_name || 'Agent Boutique';
   const { starter, pro, elite } = paymentLinks;
   const hasCustomInstructions = !!(user?.agent_instructions?.trim());
@@ -315,13 +315,22 @@ Choisis l'outil le plus adapté au contexte. Ne fais qu'UNE seule action par mes
     prompt += `\n\nCONTEXTE CONVERSATION (résumé automatique — basé sur l'historique) :\n${running_summary}`;
   }
 
+  // ── Sélection du catalogue PAR CAMPAGNE ──────────────────────────────────────
+  // Si un CampaignConfig actif a été résolu pour ce numéro (campaignProductInfo),
+  // on injecte SON catalogue. Sinon → repli sur user.catalog (comportement d'avant,
+  // strictement identique). Aucun changement de rendu : même boucle, même format.
+  const campaignCatalog = campaignProductInfo?.catalog;
+  const catalog = (Array.isArray(campaignCatalog) && campaignCatalog.length > 0)
+    ? campaignCatalog
+    : (Array.isArray(user?.catalog) ? user.catalog : []);
+
   // Catalogue produits — injecté UNIQUEMENT si non vide. Petits catalogues : injection complète.
   // NOTE: pour de gros catalogues, prévoir une recherche/retrieval au lieu de tout injecter.
-  if (Array.isArray(user?.catalog) && user.catalog.length > 0) {
+  if (catalog.length > 0) {
     prompt += `\n\n═══ CATALOGUE PRODUITS DISPONIBLES ═══\n`;
     prompt += `Réponds sur les produits UNIQUEMENT à partir de ce catalogue. `;
     prompt += `N'invente jamais un produit, un prix ou un stock absent du catalogue.\n\n`;
-    for (const p of user.catalog) {
+    for (const p of catalog) {
       const parts = [];
       if (p.reference) parts.push(`Réf ${p.reference}`);
       parts.push(p.nom || '(sans nom)');
@@ -335,6 +344,34 @@ Choisis l'outil le plus adapté au contexte. Ne fais qu'UNE seule action par mes
       let line = `- ${parts.join(' | ')}`;
       if (p.description) line += `\n    ${p.description}`;
       prompt += line + '\n';
+    }
+  }
+
+  // ── Fiche produit campagne (pitch / argumentaire / FAQ / objections / tarifs) ──
+  // N'est présent QUE si un CampaignConfig actif a été résolu → jamais pour les
+  // campagnes existantes (Adèle, Nove…) qui n'ont pas de config ⇒ zéro régression.
+  if (campaignProductInfo) {
+    const pi = campaignProductInfo;
+    const blocks = [];
+    if (pi.pitch?.trim())        blocks.push(`PITCH :\n${pi.pitch.trim()}`);
+    if (pi.argumentaire?.trim()) blocks.push(`ARGUMENTAIRE :\n${pi.argumentaire.trim()}`);
+    if (pi.pricing?.trim())      blocks.push(`TARIFS :\n${pi.pricing.trim()}`);
+    if (Array.isArray(pi.faq) && pi.faq.length) {
+      const lines = pi.faq
+        .filter(f => f?.question?.trim())
+        .map(f => `- Q: ${f.question.trim()}\n  R: ${(f.reponse || '').trim()}`);
+      if (lines.length) blocks.push('FAQ :\n' + lines.join('\n'));
+    }
+    if (Array.isArray(pi.objections) && pi.objections.length) {
+      const lines = pi.objections
+        .filter(o => o?.objection?.trim())
+        .map(o => `- ${o.objection.trim()} → ${(o.reponse || '').trim()}`);
+      if (lines.length) blocks.push('OBJECTIONS COURANTES :\n' + lines.join('\n'));
+    }
+    if (blocks.length) {
+      prompt += `\n\n═══ FICHE PRODUIT CAMPAGNE ═══\n`;
+      prompt += `Éléments de discours spécifiques à cette campagne :\n\n`;
+      prompt += blocks.join('\n\n');
     }
   }
 
@@ -394,11 +431,15 @@ async function nodeLoadState(state) {
   const { phone, tenant_id } = state;
   try {
     const { getSummary } = require('./conversationSummaryService');
+    const { resolveCampaignProductInfo } = require('./campaignConfigService');
 
-    const [user, convo, summaryDoc] = await Promise.all([
+    const [user, convo, summaryDoc, campaignInfo] = await Promise.all([
       User.findOne({ tenant_id }),
       Conversation.findOne({ phone, tenant_id }),
       getSummary(phone, tenant_id),   // null si absent ou erreur (fallback safe)
+      // Catalogue produit de LA campagne à laquelle ce numéro répond (ou null → repli tenant).
+      // Ne lève jamais : null en cas d'absence/erreur ⇒ buildSystemPrompt utilise user.catalog.
+      resolveCampaignProductInfo(tenant_id, phone),
     ]);
 
     if (!user) {
@@ -423,6 +464,9 @@ async function nodeLoadState(state) {
       business:        convo?.business || null,
       user,
       running_summary: summaryDoc?.running_summary || null,  // null = pas encore de résumé
+      // Campagne résolue pour ce numéro + sa fiche produit (null ⇒ repli sur user.catalog).
+      campaign:            campaignInfo?.campaign || null,
+      campaignProductInfo: campaignInfo?.productInfo || null,
     };
 
     return { context };
@@ -529,7 +573,7 @@ async function nodeRoute(state) {
   // ── FIN GARDE PRÉ-GPT ──────────────────────────────────────────────────────
 
   const messages = [
-    { role: 'system', content: buildSystemPrompt(context.user, context.running_summary) },
+    { role: 'system', content: buildSystemPrompt(context.user, context.running_summary, context.campaignProductInfo) },
     ...context.history,
     {
       role: 'user',
@@ -868,4 +912,4 @@ async function synthesizeVoice(text) {
   }
 }
 
-module.exports = { orchestrate, synthesizeVoice };
+module.exports = { orchestrate, synthesizeVoice, buildSystemPrompt };
