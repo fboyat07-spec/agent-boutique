@@ -556,6 +556,9 @@ try {
 // Agent config — instructions, Calendly
 app.use('/api/agent', require('./routes/agentConfigRoutes'));
 
+// Factures — campagne relance_facture (Phase 2)
+app.use('/api/invoices', require('./routes/invoiceRoutes'));
+
 // Modules incomplets explicitement desactives
 app.use('/api/progress', (req, res) => {
   res.status(410).json({
