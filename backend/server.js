@@ -1358,6 +1358,43 @@ app.post('/api/campaigns/adele/pause', consoleAuth, async (req, res) => {
   }
 });
 
+// ─── /api/campaigns/relance_facture/* — contrôle du séquenceur de relances (Phase 3) ──
+const { getControlDoc: getInvoiceReminderControlDoc } = require('./services/invoiceReminderScheduler');
+
+app.post('/api/campaigns/relance_facture/start', consoleAuth, async (req, res) => {
+  try {
+    const Campaign = require('./models/Campaign');
+    await getInvoiceReminderControlDoc();
+    const doc = await Campaign.findOneAndUpdate(
+      { name: 'relance_facture' },
+      { paused: false },
+      { new: true }
+    );
+    console.log('[INVOICE REMINDER] Activé via /api/campaigns/relance_facture/start — paused: false');
+    res.json({ ok: true, name: doc.name, paused: doc.paused });
+  } catch (err) {
+    console.error('[INVOICE REMINDER /start ERROR]', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/campaigns/relance_facture/pause', consoleAuth, async (req, res) => {
+  try {
+    const Campaign = require('./models/Campaign');
+    await getInvoiceReminderControlDoc();
+    const doc = await Campaign.findOneAndUpdate(
+      { name: 'relance_facture' },
+      { paused: true },
+      { new: true }
+    );
+    console.log('[INVOICE REMINDER] Mis en pause via /api/campaigns/relance_facture/pause — paused: true');
+    res.json({ ok: true, name: doc.name, paused: doc.paused });
+  } catch (err) {
+    console.error('[INVOICE REMINDER /pause ERROR]', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.get('/api/console/roi', consoleAuth, async (req, res) => {
   try {
     const roi = await computeROI();
@@ -1437,6 +1474,9 @@ async function startServer() {
 
   const { startAdeleBatchScheduler } = require('./services/adeleBatchScheduler');
   startAdeleBatchScheduler(); // démarre en pause (Campaign{name:'adele'}.paused=true par défaut)
+
+  const { startInvoiceReminderScheduler } = require('./services/invoiceReminderScheduler');
+  startInvoiceReminderScheduler(); // démarre en pause (Campaign{name:'relance_facture'}.paused=true par défaut)
 
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`[SERVER START] Server listening on 0.0.0.0:${PORT}`);
