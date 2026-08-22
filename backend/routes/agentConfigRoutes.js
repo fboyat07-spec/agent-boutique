@@ -738,6 +738,28 @@ router.post('/catalog/import', consoleAuth, async (req, res) => {
   }
 });
 
+// ─── POST /api/agent/leads/import ─────────────────────────────────────────────
+// Import de leads de prospection (OutboundLead) taggés avec la campagne choisie
+// AU MOMENT de l'import (au lieu d'un script manuel après coup). Colonnes CSV
+// attendues : phone, name, city, business. Reçoit { csv, campaign } — campaign
+// vide/absente ⇒ défaut modèle 'agent_boutique' (comportement par défaut).
+// OutboundLead n'est pas tenant-scopé (prospection globale) : pas de tenant_id.
+router.post('/leads/import', consoleAuth, async (req, res) => {
+  try {
+    const { csv, campaign } = req.body;
+    if (!csv || typeof csv !== 'string') return res.status(400).json({ error: 'csv (texte) requis' });
+
+    const { importLeadsFromText } = require('../services/csvLeadImporter');
+    const { imported, skipped, errors } = await importLeadsFromText(csv, { campaign: campaign || '' });
+
+    console.log(`[LEADS IMPORT] ${imported} lead(s) importé(s) — campagne "${(campaign || '').trim() || '(défaut agent_boutique)'}" (${skipped} ignoré(s))`);
+    return res.json({ ok: true, imported_count: imported, skipped_count: skipped, errors });
+  } catch (err) {
+    console.error('[LEADS IMPORT ERROR]', err.message);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
 // ─── GET /api/agent/catalog?tenant_id=xxx ─────────────────────────────────────
 router.get('/catalog', async (req, res) => {
   try {

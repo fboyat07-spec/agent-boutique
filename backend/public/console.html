@@ -1006,6 +1006,58 @@
         </div>
 
         <div class="lead-info-section">
+          <div class="lead-info-title">🎯 Campagnes</div>
+          <div style="font-size:12px;color:#94a3b8;margin-bottom:8px;">
+            Chaque campagne a sa propre fiche (pitch, argumentaire, tarifs, FAQ, objections).
+            Sans fiche créée ici, une campagne garde le comportement par défaut
+            (catalogue + instructions du client) — rien n'est modifié tant que vous n'agissez pas.
+          </div>
+
+          <!-- Liste des campagnes -->
+          <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px; flex-wrap:wrap;">
+            <button class="action-button primary" onclick="loadCampaigns()">Rafraîchir</button>
+            <button class="action-button" onclick="newCampaign()">+ Nouvelle campagne</button>
+            <span id="campaignListCount" style="font-size:13px; color:#6b7280;"></span>
+          </div>
+          <div id="campaignListWrapper"></div>
+
+          <!-- Formulaire créer / éditer -->
+          <div style="font-size:12px;font-weight:600;color:#64748b;margin:16px 0 6px;">Créer / éditer une campagne</div>
+          <input id="campKey" class="wa-input" type="text" placeholder="Clé de campagne (texte libre, ex: kidai)" />
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#334155;margin:6px 0;">
+            <input id="campActive" type="checkbox" checked /> Campagne active
+          </label>
+          <textarea id="campPitch" class="wa-input" rows="2" placeholder="Pitch — accroche courte" style="resize:vertical;font-family:inherit;"></textarea>
+          <textarea id="campArgumentaire" class="wa-input" rows="3" placeholder="Argumentaire — bénéfices, preuves" style="resize:vertical;font-family:inherit;"></textarea>
+          <textarea id="campPricing" class="wa-input" rows="2" placeholder="Tarifs — ex: 79€/mois, remise -10% ce mois-ci" style="resize:vertical;font-family:inherit;"></textarea>
+          <div style="font-size:12px;color:#94a3b8;margin:6px 0 2px;">FAQ — une par ligne, format : <code>question | réponse</code></div>
+          <textarea id="campFaq" class="wa-input" rows="3" placeholder="Livraison ? | Sous 48h en France" style="resize:vertical;font-family:inherit;"></textarea>
+          <div style="font-size:12px;color:#94a3b8;margin:6px 0 2px;">Objections — une par ligne, format : <code>objection | réponse</code></div>
+          <textarea id="campObjections" class="wa-input" rows="3" placeholder="trop cher | Garanti 5 ans, coût par an minime" style="resize:vertical;font-family:inherit;"></textarea>
+          <div style="display:flex; align-items:center; gap:10px; margin-top:6px;">
+            <button class="action-button primary" onclick="saveCampaign()">Enregistrer la campagne</button>
+            <span id="campSaveStatus" style="font-size:13px;"></span>
+          </div>
+        </div>
+
+        <div class="lead-info-section">
+          <div class="lead-info-title">📥 Import de leads (prospection)</div>
+          <div style="font-size:12px;color:#94a3b8;margin-bottom:8px;">
+            Colonnes attendues : phone, name, city, business. Les leads sont taggés
+            avec la campagne choisie dès l'import (plus besoin de script manuel).
+          </div>
+          <select id="leadCampaignSelect" class="wa-input" style="margin-bottom:8px;">
+            <option value="">— Aucune campagne (comportement par défaut : agent_boutique) —</option>
+          </select>
+          <input type="file" id="leadCsvFile" accept=".csv" class="wa-input" style="margin-bottom:8px;" />
+          <div style="display:flex; align-items:center; gap:10px;">
+            <button class="action-button primary" onclick="importLeadsCsv()">Importer les leads</button>
+            <span id="leadImportStatus" style="font-size:13px;"></span>
+          </div>
+          <ul id="leadImportErrors" style="margin:8px 0 0; padding-left:18px; font-size:12px; color:#991b1b;"></ul>
+        </div>
+
+        <div class="lead-info-section">
           <div class="lead-info-title">🧾 Factures — relance_facture</div>
 
           <!-- KPI tiles (composant existant réutilisé : .roi-grid / .roi-card) -->
@@ -1320,6 +1372,188 @@ Ton : serviable, dynamique, orienté solution.`
       } catch (e) {
         status.style.color = '#991b1b';
         status.textContent = '❌ Erreur réseau';
+      }
+    }
+
+    // ── Campagnes (CampaignConfig par campagne) ─────────────────────────────────
+    let campaignState = [];
+
+    function campaignAuthHeaders(withJson) {
+      const h = { 'Authorization': `Bearer ${AUTH_TOKEN}` };
+      if (withJson) h['Content-Type'] = 'application/json';
+      return h;
+    }
+    function escCampaign(v) {
+      return String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    async function loadCampaigns() {
+      const wrapper = document.getElementById('campaignListWrapper');
+      const countEl = document.getElementById('campaignListCount');
+      try {
+        const res  = await fetch(`/api/campaigns?tenant_id=${effectiveTenant()}`, { headers: campaignAuthHeaders(false) });
+        const data = await res.json();
+        campaignState = data.ok ? (data.campaigns || []) : [];
+        renderCampaignList();
+        populateLeadCampaignSelect();
+        if (countEl) countEl.textContent = campaignState.length ? `${campaignState.length} campagne(s)` : 'aucune campagne';
+      } catch (e) {
+        if (wrapper) wrapper.innerHTML = `<p style="color:red;font-size:13px;">Erreur : ${e.message}</p>`;
+      }
+    }
+
+    function renderCampaignList() {
+      const wrapper = document.getElementById('campaignListWrapper');
+      if (!wrapper) return;
+      if (!campaignState.length) {
+        wrapper.innerHTML = '<p style="font-size:13px;color:#94a3b8;">Aucune campagne configurée. Les campagnes sans fiche gardent le comportement par défaut.</p>';
+        return;
+      }
+      const rows = campaignState.map((c, i) => {
+        const badge = c.active
+          ? '<span style="color:#065f46;font-weight:600;">● active</span>'
+          : '<span style="color:#991b1b;font-weight:600;">○ inactive</span>';
+        return `<tr>
+          <td style="padding:6px 8px;font-weight:600;">${escCampaign(c.campaign)}</td>
+          <td style="padding:6px 8px;">${badge}</td>
+          <td style="padding:6px 8px;text-align:right;">
+            <button class="action-button" onclick="editCampaign(${i})">Éditer</button>
+          </td>
+        </tr>`;
+      }).join('');
+      wrapper.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:13px;">
+        <thead><tr style="color:#64748b;text-align:left;">
+          <th style="padding:4px 8px;">Campagne</th><th style="padding:4px 8px;">Statut</th><th></th>
+        </tr></thead><tbody>${rows}</tbody></table>`;
+    }
+
+    function populateLeadCampaignSelect() {
+      const sel = document.getElementById('leadCampaignSelect');
+      if (!sel) return;
+      const prev = sel.value;
+      const opts = ['<option value="">— Aucune campagne (comportement par défaut : agent_boutique) —</option>']
+        .concat(campaignState.map(c =>
+          `<option value="${escCampaign(c.campaign)}">${escCampaign(c.campaign)}${c.active ? '' : ' (inactive)'}</option>`));
+      sel.innerHTML = opts.join('');
+      if (prev) sel.value = prev;
+    }
+
+    // FAQ / objections : conversion tableau ⇄ texte "gauche | droite" par ligne.
+    function pairsToText(arr, leftKey, rightKey) {
+      return (arr || []).map(o => `${o[leftKey] || ''} | ${o[rightKey] || ''}`).join('\n');
+    }
+    function parsePairs(text) {
+      return String(text || '').split('\n').map(l => l.trim()).filter(Boolean).map(line => {
+        const idx = line.indexOf('|');
+        if (idx === -1) return { left: line.trim(), right: '' };
+        return { left: line.slice(0, idx).trim(), right: line.slice(idx + 1).trim() };
+      }).filter(p => p.left);
+    }
+
+    function fillCampaignForm(cfg) {
+      const pi = cfg?.productInfo || {};
+      document.getElementById('campKey').value          = cfg?.campaign || '';
+      document.getElementById('campActive').checked     = cfg ? cfg.active !== false : true;
+      document.getElementById('campPitch').value        = pi.pitch || '';
+      document.getElementById('campArgumentaire').value = pi.argumentaire || '';
+      document.getElementById('campPricing').value      = pi.pricing || '';
+      document.getElementById('campFaq').value          = pairsToText(pi.faq, 'question', 'reponse');
+      document.getElementById('campObjections').value   = pairsToText(pi.objections, 'objection', 'reponse');
+    }
+
+    function newCampaign() {
+      fillCampaignForm(null);
+      document.getElementById('campKey').focus();
+      const st = document.getElementById('campSaveStatus');
+      if (st) st.textContent = '';
+    }
+
+    async function editCampaign(index) {
+      const campaign = campaignState[index]?.campaign;
+      if (!campaign) return;
+      const st = document.getElementById('campSaveStatus');
+      try {
+        const res  = await fetch(`/api/campaigns/one?tenant_id=${effectiveTenant()}&campaign=${encodeURIComponent(campaign)}`, { headers: campaignAuthHeaders(false) });
+        const data = await res.json();
+        if (data.ok && data.config) {
+          fillCampaignForm(data.config);
+          if (st) { st.style.color = '#475569'; st.textContent = `Édition de « ${campaign} »`; }
+        } else if (st) {
+          st.style.color = '#991b1b'; st.textContent = 'Introuvable';
+        }
+      } catch (e) {
+        if (st) { st.style.color = '#991b1b'; st.textContent = '❌ Erreur réseau'; }
+      }
+    }
+
+    async function saveCampaign() {
+      const st = document.getElementById('campSaveStatus');
+      const campaign = document.getElementById('campKey').value.trim();
+      if (!campaign) { st.style.color = '#991b1b'; st.textContent = '⚠️ Clé de campagne requise'; return; }
+      const productInfo = {
+        pitch:        document.getElementById('campPitch').value.trim(),
+        argumentaire: document.getElementById('campArgumentaire').value.trim(),
+        pricing:      document.getElementById('campPricing').value.trim(),
+        faq:          parsePairs(document.getElementById('campFaq').value).map(p => ({ question: p.left, reponse: p.right })),
+        objections:   parsePairs(document.getElementById('campObjections').value).map(p => ({ objection: p.left, reponse: p.right })),
+      };
+      st.style.color = '#475569'; st.textContent = '⏳ Enregistrement…';
+      try {
+        const res  = await fetch('/api/campaigns', {
+          method:  'POST',
+          headers: campaignAuthHeaders(true),
+          body:    JSON.stringify({
+            tenant_id: effectiveTenant(),
+            campaign,
+            active: document.getElementById('campActive').checked,
+            productInfo,
+          }),
+        });
+        const data = await res.json();
+        if (data.ok) {
+          st.style.color = '#065f46'; st.textContent = `✅ « ${campaign} » enregistrée`;
+          loadCampaigns();
+        } else {
+          st.style.color = '#991b1b'; st.textContent = `❌ ${data.error || 'Erreur'}`;
+        }
+      } catch (e) {
+        st.style.color = '#991b1b'; st.textContent = '❌ Erreur réseau';
+      }
+    }
+
+    // ── Import de leads taggés par campagne ─────────────────────────────────────
+    async function importLeadsCsv() {
+      const fileInput  = document.getElementById('leadCsvFile');
+      const status     = document.getElementById('leadImportStatus');
+      const errorsList = document.getElementById('leadImportErrors');
+      const campaign   = document.getElementById('leadCampaignSelect').value;
+      const file       = fileInput.files?.[0];
+      errorsList.innerHTML = '';
+      if (!file) { status.style.color = '#991b1b'; status.textContent = '⚠️ Choisissez un fichier .csv'; return; }
+      status.style.color = '#475569'; status.textContent = '⏳ Import…';
+      try {
+        const csv = await file.text();
+        const res = await fetch('/api/agent/leads/import', {
+          method:  'POST',
+          headers: campaignAuthHeaders(true),
+          body:    JSON.stringify({ csv, campaign }),
+        });
+        const data = await res.json();
+        if (data.ok) {
+          const label = campaign || 'agent_boutique (défaut)';
+          status.style.color = '#065f46';
+          status.textContent = `✅ ${data.imported_count} lead(s) importé(s) → ${label}` +
+            (data.skipped_count ? ` (${data.skipped_count} ignoré(s))` : '');
+          if (data.errors?.length) {
+            const shown = data.errors.slice(0, 10);
+            errorsList.innerHTML = shown.map(e => `<li>${escCampaign(e)}</li>`).join('') +
+              (data.errors.length > shown.length ? `<li>… et ${data.errors.length - shown.length} autre(s)</li>` : '');
+          }
+        } else {
+          status.style.color = '#991b1b'; status.textContent = `❌ ${data.error || 'Erreur'}`;
+        }
+      } catch (e) {
+        status.style.color = '#991b1b'; status.textContent = '❌ Erreur réseau';
       }
     }
 
@@ -2332,6 +2566,7 @@ Ton : serviable, dynamique, orienté solution.`
       loadAgentInstructions();
       loadCalendlyLink();
       loadCatalogCount();
+      loadCampaigns();
       loadInvoices();
     }
 
@@ -2343,6 +2578,7 @@ Ton : serviable, dynamique, orienté solution.`
     loadActiveSequences();
     loadROIDashboard();
     loadCatalogCount();
+    loadCampaigns();
     loadInvoices();
 
     // État initial mobile : afficher la liste des conversations
