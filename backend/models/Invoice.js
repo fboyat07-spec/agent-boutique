@@ -39,6 +39,12 @@ const InvoiceSchema = new mongoose.Schema({
       'reminder_sent_j+20',
       'paid',
       'disputed',
+      // Phase 4 — statuts posés quand le client répond à une relance. Comme
+      // paid/disputed, ils SORTENT de la chaîne pending → reminder_sent_j* et
+      // suspendent donc toute relance automatique future (cf.
+      // invoiceReminderService.resolveDueReminderStep, whitelist REMINDER_CHAIN_STATUSES).
+      'payment_claimed', // le client affirme avoir payé — vérification humaine requise
+      'delayed',         // le client a demandé un délai — confirmation humaine requise
     ],
     default: 'pending',
     index: true,

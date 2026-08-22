@@ -24,6 +24,15 @@ const STATUS_INDEX = {
 // l'écart avec dueDate (vérifié explicitement, pas seulement via STATUS_INDEX).
 const TERMINAL_STATUSES = ['paid', 'disputed'];
 
+// WHITELIST — seuls ces statuts autorisent l'automatisation. C'est exactement
+// l'ensemble des clés de STATUS_INDEX (pending + reminder_sent_j*). Toute facture
+// dont le statut sort de cette chaîne (paid, disputed, payment_claimed, delayed,
+// ou tout statut futur/inconnu) DOIT arrêter l'automatisation. Approche par
+// liste blanche plutôt que noire : un nouveau statut ajouté à Invoice sans
+// mise à jour ici est traité comme "arrêt" par défaut (fail-safe), pas comme
+// "pending" (ce qui relancerait à tort — le bug corrigé en Phase 4).
+const REMINDER_CHAIN_STATUSES = Object.keys(STATUS_INDEX);
+
 const REMINDER_STEPS = [
   // J-3 avant l'échéance : seule étape avec une borne haute (doit être envoyée
   // AVANT dueDate — sinon une facture déjà en retard importée via CSV recevrait
@@ -61,7 +70,13 @@ const REMINDER_STEPS = [
  * @returns {{templateStep:string, newStatus:string}|null}
  */
 function resolveDueReminderStep(invoice, now = new Date()) {
-  if (!invoice || TERMINAL_STATUSES.includes(invoice.status)) return null;
+  if (!invoice) return null;
+
+  // Fail-safe : n'automatise QUE les statuts de la chaîne de relance connue.
+  // Couvre paid/disputed (terminaux), payment_claimed/delayed (Phase 4) et tout
+  // statut inconnu — tous arrêtent l'automatisation. TERMINAL_STATUSES est
+  // désormais un sous-ensemble redondant, conservé pour l'export/compat.
+  if (!REMINDER_CHAIN_STATUSES.includes(invoice.status)) return null;
 
   const dueDate = new Date(invoice.dueDate);
   if (Number.isNaN(dueDate.getTime())) return null;
@@ -112,5 +127,6 @@ module.exports = {
   REMINDER_STEPS,
   STATUS_INDEX,
   TERMINAL_STATUSES,
+  REMINDER_CHAIN_STATUSES,
   DAY_MS,
 };

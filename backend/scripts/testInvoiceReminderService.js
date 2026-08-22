@@ -21,6 +21,7 @@ const assert = require('assert');
 const {
   resolveDueReminderStep,
   normalizeOutboundPhone,
+  REMINDER_CHAIN_STATUSES,
   DAY_MS,
 } = require('../services/invoiceReminderService');
 
@@ -205,6 +206,34 @@ check('gère une entrée vide sans lever', () => {
   assert.strictEqual(normalizeOutboundPhone(''), '');
   assert.strictEqual(normalizeOutboundPhone(null), '');
   assert.strictEqual(normalizeOutboundPhone(undefined), '');
+});
+
+// ─── G. Arrêt pour TOUT statut hors chaîne pending → reminder_sent_j* ──────────
+// Exigence explicite Phase 4 : prouver (pas supposer) que resolveDueReminderStep
+// s'arrête pour tout statut sortant de la chaîne — y compris les nouveaux statuts
+// payment_claimed/delayed (Phase 4) et tout statut inconnu/futur. Une facture
+// très en retard est utilisée pour que le calcul brut de dueDate indique "dû" :
+// seule la garde de statut peut alors expliquer le null.
+sep('G. Arrêt pour tout statut hors chaîne (payment_claimed/delayed/inconnu)');
+
+const veryOverdue = days(-25); // J+20 serait "dû" en valeur brute sur ce retard
+
+check('référence : reminder_sent_j+10 très en retard EST relancée (sinon le test ne prouve rien)', () => {
+  const step = resolveDueReminderStep({ status: 'reminder_sent_j+10', dueDate: veryOverdue }, NOW);
+  assert.ok(step && step.templateStep === 'j+20');
+});
+
+for (const status of ['payment_claimed', 'delayed', 'disputed', 'paid', 'statut_futur_inconnu', 'WON', '']) {
+  check(`statut "${status}" hors chaîne → resolveDueReminderStep = null (aucune relance)`, () => {
+    assert.strictEqual(resolveDueReminderStep({ status, dueDate: veryOverdue }, NOW), null);
+  });
+}
+
+check('REMINDER_CHAIN_STATUSES contient exactement la chaîne pending → reminder_sent_j*', () => {
+  assert.deepStrictEqual(
+    [...REMINDER_CHAIN_STATUSES].sort(),
+    ['pending', 'reminder_sent_j+1', 'reminder_sent_j+10', 'reminder_sent_j+20', 'reminder_sent_j-3'].sort()
+  );
 });
 
 // ─── Résultat ──────────────────────────────────────────────────────────────────

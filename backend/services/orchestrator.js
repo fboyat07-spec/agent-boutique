@@ -25,6 +25,7 @@ const Conversation     = require('../models/Conversation');
 const User             = require('../models/User');
 const paymentLinks     = require('../config/paymentLinks');
 const WhatsAppSequence = require('../models/WhatsAppSequence');
+const { routeByCampaign } = require('./invoiceReplyService');
 
 let _openai = null;
 function getOpenAI() {
@@ -195,12 +196,29 @@ const AGENT_TOOLS = [
 
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
 
-// ── Hot lead notification ─────────────────────────────────────────────────────
-function notifyHotLead({ phone, score, lastMessage, reason }) {
+// ── Notification opérateur (alerte humaine) ───────────────────────────────────
+// Primitif partagé : envoie un message WhatsApp texte au numéro opérateur.
+// Réutilisé par notifyHotLead (prospection) ET par le traitement des réponses
+// relance_facture (Phase 4) — un seul endroit pour le numéro opérateur et la
+// mécanique d'envoi. Fire-and-forget, ne jette jamais.
+const OPERATOR_PHONE = '33788199089';
+
+function notifyOperator(body, logTag = 'OPERATOR NOTIF') {
   const waToken   = process.env.WHATSAPP_TOKEN;
   const waPhoneId = process.env.PHONE_NUMBER_ID || process.env.WHATSAPP_PHONE_NUMBER_ID;
-  if (!waToken || !waPhoneId) return;
+  if (!waToken || !waPhoneId) return Promise.resolve();
 
+  return axios.post(
+    `https://graph.facebook.com/v20.0/${waPhoneId}/messages`,
+    { messaging_product: 'whatsapp', to: OPERATOR_PHONE, type: 'text', text: { body } },
+    { headers: { Authorization: `Bearer ${waToken}`, 'Content-Type': 'application/json' }, timeout: 8000 }
+  )
+  .then(() => console.log(`[${logTag}] ✅ Notif opérateur envoyée`))
+  .catch(err => console.warn(`[${logTag}] ⚠️ Notif opérateur échouée:`, err.message));
+}
+
+// ── Hot lead notification ─────────────────────────────────────────────────────
+function notifyHotLead({ phone, score, lastMessage, reason }) {
   const header = reason === 'intent'
     ? '🎯 Intention d\'achat détectée'
     : '🔥 Lead chaud détecté !';
@@ -208,14 +226,7 @@ function notifyHotLead({ phone, score, lastMessage, reason }) {
     `${header}\nNuméro: ${phone}\nScore: ${score}/100\n` +
     `Dernière réponse: ${lastMessage}\n` +
     `→ Ouvrir la console: api.agentboutique.fr/console.html`;
-
-  axios.post(
-    `https://graph.facebook.com/v20.0/${waPhoneId}/messages`,
-    { messaging_product: 'whatsapp', to: '33788199089', type: 'text', text: { body } },
-    { headers: { Authorization: `Bearer ${waToken}`, 'Content-Type': 'application/json' }, timeout: 8000 }
-  )
-  .then(() => console.log(`[HOT LEAD] ✅ Notif envoyée | phone: ${phone} | reason: ${reason}`))
-  .catch(err  => console.warn('[HOT LEAD] ⚠️ Notif échouée:', err.message));
+  notifyOperator(body, 'HOT LEAD');
 }
 
 function buildSystemPrompt(user, running_summary, campaignProductInfo) {
@@ -504,6 +515,111 @@ async function nodeClassifyIntent(state) {
   }
 }
 
+// ─── RELANCE_FACTURE — classification + traitement dédié (Phase 4) ─────────────
+// Classifieur SÉPARÉ du classifieur commercial : contexte (facture impayée) et
+// biais de prudence différents. Fallback conservateur → 'unclear' (notif humaine,
+// aucun changement de statut) sur toute erreur LLM/parse.
+async function classifyInvoiceReply(message) {
+  const { buildInvoiceReplyClassifierPrompt } = require('./invoiceReplyService');
+  try {
+    const res = await getOpenAI().chat.completions.create({
+      model: 'gpt-4o-mini',
+      max_tokens: 60,
+      temperature: 0,
+      messages: [
+        { role: 'system', content: buildInvoiceReplyClassifierPrompt() },
+        { role: 'user',   content: `Message du client: "${message}"` },
+      ],
+    });
+    const text   = res.choices[0]?.message?.content?.trim() || '{}';
+    const parsed = JSON.parse(text.replace(/```json|```/g, '').trim());
+    return { category: parsed.category, agreedDate: (parsed.agreed_date || '').trim() };
+  } catch (err) {
+    console.warn('[INVOICE REPLY] classify error → unclear (fail-safe):', err.message);
+    return { category: 'unclear', agreedDate: '' };
+  }
+}
+
+// Nœud dédié aux réponses de la campagne relance_facture. Atteint UNIQUEMENT via
+// l'arête conditionnelle depuis load_state (routeByCampaign) — les nœuds
+// commerciaux ne sont jamais exécutés pour cette campagne.
+async function nodeHandleInvoiceReply(state) {
+  const { message, phone, context } = state;
+  const Invoice = require('../models/Invoice');
+  const { resolveInvoiceReplyOutcome } = require('./invoiceReplyService');
+  const { REMINDER_CHAIN_STATUSES }     = require('./invoiceReminderService');
+
+  // 1. Classer la réponse (fail-safe interne → unclear)
+  const { category, agreedDate } = await classifyInvoiceReply(message);
+  const outcome = resolveInvoiceReplyOutcome(category);
+  console.log('[INVOICE REPLY]', { phone, category: outcome.category, newStatus: outcome.newStatus });
+
+  // 2. Retrouver la facture concernée. Invoice.clientPhone est en E.164 (avec '+'),
+  //    le phone du webhook est sans '+' → on interroge les deux formes.
+  let invoice = null;
+  try {
+    const candidates = await Invoice.find({
+      campaign:    'relance_facture',
+      clientPhone: { $in: ['+' + phone, phone] },
+    }).sort({ updatedAt: -1 }).lean();
+    // Cible : la facture encore dans la chaîne de relance, la plus récemment
+    // mise à jour ; sinon la plus récente (pour rattacher la notif à une facture).
+    invoice = candidates.find(i => REMINDER_CHAIN_STATUSES.includes(i.status)) || candidates[0] || null;
+  } catch (e) {
+    console.warn('[INVOICE REPLY] lookup facture échoué (non-bloquant):', e.message);
+  }
+
+  // 3. Changement de statut → suspend l'automatisation (via la whitelist Phase 3).
+  if (outcome.newStatus && invoice) {
+    try {
+      await Invoice.updateOne({ _id: invoice._id }, { status: outcome.newStatus });
+      console.log(`[INVOICE REPLY] Facture ${invoice.invoiceNumber} → ${outcome.newStatus} (relances suspendues)`);
+    } catch (e) {
+      console.warn('[INVOICE REPLY] maj statut échouée:', e.message);
+    }
+  }
+
+  // 4. Alerte humaine (réutilise le primitif notifyOperator).
+  if (outcome.notifyHuman) {
+    const lines = [
+      '🧾 Réponse client à une relance de facture',
+      `Catégorie: ${outcome.category}`,
+      `Numéro: ${phone}`,
+      invoice ? `Facture: ${invoice.invoiceNumber} (${invoice.amount}€)` : 'Facture: (non retrouvée pour ce numéro)',
+      outcome.newStatus ? `Statut → ${outcome.newStatus} (relances suspendues)` : 'Statut inchangé',
+      agreedDate ? `Date évoquée par le client: ${agreedDate}` : null,
+      `Message: "${message}"`,
+      '→ Vérification manuelle requise.',
+    ].filter(Boolean);
+    notifyOperator(lines.join('\n'), 'INVOICE REPLY');
+  }
+
+  // 5. Réponse au client.
+  if (outcome.replyKind === 'informative') {
+    // Question générale → réponse informative via le catalogue/instructions de la
+    // campagne déjà injectés par la Phase 0. Repli neutre si le LLM échoue.
+    try {
+      const res = await getOpenAI().chat.completions.create({
+        model: 'gpt-4o',
+        max_tokens: 200,
+        temperature: 0.5,
+        messages: [
+          { role: 'system', content: buildSystemPrompt(context.user, context.running_summary, context.campaignProductInfo) },
+          ...(context.history || []),
+          { role: 'user', content: message },
+        ],
+      });
+      const reply = res.choices[0]?.message?.content?.trim();
+      return { reply: reply || 'Merci pour votre message, je reviens vers vous rapidement.' };
+    } catch (e) {
+      console.warn('[INVOICE REPLY] réponse informative échouée → repli neutre:', e.message);
+      return { reply: 'Merci pour votre message, je reviens vers vous rapidement.' };
+    }
+  }
+
+  return { reply: outcome.neutralReply };
+}
+
 async function nodeRoute(state) {
   const { message, context, intent } = state;
 
@@ -744,6 +860,9 @@ async function nodePersistState(state) {
     );
 
     // ── Hot lead notification (fire-and-forget) ───────────────────────────────
+    // Gate : ne jamais déclencher d'alerte commerciale "lead chaud" sur une
+    // conversation relance_facture (le nœud dédié gère sa propre notif humaine).
+    if (state.context?.campaign !== 'relance_facture')
     (async () => {
       try {
         const prevScore = state.context?.score || 0;
@@ -781,6 +900,7 @@ const workflow = new StateGraph(OrchestratorState);
 workflow.addNode('load_state',       nodeLoadState);
 workflow.addNode('classify_intent',  nodeClassifyIntent);
 workflow.addNode('route',            nodeRoute);
+workflow.addNode('handle_invoice_reply', nodeHandleInvoiceReply);
 workflow.addNode('qualify_lead',     nodeQualifyLead);
 workflow.addNode('present_offer',    nodePresentOffer);
 workflow.addNode('handle_objection', nodeHandleObjection);
@@ -791,7 +911,21 @@ workflow.addNode('persist_state',    nodePersistState);
 
 // Arêtes fixes
 workflow.addEdge(START, 'load_state');
-workflow.addEdge('load_state',      'classify_intent');
+
+// ── Branche par campagne (résolue en load_state, Phase 0) ────────────────────
+// relance_facture → traitement dédié : les nœuds commerciaux (classify_intent,
+// route, qualify_lead, present_offer, handle_objection, close_sale,
+// schedule_followup, end_conversation) sont alors INATTEIGNABLES.
+// Toute autre campagne (adele, nove, agent_boutique…) → pipeline commercial
+// existant, strictement INCHANGÉ.
+workflow.addConditionalEdges(
+  'load_state',
+  (state) => routeByCampaign(state.context?.campaign),
+  {
+    invoice_reply: 'handle_invoice_reply',
+    commercial:    'classify_intent',
+  }
+);
 workflow.addEdge('classify_intent', 'route');
 
 // Arêtes conditionnelles depuis route → nœud action selon toolName
@@ -806,7 +940,7 @@ workflow.addConditionalEdges('route', (state) => state.toolName, {
 
 // Tous les nœuds action → persist_state → END
 // (l'envoi WhatsApp est géré par server.js sur la valeur de retour de orchestrate())
-for (const node of ['qualify_lead', 'present_offer', 'handle_objection', 'close_sale', 'schedule_followup', 'end_conversation']) {
+for (const node of ['handle_invoice_reply', 'qualify_lead', 'present_offer', 'handle_objection', 'close_sale', 'schedule_followup', 'end_conversation']) {
   workflow.addEdge(node, 'persist_state');
 }
 workflow.addEdge('persist_state', END);
