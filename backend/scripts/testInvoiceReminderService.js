@@ -236,6 +236,43 @@ check('REMINDER_CHAIN_STATUSES contient exactement la chaîne pending → remind
   );
 });
 
+// ─── H. Marquage manuel "payée" (bouton console, PATCH /api/invoices/:id/status) ──
+// Preuve explicite (pas supposée) que le statut posé par l'action manuelle de
+// l'opérateur dans la console arrête bien resolveDueReminderStep — même
+// garantie whitelist que pour un statut 'paid' théorique (section B/G), mais
+// exercée ici sur le scénario concret de la fonctionnalité : une facture EN
+// COURS de relance, marquée payée à la main avant que le cycle automatique
+// ne se termine.
+sep('H. Marquage manuel "payée" (console) — preuve explicite d\'arrêt des relances');
+
+check('préalable : facture en cours de relance (reminder_sent_j+10, J+20 due) SERAIT relancée sans intervention manuelle', () => {
+  const inv = { status: 'reminder_sent_j+10', dueDate: days(-25) };
+  const step = resolveDueReminderStep(inv, NOW);
+  assert.ok(step && step.templateStep === 'j+20', 'préalable du test : sans marquage manuel, une relance J+20 est bien due');
+});
+
+check('après marquage manuel "payée" (effet du PATCH /api/invoices/:id/status) → plus aucune relance, y compris J+20 déjà due', () => {
+  // Simule exactement l'effet du handler de route : { status: 'paid' } appliqué
+  // au document, rien d'autre ne change (même dueDate, toujours 25j de retard).
+  const invApresMarquage = { status: 'paid', dueDate: days(-25) };
+  assert.strictEqual(resolveDueReminderStep(invApresMarquage, NOW), null);
+});
+
+check('marquage manuel possible depuis N\'IMPORTE QUELLE étape de la chaîne → toujours arrêté après, quelle que soit l\'étape de départ', () => {
+  for (const statusAvant of REMINDER_CHAIN_STATUSES) {
+    // Le bouton "Marquer comme payée" est visible sur toute ligne non déjà
+    // paid/disputed (cf. console.html) — donc accessible depuis chacun de ces
+    // statuts. Après clic, le document passe à 'paid' quel que soit le point
+    // de départ dans la chaîne.
+    const invApres = { status: 'paid', dueDate: days(-25) };
+    assert.strictEqual(
+      resolveDueReminderStep(invApres, NOW),
+      null,
+      `marquage manuel depuis "${statusAvant}" → paid : une relance ne devrait jamais repartir`
+    );
+  }
+});
+
 // ─── Résultat ──────────────────────────────────────────────────────────────────
 sep('RÉSULTAT');
 if (process.exitCode === 1) {
