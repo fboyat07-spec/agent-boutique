@@ -1411,6 +1411,7 @@ Ton : serviable, dynamique, orienté solution.`
       const html = rows.map(inv => {
         const label = INVOICE_STATUS_LABELS[inv.status] || inv.status;
         const color = INVOICE_STATUS_COLORS[inv.status] || '#94a3b8';
+        const canMarkPaid = inv.status !== 'paid' && inv.status !== 'disputed';
         return `
           <tr style="border-bottom:1px solid #f3f4f6;">
             <td style="padding:6px 8px;">${inv.clientName || '—'}</td>
@@ -1422,6 +1423,11 @@ Ton : serviable, dynamique, orienté solution.`
               <span style="background:${color};color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;font-weight:600;">
                 ${label}
               </span>
+            </td>
+            <td style="padding:6px 8px;text-align:center;">
+              ${canMarkPaid
+                ? `<button class="action-button" style="padding:4px 10px;font-size:12px;" onclick="markInvoicePaid('${inv._id}', '${(inv.invoiceNumber || '').replace(/'/g, "\\'")}')">Marquer comme payée</button>`
+                : ''}
             </td>
           </tr>`;
       }).join('');
@@ -1436,10 +1442,31 @@ Ton : serviable, dynamique, orienté solution.`
               <th style="text-align:right;padding:6px 8px;">Montant</th>
               <th style="text-align:center;padding:6px 8px;">Échéance</th>
               <th style="text-align:center;padding:6px 8px;">Statut</th>
+              <th style="text-align:center;padding:6px 8px;">Action</th>
             </tr>
           </thead>
           <tbody>${html}</tbody>
         </table>`;
+    }
+
+    async function markInvoicePaid(id, invoiceNumber) {
+      const confirmed = confirm(`Marquer la facture ${invoiceNumber || ''} comme payée ?\n\nCette action arrête définitivement les relances automatiques pour cette facture.`);
+      if (!confirmed) return;
+      try {
+        const res = await fetch(`/api/invoices/${id}/status`, {
+          method:  'PATCH',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${AUTH_TOKEN}` },
+          body:    JSON.stringify({ status: 'paid' }),
+        });
+        const data = await res.json();
+        if (!data.ok) {
+          alert(`❌ ${data.error || 'Erreur'}`);
+          return;
+        }
+        loadInvoices();
+      } catch (e) {
+        alert(`❌ Erreur réseau : ${e.message}`);
+      }
     }
 
     async function createInvoiceManual() {

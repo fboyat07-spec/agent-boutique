@@ -125,4 +125,34 @@ router.get('/', consoleAuth, async (req, res) => {
   }
 });
 
+// ─── PATCH /api/invoices/:id/status — marquage manuel (paid) ──────────────────
+// Bouton "Marquer comme payée" de la console (écran factures, Phase 2).
+// Restreint à 'paid' : bascule manuelle par l'opérateur, pas un remplacement
+// générique du statut. Une fois 'paid', la facture sort de la chaîne de
+// relance (invoiceReminderService.REMINDER_CHAIN_STATUSES) et
+// resolveDueReminderStep() l'exclut définitivement de tout envoi futur —
+// vérifié explicitement par scripts/testInvoiceReminderService.js.
+router.patch('/:id/status', consoleAuth, async (req, res) => {
+  try {
+    const { status } = req.body;
+    const allowed = ['paid'];
+    if (!allowed.includes(status)) {
+      return res.status(400).json({ error: `status doit être : ${allowed.join(' | ')}` });
+    }
+
+    const invoice = await Invoice.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true }
+    );
+    if (!invoice) return res.status(404).json({ error: 'Facture introuvable' });
+
+    console.log(`[INVOICE] Marquée payée manuellement : ${invoice.invoiceNumber} (tenant ${invoice.tenantId})`);
+    return res.json({ ok: true, invoice });
+  } catch (err) {
+    console.error('[INVOICE STATUS ERROR]', err.message);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

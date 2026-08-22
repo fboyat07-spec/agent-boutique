@@ -46,7 +46,10 @@ if (INTERVAL_MINUTES < 1 || INTERVAL_MINUTES > 59) {
 
 // Statuts sur lesquels plus rien ne peut jamais être envoyé — exclus de la
 // requête pour ne pas rescanner indéfiniment des factures figées à chaque tick.
-const NON_ACTIONABLE_STATUSES = ['paid', 'disputed', 'reminder_sent_j+20'];
+// payment_claimed/delayed (Phase 4) y figurent : dès que le client a répondu, la
+// séquence est suspendue en attente de vérification humaine. Filet de sécurité
+// redondant : resolveDueReminderStep arrête déjà tout statut hors chaîne.
+const NON_ACTIONABLE_STATUSES = ['paid', 'disputed', 'reminder_sent_j+20', 'payment_claimed', 'delayed'];
 
 function maskPhone(phone) {
   if (!phone || phone.length < 6) return '***';
