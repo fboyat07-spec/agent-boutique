@@ -10,6 +10,10 @@
  * Vérifie le comportement du jeton console partagé (CONSOLE_TOKEN) utilisé
  * pour protéger /api/invoices*, /api/agent/instructions, /api/agent/calendly,
  * /api/agent/catalog/import — même mécanisme que /api/console/* (server.js).
+ *
+ * Vérifie aussi le comportement fail-closed : sans CONSOLE_TOKEN défini, le
+ * module doit lever au chargement (donc empêcher le serveur de démarrer),
+ * plutôt que d'accepter silencieusement un jeton par défaut codé en dur.
  */
 
 process.env.CONSOLE_TOKEN = 'test_token_123';
@@ -17,6 +21,8 @@ process.env.CONSOLE_TOKEN = 'test_token_123';
 const consoleAuth = require('../middleware/consoleAuth');
 
 const assert = require('assert');
+const path = require('path');
+const { spawnSync } = require('child_process');
 
 let passed = 0;
 function check(label, fn) {
@@ -97,6 +103,37 @@ check('mauvais jeton en query → 401', () => {
   consoleAuth(req, res, () => { nextCalled = true; });
   assert.strictEqual(res.statusCode, 401);
   assert.strictEqual(nextCalled, false);
+});
+
+sep('consoleAuth — fail closed sans CONSOLE_TOKEN (démarrage)');
+
+// Ce comportement dépend du chargement initial du module (throw au require) —
+// doit être exercé dans un processus enfant frais, l'exigence porte sur "le
+// serveur échoue au démarrage", pas sur un état re-testable dans ce process.
+function runInChildWithoutToken() {
+  const { CONSOLE_TOKEN, ...envWithoutToken } = process.env;
+  return spawnSync(
+    process.execPath,
+    ['-e', "require('./middleware/consoleAuth');"],
+    { cwd: path.resolve(__dirname, '..'), env: envWithoutToken, encoding: 'utf8' }
+  );
+}
+
+check('sans CONSOLE_TOKEN dans l\'environnement, le require() du module échoue (exit non-zéro)', () => {
+  const result = runInChildWithoutToken();
+  assert.notStrictEqual(result.status, 0, `Le process enfant aurait dû échouer, exit code: ${result.status}`);
+});
+
+check('le message d\'erreur mentionne clairement CONSOLE_TOKEN (pas un crash muet)', () => {
+  const result = runInChildWithoutToken();
+  assert.match(result.stderr, /CONSOLE_TOKEN/);
+});
+
+check('aucun fallback silencieux : un jeton vide ne peut plus jamais matcher "console_admin_2024"', () => {
+  // Contre-preuve directe : le code source ne doit plus contenir ce jeton codé en dur.
+  const fs = require('fs');
+  const source = fs.readFileSync(path.resolve(__dirname, '../middleware/consoleAuth.js'), 'utf8');
+  assert.ok(!source.includes('console_admin_2024'), 'Le fallback codé en dur est encore présent dans le fichier');
 });
 
 sep('RÉSULTAT');

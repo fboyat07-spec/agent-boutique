@@ -15,7 +15,19 @@
  * l'implémentation d'origine dans server.js).
  */
 
-const CONSOLE_TOKEN = process.env.CONSOLE_TOKEN || 'console_admin_2024';
+const CONSOLE_TOKEN = process.env.CONSOLE_TOKEN;
+
+// Fail closed : aucun fallback codé en dur. Sans CONSOLE_TOKEN défini, le
+// serveur ne doit pas démarrer avec une auth console silencieusement
+// devinable — on lève dès le chargement du module plutôt que d'accepter un
+// jeton par défaut.
+if (!CONSOLE_TOKEN) {
+  throw new Error(
+    "[CONSOLE AUTH] Variable d'environnement CONSOLE_TOKEN manquante. " +
+    'Définissez CONSOLE_TOKEN avant de démarrer le serveur — aucun jeton ' +
+    'par défaut ne sera utilisé (fail closed).'
+  );
+}
 
 function consoleAuth(req, res, next) {
   const headerToken = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
