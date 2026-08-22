@@ -80,3 +80,7 @@ UserSchema.methods.isLocked = function() {
 };
 
 module.exports = mongoose.model('User', UserSchema);
+
+// Exporté pour réutilisation par d'autres collections (ex: CampaignConfig.productInfo.catalog).
+// Additif : n'altère pas l'export principal (le modèle User reste module.exports).
+module.exports.ProductSchema = ProductSchema;

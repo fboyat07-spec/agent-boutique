@@ -49,6 +49,17 @@ const WHATSAPP_TEMPLATES = {
     j7: 'produit_closing_j7',
     usesVariables: false,  // templates confirmés sans variable — aucun component à envoyer
   },
+  // Relances de facture (Phase 3) — déclenchées par services/invoiceReminderScheduler.js
+  // selon l'échéance (dueDate) de chaque facture, pas selon un point de départ fixe.
+  // usesVariables:false par défaut — templates Meta pas encore créés/confirmés à ce stade,
+  // à ajuster une fois leur contenu réel approuvé (cf. commentaire équivalent pour 'adele').
+  relance_facture: {
+    'j-3':  'rappel_avant_echeance',
+    'j+1':  'relance_echeance_depassee',
+    'j+10': 'relance_ferme',
+    'j+20': 'derniere_relance',
+    usesVariables: false,
+  },
 };
 
 /**
@@ -308,8 +319,9 @@ router.get('/sequences-active', async (req, res) => {
 // ─── Exports additionnels (réutilisation par d'autres modules, ex: adeleBatchScheduler) ──
 // Le router Express est une fonction — on peut lui attacher des propriétés sans changer
 // la façon dont server.js le monte (app.use('/api/whatsapp', require('./routes/whatsapp'))).
-router.isOptedOut      = isOptedOut;
-router.getTemplateName = getTemplateName;
-router.sendTemplate    = sendTemplate;
+router.isOptedOut           = isOptedOut;
+router.getTemplateName      = getTemplateName;
+router.sendTemplate         = sendTemplate;
+router.buildTemplateVariables = buildTemplateVariables;
 
 module.exports = router;

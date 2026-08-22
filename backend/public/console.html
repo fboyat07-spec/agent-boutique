@@ -1006,6 +1006,76 @@
         </div>
 
         <div class="lead-info-section">
+          <div class="lead-info-title">🧾 Factures — relance_facture</div>
+
+          <!-- KPI tiles (composant existant réutilisé : .roi-grid / .roi-card) -->
+          <div class="roi-grid" style="margin-bottom:14px;">
+            <div class="roi-card blue">
+              <div class="roi-num" id="inv-total">--</div>
+              <div class="roi-label">Total factures</div>
+            </div>
+            <div class="roi-card blue">
+              <div class="roi-num" id="inv-pending">--</div>
+              <div class="roi-label">En attente</div>
+            </div>
+            <div class="roi-card blue">
+              <div class="roi-num" id="inv-reminders">--</div>
+              <div class="roi-label">Relances en cours</div>
+            </div>
+            <div class="roi-card green">
+              <div class="roi-num" id="inv-paid">--</div>
+              <div class="roi-label">Payées</div>
+            </div>
+            <div class="roi-card green">
+              <div class="roi-num" id="inv-disputed">--</div>
+              <div class="roi-label">Litiges</div>
+            </div>
+          </div>
+
+          <!-- Saisie manuelle -->
+          <div style="font-size:12px;font-weight:600;color:#64748b;margin-bottom:6px;">Nouvelle facture</div>
+          <input id="invClientName"    class="wa-input" type="text" placeholder="Nom du client" />
+          <input id="invClientPhone"   class="wa-input" type="tel"  placeholder="+33612345678 (E.164)" />
+          <input id="invInvoiceNumber" class="wa-input" type="text" placeholder="N° facture (ex: FAC-2026-001)" />
+          <input id="invAmount"        class="wa-input" type="number" step="0.01" min="0" placeholder="Montant (€)" />
+          <input id="invDueDate"       class="wa-input" type="date" />
+          <div style="display:flex; align-items:center; gap:10px;">
+            <button class="action-button primary" onclick="createInvoiceManual()">Créer la facture</button>
+            <span id="invCreateStatus" style="font-size:13px;"></span>
+          </div>
+
+          <!-- Import CSV en masse -->
+          <div style="font-size:12px;font-weight:600;color:#64748b;margin:16px 0 6px;">Import CSV en masse</div>
+          <div style="font-size:12px;color:#94a3b8;margin-bottom:8px;">
+            Colonnes attendues : client_name, client_phone, invoice_number, amount, due_date
+          </div>
+          <input type="file" id="invCsvFile" accept=".csv" class="wa-input" style="margin-bottom:8px;" />
+          <div style="display:flex; align-items:center; gap:10px;">
+            <button class="action-button primary" onclick="importInvoiceCsv()">Importer les factures</button>
+            <span id="invImportStatus" style="font-size:13px;"></span>
+          </div>
+          <ul id="invImportErrors" style="margin:8px 0 0; padding-left:18px; font-size:12px; color:#991b1b;"></ul>
+
+          <!-- Liste + filtre + tri -->
+          <div style="display:flex; align-items:center; gap:10px; margin:16px 0 10px; flex-wrap:wrap;">
+            <button class="action-button primary" onclick="loadInvoices()">Rafraîchir</button>
+            <select id="invStatusFilter" class="wa-input" style="width:auto; margin:0;" onchange="renderInvoiceTable()">
+              <option value="">Tous les statuts</option>
+              <option value="pending">En attente</option>
+              <option value="reminder_sent_j-3">Relance J-3</option>
+              <option value="reminder_sent_j+1">Relance J+1</option>
+              <option value="reminder_sent_j+10">Relance J+10</option>
+              <option value="reminder_sent_j+20">Relance J+20</option>
+              <option value="paid">Payée</option>
+              <option value="disputed">Litige</option>
+            </select>
+            <button class="action-button" onclick="toggleInvoiceSort()" id="invSortBtn">Échéance ▲</button>
+            <span id="invListCount" style="font-size:13px; color:#6b7280;"></span>
+          </div>
+          <div id="invoiceTableWrapper"></div>
+        </div>
+
+        <div class="lead-info-section">
           <div class="lead-info-title">📋 Instructions pour l'agent</div>
           <textarea id="agentInstructions" class="wa-input"
             rows="4"
@@ -1234,7 +1304,7 @@ Ton : serviable, dynamique, orienté solution.`
         const csv = await file.text();
         const res = await fetch('/api/agent/catalog/import', {
           method:  'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${AUTH_TOKEN}` },
           body:    JSON.stringify({ tenant_id: effectiveTenant(), csv }),
         });
         const data = await res.json();
@@ -1243,6 +1313,196 @@ Ton : serviable, dynamique, orienté solution.`
           status.textContent = `✅ ${data.imported_count} produits importés` +
             (data.skipped_count ? ` (${data.skipped_count} ignorés)` : '');
           loadCatalogCount();
+        } else {
+          status.style.color = '#991b1b';
+          status.textContent = `❌ ${data.error || 'Erreur'}`;
+        }
+      } catch (e) {
+        status.style.color = '#991b1b';
+        status.textContent = '❌ Erreur réseau';
+      }
+    }
+
+    // ── Factures (campagne relance_facture) ─────────────────────────────────────
+    let invoiceState = [];
+    let invoiceSortAsc = true;
+
+    const INVOICE_STATUS_LABELS = {
+      'pending':             'En attente',
+      'reminder_sent_j-3':   'Relance J-3',
+      'reminder_sent_j+1':   'Relance J+1',
+      'reminder_sent_j+10':  'Relance J+10',
+      'reminder_sent_j+20':  'Relance J+20',
+      'paid':                'Payée',
+      'disputed':            'Litige',
+    };
+    const INVOICE_STATUS_COLORS = {
+      'pending':             '#94a3b8',
+      'reminder_sent_j-3':   '#f59e0b',
+      'reminder_sent_j+1':   '#f97316',
+      'reminder_sent_j+10':  '#ef4444',
+      'reminder_sent_j+20':  '#b91c1c',
+      'paid':                '#22c55e',
+      'disputed':            '#8b5cf6',
+    };
+
+    async function loadInvoices() {
+      const countEl = document.getElementById('invListCount');
+      try {
+        const res  = await fetch(`/api/invoices?tenant_id=${effectiveTenant()}`, {
+          headers: { 'Authorization': `Bearer ${AUTH_TOKEN}` },
+        });
+        const data = await res.json();
+        if (!data.ok) {
+          document.getElementById('invoiceTableWrapper').innerHTML = '<p style="color:red;font-size:13px;">Erreur chargement</p>';
+          return;
+        }
+        invoiceState = data.invoices || [];
+        renderInvoiceKPIs();
+        renderInvoiceTable();
+      } catch (e) {
+        if (countEl) countEl.textContent = '';
+        document.getElementById('invoiceTableWrapper').innerHTML = `<p style="color:red;font-size:13px;">Erreur : ${e.message}</p>`;
+      }
+    }
+
+    function renderInvoiceKPIs() {
+      const byStatus = status => invoiceState.filter(i => i.status === status).length;
+      const reminders = invoiceState.filter(i => (i.status || '').startsWith('reminder_sent')).length;
+      document.getElementById('inv-total').textContent     = invoiceState.length;
+      document.getElementById('inv-pending').textContent   = byStatus('pending');
+      document.getElementById('inv-reminders').textContent = reminders;
+      document.getElementById('inv-paid').textContent      = byStatus('paid');
+      document.getElementById('inv-disputed').textContent  = byStatus('disputed');
+    }
+
+    function toggleInvoiceSort() {
+      invoiceSortAsc = !invoiceSortAsc;
+      document.getElementById('invSortBtn').textContent = `Échéance ${invoiceSortAsc ? '▲' : '▼'}`;
+      renderInvoiceTable();
+    }
+
+    function renderInvoiceTable() {
+      const wrapper  = document.getElementById('invoiceTableWrapper');
+      const count    = document.getElementById('invListCount');
+      const statusFilter = document.getElementById('invStatusFilter').value;
+
+      let rows = statusFilter
+        ? invoiceState.filter(i => i.status === statusFilter)
+        : invoiceState.slice();
+
+      rows.sort((a, b) => {
+        const diff = new Date(a.dueDate) - new Date(b.dueDate);
+        return invoiceSortAsc ? diff : -diff;
+      });
+
+      const n = rows.length;
+      count.textContent = `${n} facture${n !== 1 ? 's' : ''}`;
+
+      if (n === 0) {
+        wrapper.innerHTML = '<p style="color:#6b7280;font-size:13px;">Aucune facture</p>';
+        return;
+      }
+
+      const now = Date.now();
+      const fmtDate = d => new Date(d).toLocaleDateString('fr-FR');
+      const isOverdue = inv => inv.status === 'pending' && new Date(inv.dueDate).getTime() < now;
+
+      const html = rows.map(inv => {
+        const label = INVOICE_STATUS_LABELS[inv.status] || inv.status;
+        const color = INVOICE_STATUS_COLORS[inv.status] || '#94a3b8';
+        return `
+          <tr style="border-bottom:1px solid #f3f4f6;">
+            <td style="padding:6px 8px;">${inv.clientName || '—'}</td>
+            <td style="padding:6px 8px;font-family:monospace;font-size:12px;">${inv.clientPhone || '—'}</td>
+            <td style="padding:6px 8px;font-family:monospace;font-size:12px;">${inv.invoiceNumber || '—'}</td>
+            <td style="padding:6px 8px;text-align:right;">${(inv.amount ?? 0).toFixed(2)}€</td>
+            <td style="padding:6px 8px;text-align:center;${isOverdue(inv) ? 'color:#dc2626;font-weight:600;' : ''}">${fmtDate(inv.dueDate)}</td>
+            <td style="padding:6px 8px;text-align:center;">
+              <span style="background:${color};color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;font-weight:600;">
+                ${label}
+              </span>
+            </td>
+          </tr>`;
+      }).join('');
+
+      wrapper.innerHTML = `
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+          <thead>
+            <tr style="border-bottom:2px solid #e5e7eb;color:#374151;font-weight:600;">
+              <th style="text-align:left;padding:6px 8px;">Client</th>
+              <th style="text-align:left;padding:6px 8px;">Téléphone</th>
+              <th style="text-align:left;padding:6px 8px;">N° Facture</th>
+              <th style="text-align:right;padding:6px 8px;">Montant</th>
+              <th style="text-align:center;padding:6px 8px;">Échéance</th>
+              <th style="text-align:center;padding:6px 8px;">Statut</th>
+            </tr>
+          </thead>
+          <tbody>${html}</tbody>
+        </table>`;
+    }
+
+    async function createInvoiceManual() {
+      const status = document.getElementById('invCreateStatus');
+      const clientName    = document.getElementById('invClientName').value.trim();
+      const clientPhone   = document.getElementById('invClientPhone').value.trim();
+      const invoiceNumber = document.getElementById('invInvoiceNumber').value.trim();
+      const amount        = document.getElementById('invAmount').value;
+      const dueDate        = document.getElementById('invDueDate').value;
+
+      status.style.color = '#475569';
+      status.textContent = '⏳ Création…';
+      try {
+        const res = await fetch('/api/invoices', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${AUTH_TOKEN}` },
+          body:    JSON.stringify({ tenant_id: effectiveTenant(), clientName, clientPhone, invoiceNumber, amount, dueDate }),
+        });
+        const data = await res.json();
+        if (data.ok) {
+          status.style.color = '#065f46';
+          status.textContent = '✅ Facture créée';
+          ['invClientName', 'invClientPhone', 'invInvoiceNumber', 'invAmount', 'invDueDate']
+            .forEach(id => { document.getElementById(id).value = ''; });
+          loadInvoices();
+        } else {
+          status.style.color = '#991b1b';
+          status.textContent = `❌ ${data.error || 'Erreur'}`;
+        }
+      } catch (e) {
+        status.style.color = '#991b1b';
+        status.textContent = '❌ Erreur réseau';
+      }
+      setTimeout(() => { status.textContent = ''; }, 6000);
+    }
+
+    async function importInvoiceCsv() {
+      const fileInput  = document.getElementById('invCsvFile');
+      const status     = document.getElementById('invImportStatus');
+      const errorsList = document.getElementById('invImportErrors');
+      const file        = fileInput.files?.[0];
+      errorsList.innerHTML = '';
+      if (!file) { status.style.color = '#991b1b'; status.textContent = '⚠️ Choisissez un fichier .csv'; return; }
+      status.style.color = '#475569';
+      status.textContent = '⏳ Import…';
+      try {
+        const csv = await file.text();
+        const res = await fetch('/api/invoices/import', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${AUTH_TOKEN}` },
+          body:    JSON.stringify({ tenant_id: effectiveTenant(), csv }),
+        });
+        const data = await res.json();
+        if (data.ok) {
+          status.style.color = '#065f46';
+          status.textContent = `✅ ${data.imported_count} facture(s) importée(s)` +
+            (data.skipped_count ? ` (${data.skipped_count} ignorée(s))` : '');
+          if (data.errors?.length) {
+            const shown = data.errors.slice(0, 10);
+            errorsList.innerHTML = shown.map(e => `<li>${e}</li>`).join('') +
+              (data.errors.length > shown.length ? `<li>… et ${data.errors.length - shown.length} autre(s)</li>` : '');
+          }
+          loadInvoices();
         } else {
           status.style.color = '#991b1b';
           status.textContent = `❌ ${data.error || 'Erreur'}`;
@@ -1264,7 +1524,7 @@ Ton : serviable, dynamique, orienté solution.`
       try {
         const res = await fetch('/api/agent/instructions', {
           method:  'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${AUTH_TOKEN}` },
           body:    JSON.stringify({ tenant_id: effectiveTenantId, instructions }),
         });
         const data = await res.json();
@@ -1286,7 +1546,9 @@ Ton : serviable, dynamique, orienté solution.`
       try {
         const effectiveTenantId = (currentTenantId && currentTenantId !== 'DEFAULT')
           ? currentTenantId : 'store_demo';
-        const res  = await fetch(`/api/agent/instructions?tenant_id=${effectiveTenantId}`);
+        const res  = await fetch(`/api/agent/instructions?tenant_id=${effectiveTenantId}`, {
+          headers: { 'Authorization': `Bearer ${AUTH_TOKEN}` },
+        });
         const data = await res.json();
         if (data.ok && data.instructions) {
           document.getElementById('agentInstructions').value = data.instructions;
@@ -1321,7 +1583,9 @@ Ton : serviable, dynamique, orienté solution.`
       try {
         const effectiveTenantId = (currentTenantId && currentTenantId !== 'DEFAULT')
           ? currentTenantId : 'store_demo';
-        const res  = await fetch(`/api/agent/calendly?tenant_id=${effectiveTenantId}`);
+        const res  = await fetch(`/api/agent/calendly?tenant_id=${effectiveTenantId}`, {
+          headers: { 'Authorization': `Bearer ${AUTH_TOKEN}` },
+        });
         const data = await res.json();
         if (data.ok && data.calendly_link) {
           document.getElementById('calendlyLink').value = data.calendly_link;
@@ -2041,6 +2305,7 @@ Ton : serviable, dynamique, orienté solution.`
       loadAgentInstructions();
       loadCalendlyLink();
       loadCatalogCount();
+      loadInvoices();
     }
 
     loadConversations();
@@ -2051,6 +2316,7 @@ Ton : serviable, dynamique, orienté solution.`
     loadActiveSequences();
     loadROIDashboard();
     loadCatalogCount();
+    loadInvoices();
 
     // État initial mobile : afficher la liste des conversations
     if (isMobile()) {

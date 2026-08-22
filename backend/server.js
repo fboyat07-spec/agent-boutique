@@ -387,7 +387,6 @@ const AgentInstruction = require('./models/AgentInstruction');
 
 // ─── Console API — state & helpers ───────────────────────────────────────────
 let agentEnabled = true;
-const CONSOLE_TOKEN = process.env.CONSOLE_TOKEN || 'console_admin_2024';
 if (!global._consoleSseClients) global._consoleSseClients = new Set();
 
 // Error counter (auto-reset chaque jour)
@@ -555,6 +554,9 @@ try {
 
 // Agent config — instructions, Calendly
 app.use('/api/agent', require('./routes/agentConfigRoutes'));
+
+// Factures — campagne relance_facture (Phase 2)
+app.use('/api/invoices', require('./routes/invoiceRoutes'));
 
 // Modules incomplets explicitement desactives
 app.use('/api/progress', (req, res) => {
@@ -1215,14 +1217,9 @@ app.use('/console', express.static(path.join(__dirname, 'public'), {
 // ─── /api/console/* ──────────────────────────────────────────────────────────
 const { computeROI } = require('./services/roiCalculator');
 
-function consoleAuth(req, res, next) {
-  // Accepte Bearer header OU ?token= (EventSource ne supporte pas les headers)
-  const headerToken = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
-  const queryToken  = req.query.token || '';
-  const token = headerToken || queryToken;
-  if (token !== CONSOLE_TOKEN) return res.status(401).json({ error: 'Unauthorized' });
-  next();
-}
+// Centralisé dans middleware/consoleAuth.js — require()-able par les autres
+// routeurs (agentConfigRoutes, invoiceRoutes) sans dupliquer la vérification.
+const consoleAuth = require('./middleware/consoleAuth');
 
 app.get('/api/console/stats', consoleAuth, async (req, res) => {
   try {
@@ -1361,6 +1358,43 @@ app.post('/api/campaigns/adele/pause', consoleAuth, async (req, res) => {
   }
 });
 
+// ─── /api/campaigns/relance_facture/* — contrôle du séquenceur de relances (Phase 3) ──
+const { getControlDoc: getInvoiceReminderControlDoc } = require('./services/invoiceReminderScheduler');
+
+app.post('/api/campaigns/relance_facture/start', consoleAuth, async (req, res) => {
+  try {
+    const Campaign = require('./models/Campaign');
+    await getInvoiceReminderControlDoc();
+    const doc = await Campaign.findOneAndUpdate(
+      { name: 'relance_facture' },
+      { paused: false },
+      { new: true }
+    );
+    console.log('[INVOICE REMINDER] Activé via /api/campaigns/relance_facture/start — paused: false');
+    res.json({ ok: true, name: doc.name, paused: doc.paused });
+  } catch (err) {
+    console.error('[INVOICE REMINDER /start ERROR]', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/campaigns/relance_facture/pause', consoleAuth, async (req, res) => {
+  try {
+    const Campaign = require('./models/Campaign');
+    await getInvoiceReminderControlDoc();
+    const doc = await Campaign.findOneAndUpdate(
+      { name: 'relance_facture' },
+      { paused: true },
+      { new: true }
+    );
+    console.log('[INVOICE REMINDER] Mis en pause via /api/campaigns/relance_facture/pause — paused: true');
+    res.json({ ok: true, name: doc.name, paused: doc.paused });
+  } catch (err) {
+    console.error('[INVOICE REMINDER /pause ERROR]', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.get('/api/console/roi', consoleAuth, async (req, res) => {
   try {
     const roi = await computeROI();
@@ -1440,6 +1474,9 @@ async function startServer() {
 
   const { startAdeleBatchScheduler } = require('./services/adeleBatchScheduler');
   startAdeleBatchScheduler(); // démarre en pause (Campaign{name:'adele'}.paused=true par défaut)
+
+  const { startInvoiceReminderScheduler } = require('./services/invoiceReminderScheduler');
+  startInvoiceReminderScheduler(); // démarre en pause (Campaign{name:'relance_facture'}.paused=true par défaut)
 
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`[SERVER START] Server listening on 0.0.0.0:${PORT}`);
