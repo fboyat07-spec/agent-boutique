@@ -220,6 +220,72 @@ check('validateCampaignKey : édition d\'une campagne normale ⇒ allowed', () =
   assert.ok(!result.error);
 });
 
+// ─── F. Gate agent_instructions pour relance_facture ────────────────────────────
+sep('F. Gate agent_instructions — SAUTÉ uniquement pour relance_facture');
+
+const userWithInstructions = {
+  store_name: 'Boutique Test',
+  agent_instructions: 'Ne jamais parler de nos concurrents. Toujours vouvoyer le client.',
+  catalog: [
+    { reference: 'T1', nom: 'Produit Tenant', prix: 20, stock: 4 },
+  ],
+};
+
+check('campaign === "relance_facture" ⇒ bloc INSTRUCTIONS SPÉCIFIQUES DU CLIENT SAUTÉ', () => {
+  const prompt = buildSystemPrompt(userWithInstructions, null, null, 'relance_facture');
+  assert.ok(!prompt.includes('INSTRUCTIONS SPÉCIFIQUES DU CLIENT'), 'bloc agent_instructions injecté malgré relance_facture');
+  assert.ok(!prompt.includes('Ne jamais parler de nos concurrents'), 'contenu agent_instructions fuité malgré relance_facture');
+});
+
+check('campaign undefined (pas de 4e arg) ⇒ comportement INCHANGÉ (bloc injecté si agent_instructions présent)', () => {
+  const legacy = buildSystemPrompt(userWithInstructions, null, null);
+  assert.ok(legacy.includes('INSTRUCTIONS SPÉCIFIQUES DU CLIENT'), 'bloc agent_instructions absent — régression');
+  assert.ok(legacy.includes('Ne jamais parler de nos concurrents'), 'contenu agent_instructions absent — régression');
+});
+
+check('campaign === "adele" ⇒ byte-identique au comportement sans 4e argument (pas de gate)', () => {
+  const legacy = buildSystemPrompt(userWithInstructions, null, null);
+  const withCampaign = buildSystemPrompt(userWithInstructions, null, null, 'adele');
+  assert.strictEqual(withCampaign, legacy, 'passer campaign="adele" modifie le prompt — régression');
+});
+
+check('campaign === "nove" ⇒ byte-identique au comportement sans 4e argument (pas de gate)', () => {
+  const legacy = buildSystemPrompt(userWithInstructions, null, null);
+  const withCampaign = buildSystemPrompt(userWithInstructions, null, null, 'nove');
+  assert.strictEqual(withCampaign, legacy, 'passer campaign="nove" modifie le prompt — régression');
+});
+
+check('campaign === "agent_boutique" ⇒ byte-identique au comportement sans 4e argument (pas de gate)', () => {
+  const legacy = buildSystemPrompt(userWithInstructions, null, null);
+  const withCampaign = buildSystemPrompt(userWithInstructions, null, null, 'agent_boutique');
+  assert.strictEqual(withCampaign, legacy, 'passer campaign="agent_boutique" modifie le prompt — régression');
+});
+
+check('campaign === null (aucune campagne résolue) ⇒ byte-identique au comportement sans 4e argument', () => {
+  const legacy = buildSystemPrompt(userWithInstructions, null, null);
+  const withCampaign = buildSystemPrompt(userWithInstructions, null, null, null);
+  assert.strictEqual(withCampaign, legacy, 'passer campaign=null modifie le prompt — régression');
+});
+
+check('relance_facture SANS agent_instructions ⇒ prompt byte-identique (rien à sauter)', () => {
+  const legacy = buildSystemPrompt(tenantUser, null, null); // tenantUser.agent_instructions === ''
+  const withCampaign = buildSystemPrompt(tenantUser, null, null, 'relance_facture');
+  assert.strictEqual(withCampaign, legacy, 'gate relance_facture modifie le prompt même sans agent_instructions');
+});
+
+check('relance_facture : la fiche produit campagne (FAQ/pitch) reste injectée normalement', () => {
+  const norm = normalizeCampaignConfigInput({
+    campaign: 'relance_facture',
+    productInfo: {
+      faq: [{ question: 'Comment obtenir un duplicata ?', reponse: 'Contactez-nous.' }],
+    },
+  });
+  const prompt = buildSystemPrompt(userWithInstructions, null, norm.productInfo, 'relance_facture');
+  assert.ok(prompt.includes('FICHE PRODUIT CAMPAGNE'), 'fiche produit campagne absente pour relance_facture');
+  assert.ok(prompt.includes('Comment obtenir un duplicata ?'), 'FAQ relance_facture absente');
+  assert.ok(!prompt.includes('INSTRUCTIONS SPÉCIFIQUES DU CLIENT'), 'agent_instructions fuité malgré relance_facture');
+});
+
 // ─── Résultat ──────────────────────────────────────────────────────────────────
 sep('RÉSULTAT');
 if (process.exitCode === 1) {

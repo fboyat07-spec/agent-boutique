@@ -229,7 +229,7 @@ function notifyHotLead({ phone, score, lastMessage, reason }) {
   notifyOperator(body, 'HOT LEAD');
 }
 
-function buildSystemPrompt(user, running_summary, campaignProductInfo) {
+function buildSystemPrompt(user, running_summary, campaignProductInfo, campaign) {
   const storeName = user?.store_name || 'Agent Boutique';
   const { starter, pro, elite } = paymentLinks;
   const hasCustomInstructions = !!(user?.agent_instructions?.trim());
@@ -386,8 +386,13 @@ Choisis l'outil le plus adapté au contexte. Ne fais qu'UNE seule action par mes
     }
   }
 
-  // Instructions client — DERNIÈRE position = priorité maximale sur tout le prompt
-  if (user?.agent_instructions?.trim()) {
+  // Instructions client — DERNIÈRE position = priorité maximale sur tout le prompt.
+  // EXCEPTION : la campagne 'relance_facture' (Phase 0-4) répond aux relances de
+  // factures via sa PROPRE fiche produit (FAQ ci-dessus) — les instructions
+  // commerciales génériques du tenant (user.agent_instructions, pensées pour la
+  // prospection/vente Agent Boutique) n'ont pas de sens ici et sont donc SAUTÉES.
+  // Toute autre campagne (ou absence de campagne) : comportement inchangé.
+  if (campaign !== 'relance_facture' && user?.agent_instructions?.trim()) {
     prompt += `\n\n═══ INSTRUCTIONS SPÉCIFIQUES DU CLIENT (PRIORITÉ MAXIMALE) ═══\n`;
     prompt += `Les instructions ci-dessous sont PRIORITAIRES sur tout ce qui précède.\n`;
     prompt += `En cas de contradiction, TOUJOURS suivre ces instructions :\n\n`;
@@ -604,7 +609,7 @@ async function nodeHandleInvoiceReply(state) {
         max_tokens: 200,
         temperature: 0.5,
         messages: [
-          { role: 'system', content: buildSystemPrompt(context.user, context.running_summary, context.campaignProductInfo) },
+          { role: 'system', content: buildSystemPrompt(context.user, context.running_summary, context.campaignProductInfo, context.campaign) },
           ...(context.history || []),
           { role: 'user', content: message },
         ],
@@ -689,7 +694,7 @@ async function nodeRoute(state) {
   // ── FIN GARDE PRÉ-GPT ──────────────────────────────────────────────────────
 
   const messages = [
-    { role: 'system', content: buildSystemPrompt(context.user, context.running_summary, context.campaignProductInfo) },
+    { role: 'system', content: buildSystemPrompt(context.user, context.running_summary, context.campaignProductInfo, context.campaign) },
     ...context.history,
     {
       role: 'user',
