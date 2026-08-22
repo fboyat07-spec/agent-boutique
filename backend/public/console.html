@@ -55,7 +55,7 @@
     /* ── Layout Fullscreen 3 Colonnes ───────────────────────────────────── */
     .app-container {
       display: grid;
-      grid-template-columns: 340px 1fr 320px;
+      grid-template-columns: 320px 1fr 440px;
       height: 100vh;
       overflow: hidden;
     }
@@ -543,7 +543,7 @@
     /* ── Responsive Design ───────────────────────────────────────────── */
     @media (max-width: 1200px) {
       .app-container {
-        grid-template-columns: 300px 1fr 280px;
+        grid-template-columns: 280px 1fr 380px;
       }
     }
 
@@ -830,6 +830,44 @@
     }
     .wa-result.success { background:#d1fae5; color:#065f46; }
     .wa-result.error   { background:#fee2e2; color:#991b1b; }
+
+    /* ── Séparateurs de groupes — panneau droit ─────────────────────── */
+    /* Chaque groupe logique du panneau droit est précédé d'un bandeau
+       coloré qui indique au premier coup d'œil ce qu'il contient.
+       CSS-only : aucun JS impliqué, aucun comportement modifié. */
+    .panel-group-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 24px -20px 12px;   /* déborde jusqu'aux bords du padding parent */
+      padding: 8px 20px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-secondary);
+      color: var(--text-secondary);
+    }
+    /* Premier groupe : pas de marge-top (il est en tête du scroll) */
+    .panel-group-header:first-child {
+      margin-top: 0;
+      border-top: none;
+    }
+    /* Couleur de la pastille */
+    .panel-group-header::before {
+      content: '';
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .panel-group-header.group-campaigns::before  { background: var(--blue); }
+    .panel-group-header.group-invoices::before   { background: var(--orange); }
+    .panel-group-header.group-settings::before   { background: var(--purple); }
+    .panel-group-header.group-leadinfo::before   { background: var(--text-muted); }
   </style>
 </head>
 <body>
@@ -993,6 +1031,8 @@
           <span id="presetStatus" style="font-size:13px;color:#065f46;margin-left:8px;"></span>
         </div>
 
+        <div class="panel-group-header group-campaigns">Catalogue &amp; Campagnes — commun à tous les clients</div>
+
         <div class="lead-info-section">
           <div class="lead-info-title">📦 Catalogue produits</div>
           <div style="font-size:13px;color:#64748b;margin-bottom:8px;">
@@ -1056,6 +1096,8 @@
           </div>
           <ul id="leadImportErrors" style="margin:8px 0 0; padding-left:18px; font-size:12px; color:#991b1b;"></ul>
         </div>
+
+        <div class="panel-group-header group-invoices">Factures — spécifique à relance_facture</div>
 
         <div class="lead-info-section">
           <div class="lead-info-title">🧾 Factures — relance_facture</div>
@@ -1126,6 +1168,8 @@
           </div>
           <div id="invoiceTableWrapper"></div>
         </div>
+
+        <div class="panel-group-header group-settings">Paramètres de l'agent — commun à tous les clients</div>
 
         <div class="lead-info-section">
           <div class="lead-info-title">📋 Instructions pour l'agent</div>
