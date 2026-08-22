@@ -31,7 +31,15 @@ const REMINDER_STEPS = [
   { statusIndex: 1, offsetDays: -3, templateStep: 'j-3',  newStatus: 'reminder_sent_j-3',  mustBeBeforeDueDate: true  },
   { statusIndex: 2, offsetDays: 1,  templateStep: 'j+1',  newStatus: 'reminder_sent_j+1',  mustBeBeforeDueDate: false },
   { statusIndex: 3, offsetDays: 10, templateStep: 'j+10', newStatus: 'reminder_sent_j+10', mustBeBeforeDueDate: false },
-  { statusIndex: 4, offsetDays: 20, templateStep: 'j+20', newStatus: 'reminder_sent_j+20', mustBeBeforeDueDate: false },
+  // J+20 ("dernière relance") : contrairement à tous les autres seuils — qui
+  // restent atteignables directement dès le tout premier envoi, même si la
+  // facture est déjà très en retard (import CSV historique) — ce template ne
+  // peut JAMAIS être le premier message envoyé. requiredStatusIndex impose que
+  // le statut actuel soit EXACTEMENT reminder_sent_j+10 (pas seulement
+  // "antérieur à j+20") : une facture 'pending' à 25 jours de retard reçoit
+  // donc j+10 d'abord ; j+20 ne partira qu'au passage suivant si toujours
+  // impayée à ce moment-là.
+  { statusIndex: 4, offsetDays: 20, templateStep: 'j+20', newStatus: 'reminder_sent_j+20', mustBeBeforeDueDate: false, requiredStatusIndex: 3 },
 ];
 
 /**
@@ -43,6 +51,10 @@ const REMINDER_STEPS = [
  * cron resté arrêté longtemps), on saute directement à l'étape la PLUS AVANCÉE
  * due, sans repasser par les étapes intermédiaires devenues obsolètes — cela
  * évite d'envoyer plusieurs messages WhatsApp au même client dans un seul tick.
+ *
+ * Exception à ce saut direct : J+20 ("dernière relance") exige que le statut
+ * actuel soit EXACTEMENT reminder_sent_j+10 (cf. REMINDER_STEPS.requiredStatusIndex)
+ * — il ne peut jamais être le tout premier message envoyé à une facture.
  *
  * @param {{status:string, dueDate:Date|string}} invoice
  * @param {Date} now
@@ -59,7 +71,14 @@ function resolveDueReminderStep(invoice, now = new Date()) {
 
   for (let i = REMINDER_STEPS.length - 1; i >= 0; i--) {
     const step = REMINDER_STEPS[i];
-    if (step.statusIndex <= currentIndex) continue; // déjà envoyée ou dépassée
+
+    if (step.requiredStatusIndex !== undefined) {
+      // Étape plafonnée (J+20) : éligible SEULEMENT si le statut actuel est
+      // exactement celui requis — jamais un saut direct depuis un statut antérieur.
+      if (currentIndex !== step.requiredStatusIndex) continue;
+    } else if (step.statusIndex <= currentIndex) {
+      continue; // déjà envoyée ou dépassée
+    }
 
     const triggerTime = dueDate.getTime() + step.offsetDays * DAY_MS;
     if (nowMs < triggerTime) continue; // pas encore due
