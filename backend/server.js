@@ -558,6 +558,9 @@ app.use('/api/agent', require('./routes/agentConfigRoutes'));
 // Factures — campagne relance_facture (Phase 2)
 app.use('/api/invoices', require('./routes/invoiceRoutes'));
 
+// Campagnes — fiche produit par campagne (CampaignConfig), écran console
+app.use('/api/campaigns', require('./routes/campaignConfigRoutes'));
+
 // Modules incomplets explicitement desactives
 app.use('/api/progress', (req, res) => {
   res.status(410).json({
