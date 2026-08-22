@@ -26,7 +26,7 @@ process.env.SALES_PAYMENT_LINK_PRO     ||= 'https://pay.test/pro';
 process.env.SALES_PAYMENT_LINK_ELITE   ||= 'https://pay.test/elite';
 
 const assert = require('assert');
-const { normalizeCampaignConfigInput } = require('../services/campaignAdminService');
+const { normalizeCampaignConfigInput, validateCampaignKey } = require('../services/campaignAdminService');
 const { buildLeadDoc, parseLeadRows } = require('../services/csvLeadImporter');
 const { buildSystemPrompt } = require('../services/orchestrator');
 
@@ -190,6 +190,34 @@ check('valeurs par défaut de lead (name/city/business) si colonnes vides', () =
   assert.strictEqual(doc.name, 'Prospect');
   assert.strictEqual(doc.city, 'France');
   assert.strictEqual(doc.business, 'Business');
+});
+
+// ─── E. Protection de la clé réservée relance_facture ──────────────────────────
+sep('E. Protection de la clé réservée relance_facture');
+
+check('validateCampaignKey : création d\'une nouvelle relance_facture ⇒ rejet', () => {
+  const result = validateCampaignKey('relance_facture', true);
+  assert.strictEqual(result.ok, false);
+  assert.ok(result.error.includes('relance_facture'));
+  assert.ok(result.error.includes('réservée'));
+});
+
+check('validateCampaignKey : édition d\'une relance_facture existante ⇒ allowed', () => {
+  const result = validateCampaignKey('relance_facture', false);
+  assert.strictEqual(result.ok, true);
+  assert.ok(!result.error);
+});
+
+check('validateCampaignKey : création d\'une campagne normale (non relance_facture) ⇒ allowed', () => {
+  const result = validateCampaignKey('kidai', true);
+  assert.strictEqual(result.ok, true);
+  assert.ok(!result.error);
+});
+
+check('validateCampaignKey : édition d\'une campagne normale ⇒ allowed', () => {
+  const result = validateCampaignKey('kidai', false);
+  assert.strictEqual(result.ok, true);
+  assert.ok(!result.error);
 });
 
 // ─── Résultat ──────────────────────────────────────────────────────────────────

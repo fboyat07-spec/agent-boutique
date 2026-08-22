@@ -29,7 +29,7 @@ const express = require('express');
 
 const CampaignConfig = require('../models/CampaignConfig');
 const consoleAuth = require('../middleware/consoleAuth');
-const { normalizeCampaignConfigInput } = require('../services/campaignAdminService');
+const { normalizeCampaignConfigInput, validateCampaignKey } = require('../services/campaignAdminService');
 
 const router = express.Router();
 
@@ -81,6 +81,14 @@ router.post('/', consoleAuth, async (req, res) => {
 
     const norm = normalizeCampaignConfigInput(req.body);
     if (!norm.ok) return res.status(400).json({ error: norm.error });
+
+    // Vérifier si la config existe déjà (pour distinguer création/édition)
+    const exists = await CampaignConfig.findOne({ tenantId: tenant_id, campaign: norm.campaign }).lean();
+    const isCreation = !exists;
+
+    // Valider la clé de campagne (relance_facture est réservée)
+    const validation = validateCampaignKey(norm.campaign, isCreation);
+    if (!validation.ok) return res.status(400).json({ error: validation.error });
 
     const config = await CampaignConfig.findOneAndUpdate(
       { tenantId: tenant_id, campaign: norm.campaign },

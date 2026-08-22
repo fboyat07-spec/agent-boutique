@@ -88,9 +88,29 @@ function normalizeCampaignConfigInput(body = {}) {
   return { ok: true, campaign, active, productInfo };
 }
 
+/**
+ * Valide la clé de campagne contre les clés réservées.
+ * Clés réservées : 'relance_facture' (Phase 0-4) ne peut être créée que si le
+ * document existe déjà (édition d'une config existante).
+ *
+ * @param {string} campaign — clé de campagne
+ * @param {boolean} isCreation — true si création (document n'existe pas), false si édition
+ * @returns {{ok:boolean, error?:string}}
+ */
+function validateCampaignKey(campaign, isCreation) {
+  if (campaign === 'relance_facture' && isCreation) {
+    return {
+      ok: false,
+      error: 'Clé de campagne \'relance_facture\' réservée par le système de relance de factures (Phase 0-4). Cette clé ne peut pas être utilisée pour une nouvelle campagne.'
+    };
+  }
+  return { ok: true };
+}
+
 module.exports = {
   normalizeCampaignConfigInput,
   normalizeFaq,
   normalizeObjections,
   normalizeCatalog,
+  validateCampaignKey,
 };
