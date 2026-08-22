@@ -55,7 +55,7 @@
     /* ── Layout Fullscreen 3 Colonnes ───────────────────────────────────── */
     .app-container {
       display: grid;
-      grid-template-columns: 320px 1fr 440px;
+      grid-template-columns: 300px 1fr 600px;
       height: 100vh;
       overflow: hidden;
     }
@@ -543,7 +543,7 @@
     /* ── Responsive Design ───────────────────────────────────────────── */
     @media (max-width: 1200px) {
       .app-container {
-        grid-template-columns: 280px 1fr 380px;
+        grid-template-columns: 260px 1fr 500px;
       }
     }
 
@@ -838,34 +838,58 @@
     .panel-group-header {
       display: flex;
       align-items: center;
-      gap: 8px;
-      margin: 24px -20px 12px;   /* déborde jusqu'aux bords du padding parent */
-      padding: 8px 20px;
-      font-size: 10px;
+      gap: 10px;
+      margin: 32px -20px 16px;   /* déborde jusqu'aux bords du padding parent */
+      padding: 11px 20px;
+      font-size: 11px;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 1.2px;
-      border-top: 1px solid var(--border);
-      border-bottom: 1px solid var(--border);
-      background: var(--bg-secondary);
-      color: var(--text-secondary);
+      letter-spacing: 1.4px;
+      border-top: 2px solid var(--border-strong);
+      border-bottom: 2px solid var(--border-strong);
+      border-left: 5px solid transparent;   /* surcharge par chaque variante */
+      color: var(--text-primary);
     }
     /* Premier groupe : pas de marge-top (il est en tête du scroll) */
     .panel-group-header:first-child {
       margin-top: 0;
       border-top: none;
     }
-    /* Couleur de la pastille */
+    /* Pastille colorée à gauche du texte */
     .panel-group-header::before {
       content: '';
       display: inline-block;
-      width: 10px;
-      height: 10px;
+      width: 8px;
+      height: 8px;
       border-radius: 50%;
       flex-shrink: 0;
     }
+    /* Variante bleue — Catalogue & Campagnes */
+    .panel-group-header.group-campaigns {
+      background: #eff6ff;           /* blue-50 */
+      border-left-color: var(--blue);
+      border-top-color: #bfdbfe;
+      border-bottom-color: #bfdbfe;
+      color: #1e40af;
+    }
     .panel-group-header.group-campaigns::before  { background: var(--blue); }
+    /* Variante orange — Factures */
+    .panel-group-header.group-invoices {
+      background: #fff7ed;           /* orange-50 */
+      border-left-color: var(--orange);
+      border-top-color: #fed7aa;
+      border-bottom-color: #fed7aa;
+      color: #92400e;
+    }
     .panel-group-header.group-invoices::before   { background: var(--orange); }
+    /* Variante violet — Paramètres agent */
+    .panel-group-header.group-settings {
+      background: #f5f3ff;           /* violet-50 */
+      border-left-color: var(--purple);
+      border-top-color: #ddd6fe;
+      border-bottom-color: #ddd6fe;
+      color: #4c1d95;
+    }
     .panel-group-header.group-settings::before   { background: var(--purple); }
     .panel-group-header.group-leadinfo::before   { background: var(--text-muted); }
   </style>
